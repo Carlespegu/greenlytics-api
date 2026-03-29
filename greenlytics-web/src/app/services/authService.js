@@ -13,7 +13,6 @@ export const authService = {
     console.log('API URL:', config.apiBaseUrl)
 
     let response
-    let payload = null
 
     try {
       response = await fetch(`${config.apiBaseUrl}/auth/login`, {
@@ -25,17 +24,27 @@ export const authService = {
         body: body.toString(),
       })
     } catch (error) {
-      console.error('Login network error:', error)
+      console.error('LOGIN FETCH ERROR:', error)
       throw new Error(
         'No s’ha pogut connectar amb el servidor. Revisa la connexió o torna-ho a provar.'
       )
     }
 
+    console.log('LOGIN STATUS:', response.status)
+
+    const rawText = await response.text()
+    console.log('LOGIN RAW RESPONSE:', rawText)
+
+    let payload = null
+
     try {
-      payload = await response.json()
-    } catch {
-      payload = null
+      payload = JSON.parse(rawText)
+    } catch (error) {
+      console.error('LOGIN JSON PARSE ERROR:', error)
+      throw new Error('Error processant la resposta del servidor.')
     }
+
+    console.log('LOGIN PAYLOAD:', payload)
 
     if (!response.ok) {
       if (response.status === 400 || response.status === 401) {
@@ -48,6 +57,7 @@ export const authService = {
     }
 
     const token = payload?.access_token
+    console.log('LOGIN TOKEN:', token)
 
     if (!token) {
       throw new Error('La resposta de login no conté access_token.')
