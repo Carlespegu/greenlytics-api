@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import SunLoader from '../components/SunLoader'
-import logo from '../../assets/logo.png'
+import logo from '../components/logo2.png'
 
 function EyeIcon({ open }) {
   if (open) {
@@ -76,26 +76,24 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <div className="mb-6">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white/90 backdrop-blur p-8 shadow-lg">
-          <div className="mb-8 text-center relative">
-            <div className="absolute inset-0 blur-2xl opacity-20 bg-emerald-400 rounded-full"></div>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 to-slate-100 px-4">
+      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-lg backdrop-blur">
+        <div className="mb-8 text-center">
+          <img
+            src={logo}
+            alt="Greenlytics"
+            className="mx-auto h-28 w-auto object-contain"
+          />
 
-            <img
-              src={logo}
-              alt="Greenlytics"
-              className="relative mx-auto h-28 w-auto object-contain"
-            />
-            <h1 className="mt-4 text-3xl font-bold text-slate-900">
-              Greenlytics
-            </h1>
+          <h1 className="mt-4 text-3xl font-bold text-slate-900">
+            Greenlytics
+          </h1>
 
-            <p className="mt-2 text-sm text-slate-500">
-              Smart plant monitoring platform
-            </p>
-          </div>
+          <p className="mt-2 text-sm text-slate-500">
+            Smart plant monitoring platform
+          </p>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
