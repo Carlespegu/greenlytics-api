@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 
 function menuClassName({ isActive }) {
   return [
@@ -10,8 +11,15 @@ function menuClassName({ isActive }) {
   ].join(' ')
 }
 
+const languages = [
+  { code: 'ca', label: 'Català', flag: '🇨🇦' },
+  { code: 'es', label: 'Castellano', flag: '🇪🇸' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+]
+
 export default function AppLayout() {
   const { user, logout } = useAuth()
+  const { language, setLanguage, t } = useLanguage()
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -22,33 +30,64 @@ export default function AppLayout() {
           </Link>
 
           <div className="flex items-center gap-4">
-            <div className="text-sm text-slate-600">
-            {user?.email || user?.username || 'Sessió iniciada'}
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-600">
+                {user?.email || user?.username || t('sessionStarted')}
+              </span>
+
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-emerald-500"
+                aria-label={t('selectLanguage')}
+              >
+                {languages.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.flag} {lang.label}
+                  </option>
+                ))}
+              </select>
             </div>
+
             <button
               onClick={logout}
               className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
             >
-              Logout
+              {t('logout')}
             </button>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-6 py-6 md:grid-cols-[220px_1fr]">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-6 py-6 md:grid-cols-[240px_1fr]">
         <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <nav className="space-y-2">
             <NavLink to="/" end className={menuClassName}>
-              Dashboard
+              {t('dashboard')}
             </NavLink>
             <NavLink to="/devices" className={menuClassName}>
-              Devices
+              {t('devices')}
             </NavLink>
             <NavLink to="/installations" className={menuClassName}>
-              Installations
+              {t('installations')}
             </NavLink>
             <NavLink to="/plants" className={menuClassName}>
-              Plants
+              {t('plants')}
+            </NavLink>
+            <NavLink to="/readings" className={menuClassName}>
+              {t('readings')}
+            </NavLink>
+
+            <div className="my-3 border-t border-slate-200" />
+
+            <NavLink to="/users" className={menuClassName}>
+              {t('users')}
+            </NavLink>
+            <NavLink to="/alerts" className={menuClassName}>
+              {t('alerts')}
+            </NavLink>
+            <NavLink to="/settings" className={menuClassName}>
+              {t('settings')}
             </NavLink>
           </nav>
         </aside>
