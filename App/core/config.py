@@ -15,5 +15,4 @@ class Settings:
         os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60")
     )
 
-
 settings = Settings()
