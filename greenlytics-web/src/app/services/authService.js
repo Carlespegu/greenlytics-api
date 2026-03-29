@@ -7,8 +7,8 @@ export const authService = {
     body.append('username', credentials.email)
     body.append('password', credentials.password)
     body.append('scope', '')
-    body.append('client_id', '')
-    body.append('client_secret', '')
+    body.append('client_id', 'string')
+    body.append('client_secret', 'string')
 
     let response
     let payload = null
@@ -17,12 +17,13 @@ export const authService = {
       response = await fetch(`${config.apiBaseUrl}/auth/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
           Accept: 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body,
+        body: body.toString(),
       })
-    } catch {
+    } catch (error) {
+      console.error('Login network error:', error)
       throw new Error(
         'No s’ha pogut connectar amb el servidor. Revisa la connexió o torna-ho a provar.'
       )
@@ -40,8 +41,7 @@ export const authService = {
       }
 
       throw new Error(
-        payload?.detail ||
-          'S’ha produït un error en iniciar sessió. Torna-ho a provar.'
+        payload?.detail || 'S’ha produït un error en iniciar sessió.'
       )
     }
 
