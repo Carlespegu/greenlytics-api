@@ -10,6 +10,8 @@ export const authService = {
     body.append('client_id', 'string')
     body.append('client_secret', 'string')
 
+    console.log('API URL:', config.apiBaseUrl)
+
     let response
     let payload = null
 
