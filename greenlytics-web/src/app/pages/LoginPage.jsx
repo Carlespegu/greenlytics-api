@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import SunLoader from '../components/SunLoader'
-import logo from '../components/logo2.png'
+import logo from '../components/logo.png'
 
 function EyeIcon({ open }) {
   if (open) {
