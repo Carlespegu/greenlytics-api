@@ -10,8 +10,6 @@ export const authService = {
     body.append('client_id', 'string')
     body.append('client_secret', 'string')
 
-    console.log('API URL:', config.apiBaseUrl)
-
     let response
 
     try {
@@ -30,10 +28,7 @@ export const authService = {
       )
     }
 
-    console.log('LOGIN STATUS:', response.status)
-
     const rawText = await response.text()
-    console.log('LOGIN RAW RESPONSE:', rawText)
 
     let payload = null
 
@@ -43,8 +38,6 @@ export const authService = {
       console.error('LOGIN JSON PARSE ERROR:', error)
       throw new Error('Error processant la resposta del servidor.')
     }
-
-    console.log('LOGIN PAYLOAD:', payload)
 
     if (!response.ok) {
       if (response.status === 400 || response.status === 401) {
@@ -57,7 +50,6 @@ export const authService = {
     }
 
     const token = payload?.access_token
-    console.log('LOGIN TOKEN:', token)
 
     if (!token) {
       throw new Error('La resposta de login no conté access_token.')
@@ -68,5 +60,41 @@ export const authService = {
       user: null,
       raw: payload,
     }
+  },
+
+  async me(token) {
+    let response
+
+    try {
+      response = await fetch(`${config.apiBaseUrl}/auth/me`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    } catch (error) {
+      console.error('ME FETCH ERROR:', error)
+      throw new Error('No s’ha pogut obtenir la informació de l’usuari.')
+    }
+
+    const rawText = await response.text()
+
+    let payload = null
+
+    try {
+      payload = JSON.parse(rawText)
+    } catch (error) {
+      console.error('ME JSON PARSE ERROR:', error)
+      throw new Error('Error processant la resposta de l’usuari.')
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        payload?.detail || 'No s’ha pogut obtenir la informació de la sessió.'
+      )
+    }
+
+    return payload
   },
 }

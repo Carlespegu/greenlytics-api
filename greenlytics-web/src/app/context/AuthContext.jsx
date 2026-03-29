@@ -4,6 +4,15 @@ import { storage } from '../lib/storage'
 
 const AuthContext = createContext(null)
 
+function extractRoleCode(user) {
+  return user?.role_code || null
+}
+
+function canAccessAdminSection(user) {
+  const roleCode = extractRoleCode(user)?.toUpperCase()
+  return roleCode === 'ADMIN' || roleCode === 'MANAGER'
+}
+
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(storage.getToken())
   const [user, setUser] = useState(storage.getUser())
@@ -27,11 +36,18 @@ export function AuthProvider({ children }) {
 
   async function login(credentials) {
     setIsLoading(true)
+
     try {
       const result = await authService.login(credentials)
       setToken(result.token)
-      setUser(result.user)
-      return result
+
+      const me = await authService.me(result.token)
+      setUser(me)
+
+      return {
+        token: result.token,
+        user: me,
+      }
     } finally {
       setIsLoading(false)
     }
@@ -51,6 +67,8 @@ export function AuthProvider({ children }) {
       isLoading,
       login,
       logout,
+      roleCode: extractRoleCode(user),
+      canSeeAdminSection: canAccessAdminSection(user),
     }),
     [token, user, isLoading]
   )
