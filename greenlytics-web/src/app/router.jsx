@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import RoleProtectedRoute from './components/RoleProtectedRoute'
 import AppLayout from './layouts/AppLayout'
+import Dashboard from './pages/Dashboard'
 import DevicesPage from './pages/DevicesPage'
 import InstallationsPage from './pages/InstallationsPage'
 import LoginPage from './pages/LoginPage'
@@ -10,7 +11,8 @@ import ReadingsPage from './pages/ReadingsPage'
 import UsersPage from './pages/UsersPage'
 import AlertsPage from './pages/AlertsPage'
 import SettingsPage from './pages/SettingsPage'
-import Dashboard from './pages/Dashboard'
+import ClientsPage from './pages/ClientsPage'
+import ClientDetailPage from './pages/ClientDetailPage'
 
 export const router = createBrowserRouter([
   {
@@ -29,12 +31,21 @@ export const router = createBrowserRouter([
           { path: 'installations', element: <InstallationsPage /> },
           { path: 'plants', element: <PlantsPage /> },
           { path: 'readings', element: <ReadingsPage /> },
+          { path: 'alerts', element: <AlertsPage /> },
 
           {
-            element: <RoleProtectedRoute />,
+            element: <RoleProtectedRoute allowedRoles={['ADMIN']} />,
+            children: [
+              { path: 'clients', element: <ClientsPage /> },
+              { path: 'clients/new', element: <ClientDetailPage /> },
+              { path: 'clients/:clientId', element: <ClientDetailPage /> },
+            ],
+          },
+
+          {
+            element: <RoleProtectedRoute allowedRoles={['ADMIN', 'MANAGER']} />,
             children: [
               { path: 'users', element: <UsersPage /> },
-              { path: 'alerts', element: <AlertsPage /> },
               { path: 'settings', element: <SettingsPage /> },
             ],
           },

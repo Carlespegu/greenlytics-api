@@ -28,6 +28,8 @@ export default function AppLayout() {
   const canAccessAdministration =
     roleCode === 'ADMIN' || roleCode === 'MANAGER'
 
+  const isAdmin = roleCode === 'ADMIN'
+
   const brandPrimary = branding?.primaryColor || '#059669'
   const brandSecondary = branding?.secondaryColor || '#0f172a'
   const brandName = branding?.appName || 'Greenlytics'
@@ -87,16 +89,36 @@ export default function AppLayout() {
             <div>
               <SectionTitle>Operativa</SectionTitle>
               <div className="space-y-2">
-                <NavLink to="/" end className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                <NavLink
+                  to="/"
+                  end
+                  className={menuClassName}
+                  style={({ isActive }) => itemStyle(isActive)}
+                >
                   {t('dashboard')}
                 </NavLink>
-                <NavLink to="/devices" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+
+                <NavLink
+                  to="/devices"
+                  className={menuClassName}
+                  style={({ isActive }) => itemStyle(isActive)}
+                >
                   {t('devices')}
                 </NavLink>
-                <NavLink to="/installations" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+
+                <NavLink
+                  to="/installations"
+                  className={menuClassName}
+                  style={({ isActive }) => itemStyle(isActive)}
+                >
                   {t('installations')}
                 </NavLink>
-                <NavLink to="/plants" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+
+                <NavLink
+                  to="/plants"
+                  className={menuClassName}
+                  style={({ isActive }) => itemStyle(isActive)}
+                >
                   {t('plants')}
                 </NavLink>
               </div>
@@ -105,10 +127,19 @@ export default function AppLayout() {
             <div className="border-t border-slate-200 pt-4">
               <SectionTitle>Dades</SectionTitle>
               <div className="space-y-2">
-                <NavLink to="/readings" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                <NavLink
+                  to="/readings"
+                  className={menuClassName}
+                  style={({ isActive }) => itemStyle(isActive)}
+                >
                   {t('readings')}
                 </NavLink>
-                <NavLink to="/alerts" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+
+                <NavLink
+                  to="/alerts"
+                  className={menuClassName}
+                  style={({ isActive }) => itemStyle(isActive)}
+                >
                   {t('alerts')}
                 </NavLink>
               </div>
@@ -118,10 +149,29 @@ export default function AppLayout() {
               <div className="border-t border-slate-200 pt-4">
                 <SectionTitle>Administració</SectionTitle>
                 <div className="space-y-2">
-                  <NavLink to="/users" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                  {isAdmin && (
+                    <NavLink
+                      to="/clients"
+                      className={menuClassName}
+                      style={({ isActive }) => itemStyle(isActive)}
+                    >
+                      {t('clients')}
+                    </NavLink>
+                  )}
+
+                  <NavLink
+                    to="/users"
+                    className={menuClassName}
+                    style={({ isActive }) => itemStyle(isActive)}
+                  >
                     {t('users')}
                   </NavLink>
-                  <NavLink to="/settings" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+
+                  <NavLink
+                    to="/settings"
+                    className={menuClassName}
+                    style={({ isActive }) => itemStyle(isActive)}
+                  >
                     {t('settings')}
                   </NavLink>
                 </div>
