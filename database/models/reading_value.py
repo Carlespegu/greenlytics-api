@@ -1,8 +1,7 @@
 import uuid
-from sqlalchemy import Column, DateTime, Integer, Numeric, Text, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, Numeric, Text, Boolean, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 
 from database.base import Base
 
@@ -19,8 +18,6 @@ class ReadingValue(Base):
     value_integer = Column(Integer)
     value_text = Column(Text)
     value_boolean = Column(Boolean)
-
-    created_on = Column("createdon", DateTime, nullable=False, server_default=func.now())
 
     reading = relationship("Reading", back_populates="values")
     reading_type = relationship("ReadingType")
