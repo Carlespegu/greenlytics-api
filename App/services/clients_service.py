@@ -76,11 +76,14 @@ def create_client_service(db: Session, payload: ClientCreate):
         external_id=payload.ExternalId,
         api_key=api_key,
         api_secret_hash=api_secret_hash,
+
+        # Branding MVP en alta
         app_name=payload.AppName,
         logo_url=payload.LogoUrl,
         favicon_url=payload.FaviconUrl,
         primary_color=payload.PrimaryColor,
         secondary_color=payload.SecondaryColor,
+
         created_by=payload.CreatedBy,
     )
 
