@@ -7,11 +7,11 @@ from pydantic import BaseModel, ConfigDict, EmailStr
 
 class UserCreate(BaseModel):
     username: str
-    email: Optional[EmailStr] = None
+    email: EmailStr
     password: str
     client_id: UUID
     role_id: UUID
-    first_name: Optional[str] = None
+    first_name: str
     last_name: Optional[str] = None
     is_active: bool = True
 
@@ -32,7 +32,7 @@ class UserResponse(BaseModel):
 
     id: UUID
     username: str
-    email: Optional[str] = None
+    email: str
     client_id: UUID
     role_id: UUID
     first_name: Optional[str] = None

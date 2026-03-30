@@ -29,59 +29,28 @@ export const clientsService = {
     }
 
     if (filters.code) {
-      body.code = {
-        filter_value: filters.code,
-        comparator: 'contains',
-      }
+      body.code = { filter_value: filters.code, comparator: 'contains' }
     }
-
     if (filters.name) {
-      body.name = {
-        filter_value: filters.name,
-        comparator: 'contains',
-      }
+      body.name = { filter_value: filters.name, comparator: 'contains' }
     }
-
     if (filters.tradeName) {
-      body.trade_name = {
-        filter_value: filters.tradeName,
-        comparator: 'contains',
-      }
+      body.trade_name = { filter_value: filters.tradeName, comparator: 'contains' }
     }
-
     if (filters.email) {
-      body.email = {
-        filter_value: filters.email,
-        comparator: 'contains',
-      }
+      body.email = { filter_value: filters.email, comparator: 'contains' }
     }
-
     if (filters.city) {
-      body.city = {
-        filter_value: filters.city,
-        comparator: 'contains',
-      }
+      body.city = { filter_value: filters.city, comparator: 'contains' }
     }
-
     if (filters.country) {
-      body.country = {
-        filter_value: filters.country,
-        comparator: 'contains',
-      }
+      body.country = { filter_value: filters.country, comparator: 'contains' }
     }
-
     if (filters.clientType) {
-      body.client_type = {
-        filter_value: filters.clientType,
-        comparator: 'contains',
-      }
+      body.client_type = { filter_value: filters.clientType, comparator: 'contains' }
     }
-
     if (filters.isActive !== '') {
-      body.is_active = {
-        filter_value: filters.isActive === 'true',
-        comparator: 'equals',
-      }
+      body.is_active = { filter_value: filters.isActive === 'true', comparator: 'equals' }
     }
 
     return api.post('/clients/search', body)

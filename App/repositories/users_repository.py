@@ -39,12 +39,14 @@ def get_all_users(
     return query.order_by(User.username.asc()).all()
 
 
+
 def get_user_by_id(db: Session, user_id: UUID):
     return (
         db.query(User)
         .filter(User.id == user_id, User.is_deleted == False)  # noqa: E712
         .first()
     )
+
 
 
 def get_user_by_username(db: Session, username: str):
@@ -55,12 +57,27 @@ def get_user_by_username(db: Session, username: str):
     )
 
 
+
 def get_user_by_email(db: Session, email: str):
     return (
         db.query(User)
         .filter(User.email == email, User.is_deleted == False)  # noqa: E712
         .first()
     )
+
+
+
+def get_user_by_email_for_client(db: Session, client_id: UUID, email: str):
+    return (
+        db.query(User)
+        .filter(
+            User.client_id == client_id,
+            User.email == email,
+            User.is_deleted == False,  # noqa: E712
+        )
+        .first()
+    )
+
 
 
 def create_user(db: Session, user: User):
@@ -70,10 +87,12 @@ def create_user(db: Session, user: User):
     return user
 
 
+
 def update_user(db: Session, user: User):
     db.commit()
     db.refresh(user)
     return user
+
 
 
 def _apply_string_filter(query, column, filter_obj):
@@ -91,6 +110,7 @@ def _apply_string_filter(query, column, filter_obj):
     raise ValueError(f"Unsupported string comparator: {filter_obj.comparator}")
 
 
+
 def _apply_boolean_filter(query, column, filter_obj):
     comparator = (filter_obj.comparator or "equals").lower()
     if comparator != "equals":
@@ -98,11 +118,13 @@ def _apply_boolean_filter(query, column, filter_obj):
     return query.filter(column == filter_obj.filter_value)
 
 
+
 def _apply_uuid_filter(query, column, filter_obj):
     comparator = (filter_obj.comparator or "equals").lower()
     if comparator != "equals":
         raise ValueError(f"Unsupported UUID comparator: {filter_obj.comparator}")
     return query.filter(column == filter_obj.filter_value)
+
 
 
 def search_users(

@@ -1,6 +1,6 @@
-from sqlalchemy import func
-from sqlalchemy.orm import Session
 from uuid import UUID
+
+from sqlalchemy.orm import Session
 
 from database.models.clients import Client
 
@@ -9,7 +9,7 @@ def get_all_clients(db: Session):
     return (
         db.query(Client)
         .filter(Client.is_deleted == False)  # noqa: E712
-        .order_by(Client.created_on.desc())
+        .order_by(Client.name.asc())
         .all()
     )
 
@@ -17,7 +17,10 @@ def get_all_clients(db: Session):
 def get_client_by_id(db: Session, client_id: UUID):
     return (
         db.query(Client)
-        .filter(Client.id == client_id, Client.is_deleted == False)  # noqa: E712
+        .filter(
+            Client.id == client_id,
+            Client.is_deleted == False,  # noqa: E712
+        )
         .first()
     )
 
@@ -25,7 +28,10 @@ def get_client_by_id(db: Session, client_id: UUID):
 def get_client_by_code(db: Session, code: str):
     return (
         db.query(Client)
-        .filter(Client.code == code, Client.is_deleted == False)  # noqa: E712
+        .filter(
+            Client.code == code,
+            Client.is_deleted == False,  # noqa: E712
+        )
         .first()
     )
 
@@ -33,7 +39,32 @@ def get_client_by_code(db: Session, code: str):
 def get_client_by_api_key(db: Session, api_key: str):
     return (
         db.query(Client)
-        .filter(Client.api_key == api_key, Client.is_deleted == False)  # noqa: E712
+        .filter(
+            Client.api_key == api_key,
+            Client.is_deleted == False,  # noqa: E712
+        )
+        .first()
+    )
+
+
+def get_client_by_email(db: Session, email: str):
+    return (
+        db.query(Client)
+        .filter(
+            Client.email == email,
+            Client.is_deleted == False,  # noqa: E712
+        )
+        .first()
+    )
+
+
+def get_client_by_tax_id(db: Session, tax_id: str):
+    return (
+        db.query(Client)
+        .filter(
+            Client.tax_id == tax_id,
+            Client.is_deleted == False,  # noqa: E712
+        )
         .first()
     )
 
@@ -51,93 +82,49 @@ def update_client(db: Session, client: Client):
     return client
 
 
-def _apply_string_filter(query, column, filter_obj):
-    comparator = (filter_obj.comparator or "contains").lower()
-    value = filter_obj.filter_value
-
-    if comparator == "equals":
-        return query.filter(column == value)
-    if comparator == "contains":
-        return query.filter(column.ilike(f"%{value}%"))
-    if comparator == "starts_with":
-        return query.filter(column.ilike(f"{value}%"))
-    if comparator == "ends_with":
-        return query.filter(column.ilike(f"%{value}"))
-    raise ValueError(f"Unsupported string comparator: {filter_obj.comparator}")
-
-
-def _apply_boolean_filter(query, column, filter_obj):
-    comparator = (filter_obj.comparator or "equals").lower()
-    if comparator != "equals":
-        raise ValueError(f"Unsupported boolean comparator: {filter_obj.comparator}")
-    return query.filter(column == filter_obj.filter_value)
-
-
 def search_clients(db: Session, payload):
     query = db.query(Client).filter(Client.is_deleted == False)  # noqa: E712
 
-    if payload.code is not None:
-        query = _apply_string_filter(query, Client.code, payload.code)
+    if getattr(payload, "code", None) and payload.code.filter_value:
+        query = query.filter(Client.code.ilike(f"%{payload.code.filter_value}%"))
 
-    if payload.name is not None:
-        query = _apply_string_filter(query, Client.name, payload.name)
+    if getattr(payload, "name", None) and payload.name.filter_value:
+        query = query.filter(Client.name.ilike(f"%{payload.name.filter_value}%"))
 
-    if payload.trade_name is not None:
-        query = _apply_string_filter(query, Client.trade_name, payload.trade_name)
+    if getattr(payload, "trade_name", None) and payload.trade_name.filter_value:
+        query = query.filter(Client.trade_name.ilike(f"%{payload.trade_name.filter_value}%"))
 
-    if payload.tax_id is not None:
-        query = _apply_string_filter(query, Client.tax_id, payload.tax_id)
+    if getattr(payload, "email", None) and payload.email.filter_value:
+        query = query.filter(Client.email.ilike(f"%{payload.email.filter_value}%"))
 
-    if payload.email is not None:
-        query = _apply_string_filter(query, Client.email, payload.email)
+    if getattr(payload, "city", None) and payload.city.filter_value:
+        query = query.filter(Client.city.ilike(f"%{payload.city.filter_value}%"))
 
-    if payload.phone is not None:
-        query = _apply_string_filter(query, Client.phone, payload.phone)
+    if getattr(payload, "country", None) and payload.country.filter_value:
+        query = query.filter(Client.country.ilike(f"%{payload.country.filter_value}%"))
 
-    if payload.city is not None:
-        query = _apply_string_filter(query, Client.city, payload.city)
+    if getattr(payload, "client_type", None) and payload.client_type.filter_value:
+        query = query.filter(Client.client_type.ilike(f"%{payload.client_type.filter_value}%"))
 
-    if payload.country is not None:
-        query = _apply_string_filter(query, Client.country, payload.country)
+    if getattr(payload, "is_active", None) and payload.is_active.filter_value is not None:
+        query = query.filter(Client.is_active == payload.is_active.filter_value)
 
-    if payload.client_type is not None:
-        query = _apply_string_filter(query, Client.client_type, payload.client_type)
+    total = query.count()
 
-    if payload.is_active is not None:
-        query = _apply_boolean_filter(query, Client.is_active, payload.is_active)
+    sorting_params = getattr(payload, "sorting_params", None) or []
+    for sorting in sorting_params:
+        sort_by = getattr(sorting, "sort_by", None)
+        sort_direction = getattr(sorting, "sort_direction", "asc")
 
-    total = query.with_entities(func.count(Client.id)).scalar() or 0
+        if hasattr(Client, sort_by):
+            column = getattr(Client, sort_by)
+            query = query.order_by(column.desc() if sort_direction == "desc" else column.asc())
 
-    sortable_columns = {
-        "code": Client.code,
-        "name": Client.name,
-        "trade_name": Client.trade_name,
-        "email": Client.email,
-        "city": Client.city,
-        "country": Client.country,
-        "client_type": Client.client_type,
-        "is_active": Client.is_active,
-        "created_on": Client.created_on,
-    }
+    pagination = getattr(payload, "pagination_params", None)
+    page = getattr(pagination, "page", 1) or 1
+    page_size = getattr(pagination, "page_size", 10) or 10
 
-    if payload.sorting_params:
-        for sort in payload.sorting_params:
-            column = sortable_columns.get(sort.sort_by)
-            if column is None:
-                continue
-
-            if sort.sort_direction.lower() == "desc":
-                query = query.order_by(column.desc())
-            else:
-                query = query.order_by(column.asc())
-    else:
-        query = query.order_by(Client.name.asc())
-
-    page = payload.pagination_params.page
-    page_size = payload.pagination_params.page_size
-    offset = (page - 1) * page_size
-
-    items = query.offset(offset).limit(page_size).all()
+    items = query.offset((page - 1) * page_size).limit(page_size).all()
 
     return {
         "items": items,

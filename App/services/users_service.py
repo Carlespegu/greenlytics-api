@@ -11,7 +11,7 @@ from App.repositories.roles_repository import get_role_by_id
 from App.repositories.users_repository import (
     create_user,
     get_all_users,
-    get_user_by_email,
+    get_user_by_email_for_client,
     get_user_by_id,
     get_user_by_username,
     search_users,
@@ -19,6 +19,17 @@ from App.repositories.users_repository import (
 )
 from App.schemas.users import UserCreate, UserUpdate
 from database.models.users import User
+
+ALLOWED_ROLE_CODES = {"MANAGER", "VIEWER"}
+
+
+def _require_value(value: str | None, field_name: str):
+    if value is None or not str(value).strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Field '{field_name}' is required",
+        )
+
 
 
 def list_users_service(
@@ -41,6 +52,7 @@ def list_users_service(
     )
 
 
+
 def search_users_service(db: Session, payload):
     try:
         return search_users(db, payload)
@@ -49,6 +61,7 @@ def search_users_service(db: Session, payload):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+
 
 
 def get_user_service(db: Session, user_id: UUID):
@@ -61,21 +74,31 @@ def get_user_service(db: Session, user_id: UUID):
     return user
 
 
+
 def create_user_service(db: Session, payload: UserCreate):
-    existing_username = get_user_by_username(db, payload.username)
+    _require_value(payload.username, "username")
+    _require_value(payload.email, "email")
+    _require_value(payload.password, "password")
+    _require_value(payload.first_name, "first_name")
+
+    safe_username = payload.username.strip()
+    safe_email = str(payload.email).strip().lower()
+    safe_first_name = payload.first_name.strip()
+    safe_last_name = (payload.last_name or "").strip() or None
+
+    existing_username = get_user_by_username(db, safe_username)
     if existing_username:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"User with username '{payload.username}' already exists",
+            detail=f"User with username '{safe_username}' already exists",
         )
 
-    if payload.email:
-        existing_email = get_user_by_email(db, payload.email)
-        if existing_email:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"User with email '{payload.email}' already exists",
-            )
+    existing_email = get_user_by_email_for_client(db, payload.client_id, safe_email)
+    if existing_email:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"User with email '{safe_email}' already exists for this client",
+        )
 
     client = get_client_by_id(db, payload.client_id)
     if not client:
@@ -91,18 +114,25 @@ def create_user_service(db: Session, payload: UserCreate):
             detail="Role not found",
         )
 
+    if role.code.upper() not in ALLOWED_ROLE_CODES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User role must be MANAGER or VIEWER",
+        )
+
     user = User(
-        username=payload.username,
-        email=payload.email,
+        username=safe_username,
+        email=safe_email,
         password_hash=hash_password(payload.password),
         client_id=payload.client_id,
         role_id=payload.role_id,
-        first_name=payload.first_name,
-        last_name=payload.last_name,
+        first_name=safe_first_name,
+        last_name=safe_last_name,
         is_active=payload.is_active,
     )
 
     return create_user(db, user)
+
 
 
 def update_user_service(db: Session, user_id: UUID, payload: UserUpdate):
@@ -113,23 +143,26 @@ def update_user_service(db: Session, user_id: UUID, payload: UserUpdate):
             detail="User not found",
         )
 
-    if payload.username is not None and payload.username != user.username:
-        existing_username = get_user_by_username(db, payload.username)
+    if payload.username is not None and payload.username.strip() != user.username:
+        safe_username = payload.username.strip()
+        existing_username = get_user_by_username(db, safe_username)
         if existing_username and existing_username.id != user.id:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"User with username '{payload.username}' already exists",
+                detail=f"User with username '{safe_username}' already exists",
             )
-        user.username = payload.username
+        user.username = safe_username
 
-    if payload.email is not None and payload.email != user.email:
-        existing_email = get_user_by_email(db, payload.email)
-        if existing_email and existing_email.id != user.id:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"User with email '{payload.email}' already exists",
-            )
-        user.email = payload.email
+    if payload.email is not None:
+        safe_email = str(payload.email).strip().lower()
+        if safe_email != user.email:
+            existing_email = get_user_by_email_for_client(db, user.client_id, safe_email)
+            if existing_email and existing_email.id != user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"User with email '{safe_email}' already exists for this client",
+                )
+            user.email = safe_email
 
     if payload.client_id is not None and payload.client_id != user.client_id:
         client = get_client_by_id(db, payload.client_id)
@@ -147,22 +180,29 @@ def update_user_service(db: Session, user_id: UUID, payload: UserUpdate):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Role not found",
             )
+        if role.code.upper() not in ALLOWED_ROLE_CODES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User role must be MANAGER or VIEWER",
+            )
         user.role_id = payload.role_id
 
-    if payload.password is not None:
+    if payload.password is not None and payload.password.strip():
         user.password_hash = hash_password(payload.password)
 
     if payload.first_name is not None:
-        user.first_name = payload.first_name
+        _require_value(payload.first_name, "first_name")
+        user.first_name = payload.first_name.strip()
 
     if payload.last_name is not None:
-        user.last_name = payload.last_name
+        user.last_name = payload.last_name.strip() or None
 
     if payload.is_active is not None:
         user.is_active = payload.is_active
 
     user.modified_on = datetime.utcnow()
     return update_user(db, user)
+
 
 
 def delete_user_service(db: Session, user_id: UUID):
