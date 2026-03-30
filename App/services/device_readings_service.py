@@ -76,16 +76,16 @@ def create_device_reading_service(db: Session, device, payload):
 
     reading_values = []
 
-    for item in values:
-        code = getattr(item, "reading_type_code", None)
-        if not code:
-            continue
+        for item in values:
+            code = getattr(item, "reading_type_code", None)
+            if not code:
+                continue
 
-        reading_type = (
-            db.query(ReadingType)
-            .filter(ReadingType.code == code)
-            .first()
-        )
+            reading_type = (
+                db.query(ReadingType)
+                .filter(ReadingType.code == code.upper())
+                .first()
+            )
 
         if not reading_type:
             raise HTTPException(
