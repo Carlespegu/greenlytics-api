@@ -86,16 +86,16 @@ export default function AppLayout() {
                 <SectionTitle>Operativa</SectionTitle>
                 <div className="space-y-2">
                   <NavLink to="/" end className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
-                    {t('dashboard')}
+                    {t('Dashboard')}
                   </NavLink>
                   <NavLink to="/devices" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
-                    {t('devices')}
+                    {t('Dispositius')}
                   </NavLink>
                   <NavLink to="/installations" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
-                    {t('installations')}
+                    {t('Instal·lacions')}
                   </NavLink>
                   <NavLink to="/plants" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
-                    {t('plants')}
+                    {t('plantes')}
                   </NavLink>
                 </div>
               </div>
@@ -118,14 +118,14 @@ export default function AppLayout() {
                   <div className="space-y-2">
                     {isAdmin && (
                       <NavLink to="/clients" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
-                        {t('clients')}
+                        {t('Clients')}
                       </NavLink>
                     )}
                     <NavLink to="/users" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
-                      {t('users')}
+                      {t('Users')}
                     </NavLink>
                     <NavLink to="/settings" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
-                      {t('settings')}
+                      {t('Settings')}
                     </NavLink>
                   </div>
                 </div>
