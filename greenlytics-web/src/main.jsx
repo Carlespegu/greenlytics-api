@@ -7,11 +7,9 @@ import { router } from './app/router'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <LanguageProvider>
-      <AuthProvider>
-        <RouterProvider router={router} />
-      </AuthProvider>
-    </LanguageProvider>
-  </React.StrictMode>,
+  <LanguageProvider>
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  </LanguageProvider>,
 )

@@ -2,31 +2,69 @@ import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import LanguageDropdown from '../components/LanguageDropdown'
+import defaultLogo from '../../assets/logo.png'
 
 function menuClassName({ isActive }) {
   return [
-    'block rounded-xl px-3 py-2 text-sm font-medium',
+    'block rounded-xl px-3 py-2 text-sm font-medium transition',
     isActive
-      ? 'bg-emerald-100 text-emerald-800'
+      ? 'text-slate-900'
       : 'text-slate-700 hover:bg-slate-100',
   ].join(' ')
 }
 
+function SectionTitle({ children }) {
+  return (
+    <div className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+      {children}
+    </div>
+  )
+}
+
 export default function AppLayout() {
-  const { user, logout, canSeeAdminSection, roleCode } = useAuth()
+  const { user, logout, roleCode, branding } = useAuth()
   const { t } = useLanguage()
+
+  const canAccessAdministration =
+    roleCode === 'ADMIN' || roleCode === 'MANAGER'
+
+  const brandPrimary = branding?.primaryColor || '#059669'
+  const brandSecondary = branding?.secondaryColor || '#0f172a'
+  const brandName = branding?.appName || 'Greenlytics'
+  const brandLogo = branding?.logoUrl || defaultLogo
+
+  function itemStyle(isActive) {
+    if (isActive) {
+      return {
+        backgroundColor: 'var(--brand-primary-soft)',
+        color: brandPrimary,
+      }
+    }
+
+    return undefined
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-xl font-semibold text-emerald-700">
-            Greenlytics
+          <Link to="/" className="flex items-center gap-3">
+            <img
+              src={brandLogo}
+              alt={brandName}
+              className="h-10 w-10 rounded-xl object-contain"
+            />
+            <span
+              className="text-xl font-semibold"
+              style={{ color: brandPrimary }}
+            >
+              {brandName}
+            </span>
           </Link>
 
           <div className="flex items-center gap-4">
             <div className="text-sm text-slate-600">
-              {user?.username || user?.email || t('sessionStarted')}
+              {user?.username || user?.email}
               {roleCode ? ` · ${roleCode}` : ''}
             </div>
 
@@ -34,7 +72,8 @@ export default function AppLayout() {
 
             <button
               onClick={logout}
-              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              className="rounded-xl px-4 py-2 text-sm font-medium text-white"
+              style={{ backgroundColor: brandSecondary }}
             >
               {t('logout')}
             </button>
@@ -42,40 +81,52 @@ export default function AppLayout() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-6 py-6 md:grid-cols-[240px_1fr]">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-6 py-6 md:grid-cols-[260px_1fr]">
         <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <nav className="space-y-2">
-            <NavLink to="/" end className={menuClassName}>
-              {t('dashboard')}
-            </NavLink>
-            <NavLink to="/devices" className={menuClassName}>
-              {t('devices')}
-            </NavLink>
-            <NavLink to="/installations" className={menuClassName}>
-              {t('installations')}
-            </NavLink>
-            <NavLink to="/plants" className={menuClassName}>
-              {t('plants')}
-            </NavLink>
-            <NavLink to="/readings" className={menuClassName}>
-              {t('readings')}
-            </NavLink>
-
-            {canSeeAdminSection ? (
-              <>
-                <div className="my-3 border-t border-slate-200" />
-
-                <NavLink to="/users" className={menuClassName}>
-                  {t('users')}
+          <nav className="space-y-4">
+            <div>
+              <SectionTitle>Operativa</SectionTitle>
+              <div className="space-y-2">
+                <NavLink to="/" end className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                  {t('dashboard')}
                 </NavLink>
-                <NavLink to="/alerts" className={menuClassName}>
+                <NavLink to="/devices" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                  {t('devices')}
+                </NavLink>
+                <NavLink to="/installations" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                  {t('installations')}
+                </NavLink>
+                <NavLink to="/plants" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                  {t('plants')}
+                </NavLink>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-200 pt-4">
+              <SectionTitle>Dades</SectionTitle>
+              <div className="space-y-2">
+                <NavLink to="/readings" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                  {t('readings')}
+                </NavLink>
+                <NavLink to="/alerts" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
                   {t('alerts')}
                 </NavLink>
-                <NavLink to="/settings" className={menuClassName}>
-                  {t('settings')}
-                </NavLink>
-              </>
-            ) : null}
+              </div>
+            </div>
+
+            {canAccessAdministration && (
+              <div className="border-t border-slate-200 pt-4">
+                <SectionTitle>Administració</SectionTitle>
+                <div className="space-y-2">
+                  <NavLink to="/users" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                    {t('users')}
+                  </NavLink>
+                  <NavLink to="/settings" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                    {t('settings')}
+                  </NavLink>
+                </div>
+              </div>
+            )}
           </nav>
         </aside>
 

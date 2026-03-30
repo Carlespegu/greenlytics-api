@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import SunLoader from '../components/SunLoader'
-import logo from '../../assets/logo.png'
+import defaultLogo from '../../assets/logo.png'
 
 function EyeIcon({ open }) {
   if (open) {
@@ -43,7 +43,7 @@ function EyeIcon({ open }) {
 export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login, isAuthenticated, isLoading } = useAuth()
+  const { login, isAuthenticated, isLoading, branding } = useAuth()
 
   const [form, setForm] = useState({
     email: '',
@@ -75,18 +75,27 @@ export default function LoginPage() {
     if (error) setError('')
   }
 
+  const brandPrimary = branding?.primaryColor || '#059669'
+  const brandName = branding?.appName || 'Greenlytics'
+  const brandLogo = branding?.logoUrl || defaultLogo
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 to-slate-100 px-4">
+    <div
+      className="flex min-h-screen items-center justify-center px-4"
+      style={{
+        background: `linear-gradient(135deg, var(--brand-primary-soft) 0%, #f1f5f9 100%)`,
+      }}
+    >
       <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-lg backdrop-blur">
         <div className="mb-8 text-center">
           <img
-            src={logo}
-            alt="Greenlytics"
+            src={brandLogo}
+            alt={brandName}
             className="mx-auto h-28 w-auto object-contain"
           />
 
           <h1 className="mt-4 text-3xl font-bold text-slate-900">
-            Greenlytics
+            {brandName}
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
@@ -104,7 +113,10 @@ export default function LoginPage() {
               type="text"
               value={form.email}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition"
+              style={{
+                boxShadow: 'none',
+              }}
               placeholder="usuari o email"
               required
               autoComplete="username"
@@ -122,7 +134,7 @@ export default function LoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={form.password}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-14 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-14 outline-none transition"
                 placeholder="********"
                 required
                 autoComplete="current-password"
@@ -145,7 +157,14 @@ export default function LoginPage() {
               {error}
             </div>
           ) : (
-            <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            <div
+              className="rounded-xl px-4 py-3 text-sm"
+              style={{
+                border: `1px solid var(--brand-primary-soft-strong)`,
+                backgroundColor: 'var(--brand-primary-soft)',
+                color: brandPrimary,
+              }}
+            >
               Introdueix el teu usuari i contrasenya per accedir.
             </div>
           )}
@@ -153,7 +172,8 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="inline-flex w-full items-center justify-center gap-3 rounded-xl bg-emerald-600 px-4 py-3 font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex w-full items-center justify-center gap-3 rounded-xl px-4 py-3 font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-70"
+            style={{ backgroundColor: brandPrimary }}
           >
             {isLoading ? (
               <>

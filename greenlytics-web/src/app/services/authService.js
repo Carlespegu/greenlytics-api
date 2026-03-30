@@ -21,8 +21,7 @@ export const authService = {
         },
         body: body.toString(),
       })
-    } catch (error) {
-      console.error('LOGIN FETCH ERROR:', error)
+    } catch {
       throw new Error(
         'No s’ha pogut connectar amb el servidor. Revisa la connexió o torna-ho a provar.'
       )
@@ -34,8 +33,7 @@ export const authService = {
 
     try {
       payload = JSON.parse(rawText)
-    } catch (error) {
-      console.error('LOGIN JSON PARSE ERROR:', error)
+    } catch {
       throw new Error('Error processant la resposta del servidor.')
     }
 
@@ -73,8 +71,7 @@ export const authService = {
           Authorization: `Bearer ${token}`,
         },
       })
-    } catch (error) {
-      console.error('ME FETCH ERROR:', error)
+    } catch {
       throw new Error('No s’ha pogut obtenir la informació de l’usuari.')
     }
 
@@ -84,8 +81,7 @@ export const authService = {
 
     try {
       payload = JSON.parse(rawText)
-    } catch (error) {
-      console.error('ME JSON PARSE ERROR:', error)
+    } catch {
       throw new Error('Error processant la resposta de l’usuari.')
     }
 

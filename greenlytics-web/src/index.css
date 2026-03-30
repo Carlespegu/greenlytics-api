@@ -2,6 +2,10 @@
 
 :root {
   color-scheme: light;
+  --brand-primary: #059669;
+  --brand-primary-soft: rgba(5, 150, 105, 0.12);
+  --brand-primary-soft-strong: rgba(5, 150, 105, 0.18);
+  --brand-secondary: #0f172a;
 }
 
 body {

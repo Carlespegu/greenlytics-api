@@ -9,9 +9,8 @@ function normalizeList(payload) {
 }
 
 export const dashboardService = {
-  async getLatestReadings() {
-    // Ajusta aquest endpoint si al teu backend és diferent
-    const payload = await api.get('/device-readings?limit=12')
+  async getDashboardData() {
+    const payload = await api.get('/devices')
     return normalizeList(payload)
   },
 }
