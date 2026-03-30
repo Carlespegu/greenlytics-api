@@ -87,22 +87,22 @@ def create_device_reading_service(db: Session, device, payload):
                 .first()
             )
 
-        if not reading_type:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"ReadingType not found for code '{code}'",
+            if not reading_type:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"ReadingType not found for code '{code}'",
+                )
+
+            rv = ReadingValue(
+                reading=reading,
+                reading_type_id=reading_type.id,
+                value_decimal=getattr(item, "value_decimal", None),
+                value_integer=getattr(item, "value_integer", None),
+                value_text=getattr(item, "value_text", None),
+                value_boolean=getattr(item, "value_boolean", None),
             )
 
-        rv = ReadingValue(
-            reading=reading,
-            reading_type_id=reading_type.id,
-            value_decimal=getattr(item, "value_decimal", None),
-            value_integer=getattr(item, "value_integer", None),
-            value_text=getattr(item, "value_text", None),
-            value_boolean=getattr(item, "value_boolean", None),
-        )
-
-        reading_values.append(rv)
+            reading_values.append(rv)
 
     reading.values = reading_values
 
