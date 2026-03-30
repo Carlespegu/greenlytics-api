@@ -1,7 +1,6 @@
 from uuid import UUID
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-
 from database.models.plant import Plant
 
 
@@ -13,7 +12,14 @@ def get_all_plants(db: Session):
         .all()
     )
 
-
+def get_active_plants_by_installation_id(db, installation_id):
+    return (
+        db.query(Plant)
+        .filter(Plant.installation_id == installation_id)
+        .filter(Plant.is_active == True)
+        .filter(Plant.is_deleted == False)
+        .all()
+    )
 def get_plant_by_id(db: Session, plant_id: UUID):
     return (
         db.query(Plant)

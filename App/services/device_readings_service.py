@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from App.repositories.installation_devices_repository import get_active_assignment_by_device_id
 from App.repositories.installations_repository import get_installation_by_id
-from App.repositories.plants_repository import get_plant_by_id
+from App.repositories.plants_repository import get_active_plants_by_installation_id
 from App.repositories.readings_repository import create_reading
 
 from database.models.reading import Reading
@@ -24,26 +24,17 @@ def create_device_reading_service(db: Session, device, payload):
         if installation:
             client_id = installation.client_id
 
-    plant_id = getattr(payload, "plant_id", None)
+    # Auto-resolve plant from installation
+    plant_id = None
+    if installation_id is not None:
+        plants = get_active_plants_by_installation_id(db, installation_id)
 
-    if plant_id is not None:
-        plant = get_plant_by_id(db, plant_id)
-        if not plant:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Plant not found",
-            )
-
-        if client_id is not None and plant.client_id != client_id:
+        if len(plants) == 1:
+            plant_id = plants[0].id
+        elif len(plants) > 1:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Plant does not belong to client",
-            )
-
-        if installation_id is not None and plant.installation_id != installation_id:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Plant does not belong to installation",
+                detail="More than one active plant found for installation. Automatic plant mapping is ambiguous.",
             )
 
     reading = Reading(
