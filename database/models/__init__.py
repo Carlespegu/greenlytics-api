@@ -7,3 +7,5 @@ from database.models.device import Device
 from database.models.installation_device import InstallationDevice
 from database.models.plant import Plant
 from database.models.reading import Reading
+from database.models.reading_type import ReadingType
+from database.models.reading_value import ReadingValue

@@ -1,6 +1,7 @@
 import uuid
-from sqlalchemy import Column, String, DateTime, Integer, Numeric
+from sqlalchemy import Column, DateTime
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from database.base import Base
@@ -17,12 +18,6 @@ class Reading(Base):
     plant_id = Column("plantid", UUID(as_uuid=True))
 
     ts = Column(DateTime, nullable=False, server_default=func.now())
-
-    temp_c = Column("tempc", Numeric(10, 2))
-    hum_air = Column("humair", Numeric(10, 2))
-    ldr_raw = Column("ldrraw", Integer)
-    soil_percent = Column("soilpercent", Integer)
-    rain = Column(String(50))
-    rssi = Column(Integer)
-
     created_on = Column("createdon", DateTime, nullable=False, server_default=func.now())
+
+    values = relationship("ReadingValue", back_populates="reading", cascade="all, delete-orphan")

@@ -43,11 +43,11 @@ def get_client_service(db: Session, client_id: UUID):
 
 
 def create_client_service(db: Session, payload: ClientCreate):
-    existing = get_client_by_code(db, payload.code)
+    existing = get_client_by_code(db, payload.Code)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Client with code '{payload.code}' already exists"
+            detail=f"Client with code '{payload.Code}' already exists"
         )
 
     api_key = generate_api_key()
@@ -55,28 +55,33 @@ def create_client_service(db: Session, payload: ClientCreate):
     while get_client_by_api_key(db, api_key):
         api_key = generate_api_key()
 
-    api_secret_hash = hash_secret(payload.api_secret)
+    api_secret_hash = hash_secret(payload.ApiSecret)
 
     client = Client(
-        code=payload.code,
-        name=payload.name,
-        trade_name=payload.trade_name,
-        tax_id=payload.tax_id,
-        email=payload.email,
-        phone=payload.phone,
-        website=payload.website,
-        address=payload.address,
-        city=payload.city,
-        state=payload.state,
-        postal_code=payload.postal_code,
-        country=payload.country,
-        is_active=payload.is_active,
-        client_type=payload.client_type,
-        notes=payload.notes,
-        external_id=payload.external_id,
+        code=payload.Code,
+        name=payload.Name,
+        trade_name=payload.TradeName,
+        tax_id=payload.TaxId,
+        email=payload.Email,
+        phone=payload.Phone,
+        website=payload.Website,
+        address=payload.Address,
+        city=payload.City,
+        state=payload.State,
+        postal_code=payload.PostalCode,
+        country=payload.Country,
+        is_active=payload.IsActive,
+        client_type=payload.ClientType,
+        notes=payload.Notes,
+        external_id=payload.ExternalId,
         api_key=api_key,
         api_secret_hash=api_secret_hash,
-        created_by=payload.created_by,
+        app_name=payload.AppName,
+        logo_url=payload.LogoUrl,
+        favicon_url=payload.FaviconUrl,
+        primary_color=payload.PrimaryColor,
+        secondary_color=payload.SecondaryColor,
+        created_by=payload.CreatedBy,
     )
 
     return create_client(db, client)
@@ -90,38 +95,51 @@ def update_client_service(db: Session, client_id: UUID, payload: ClientUpdate):
             detail="Client not found"
         )
 
-    if payload.name is not None:
-        client.name = payload.name
-    if payload.trade_name is not None:
-        client.trade_name = payload.trade_name
-    if payload.tax_id is not None:
-        client.tax_id = payload.tax_id
-    if payload.email is not None:
-        client.email = payload.email
-    if payload.phone is not None:
-        client.phone = payload.phone
-    if payload.website is not None:
-        client.website = payload.website
-    if payload.address is not None:
-        client.address = payload.address
-    if payload.city is not None:
-        client.city = payload.city
-    if payload.state is not None:
-        client.state = payload.state
-    if payload.postal_code is not None:
-        client.postal_code = payload.postal_code
-    if payload.country is not None:
-        client.country = payload.country
-    if payload.is_active is not None:
-        client.is_active = payload.is_active
-    if payload.client_type is not None:
-        client.client_type = payload.client_type
-    if payload.notes is not None:
-        client.notes = payload.notes
-    if payload.external_id is not None:
-        client.external_id = payload.external_id
-    if payload.modified_by is not None:
-        client.modified_by = payload.modified_by
+    if payload.Name is not None:
+        client.name = payload.Name
+    if payload.TradeName is not None:
+        client.trade_name = payload.TradeName
+    if payload.TaxId is not None:
+        client.tax_id = payload.TaxId
+    if payload.Email is not None:
+        client.email = payload.Email
+    if payload.Phone is not None:
+        client.phone = payload.Phone
+    if payload.Website is not None:
+        client.website = payload.Website
+    if payload.Address is not None:
+        client.address = payload.Address
+    if payload.City is not None:
+        client.city = payload.City
+    if payload.State is not None:
+        client.state = payload.State
+    if payload.PostalCode is not None:
+        client.postal_code = payload.PostalCode
+    if payload.Country is not None:
+        client.country = payload.Country
+    if payload.IsActive is not None:
+        client.is_active = payload.IsActive
+    if payload.ClientType is not None:
+        client.client_type = payload.ClientType
+    if payload.Notes is not None:
+        client.notes = payload.Notes
+    if payload.ExternalId is not None:
+        client.external_id = payload.ExternalId
+
+    # Branding MVP
+    if payload.AppName is not None:
+        client.app_name = payload.AppName
+    if payload.LogoUrl is not None:
+        client.logo_url = payload.LogoUrl
+    if payload.FaviconUrl is not None:
+        client.favicon_url = payload.FaviconUrl
+    if payload.PrimaryColor is not None:
+        client.primary_color = payload.PrimaryColor
+    if payload.SecondaryColor is not None:
+        client.secondary_color = payload.SecondaryColor
+
+    if payload.ModifiedBy is not None:
+        client.modified_by = payload.ModifiedBy
 
     client.modified_on = datetime.utcnow()
 

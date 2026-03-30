@@ -34,6 +34,13 @@ class Client(Base):
     api_key = Column("apikey", String(200), unique=True)
     api_secret_hash = Column("apisecrethash", String(255))
 
+    # Branding MVP
+    app_name = Column("appname", String(150))
+    logo_url = Column("logourl", String(500))
+    favicon_url = Column("faviconurl", String(500))
+    primary_color = Column("primarycolor", String(20))
+    secondary_color = Column("secondarycolor", String(20))
+
     created_on = Column("createdon", DateTime, server_default=func.now())
     created_by = Column("createdby", String(100))
     modified_on = Column("modifiedon", DateTime)

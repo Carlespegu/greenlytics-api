@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, ConfigDict, Field
+from pydantic import BaseModel, EmailStr, ConfigDict
 
 
 class ClientCreate(BaseModel):
@@ -28,6 +28,13 @@ class ClientCreate(BaseModel):
     ExternalId: Optional[str] = None
     ApiSecret: str
 
+    # Branding MVP
+    AppName: Optional[str] = None
+    LogoUrl: Optional[str] = None
+    FaviconUrl: Optional[str] = None
+    PrimaryColor: Optional[str] = None
+    SecondaryColor: Optional[str] = None
+
     CreatedBy: Optional[str] = None
 
 
@@ -51,6 +58,14 @@ class ClientUpdate(BaseModel):
     Notes: Optional[str] = None
 
     ExternalId: Optional[str] = None
+
+    # Branding MVP
+    AppName: Optional[str] = None
+    LogoUrl: Optional[str] = None
+    FaviconUrl: Optional[str] = None
+    PrimaryColor: Optional[str] = None
+    SecondaryColor: Optional[str] = None
+
     ModifiedBy: Optional[str] = None
 
 
@@ -79,6 +94,13 @@ class ClientResponse(BaseModel):
 
     external_id: Optional[str] = None
     api_key: Optional[str] = None
+
+    # Branding MVP
+    app_name: Optional[str] = None
+    logo_url: Optional[str] = None
+    favicon_url: Optional[str] = None
+    primary_color: Optional[str] = None
+    secondary_color: Optional[str] = None
 
     created_on: Optional[datetime] = None
     created_by: Optional[str] = None
