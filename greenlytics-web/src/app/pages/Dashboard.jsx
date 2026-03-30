@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Bell,
@@ -8,6 +9,8 @@ import {
   TriangleAlert,
   Activity,
   ArrowUpRight,
+  SunMedium,
+  CloudRain,
 } from 'lucide-react'
 import {
   LineChart,
@@ -18,113 +21,14 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { dashboardService } from '../services/dashboardService'
 
-const kpis = [
-  {
-    title: 'Plantes totals',
-    value: 28,
-    subtitle: '3 noves aquesta setmana',
-    icon: Leaf,
-  },
-  {
-    title: 'Plantes OK',
-    value: 23,
-    subtitle: '82% en estat saludable',
-    icon: Activity,
-  },
-  {
-    title: 'Alertes actives',
-    value: 4,
-    subtitle: '2 necessiten revisió avui',
-    icon: TriangleAlert,
-  },
-  {
-    title: 'Devices online',
-    value: '9 / 11',
-    subtitle: '81% connectats',
-    icon: Wifi,
-  },
-]
-
-const plants = [
-  {
-    id: 1,
-    name: 'Monstera Deliciosa',
-    installation: 'Office Sabadell',
-    status: 'OK',
-    humidity: 68,
-    temperature: 22.4,
-    lastReading: 'fa 5 min',
-  },
-  {
-    id: 2,
-    name: 'Ficus Lyrata',
-    installation: 'Meeting Room A',
-    status: 'Warning',
-    humidity: 38,
-    temperature: 25.1,
-    lastReading: 'fa 12 min',
-  },
-  {
-    id: 3,
-    name: 'Calathea Orbifolia',
-    installation: 'Reception',
-    status: 'Critical',
-    humidity: 21,
-    temperature: 27.3,
-    lastReading: 'fa 18 min',
-  },
-  {
-    id: 4,
-    name: 'Pothos',
-    installation: 'Open Space',
-    status: 'OK',
-    humidity: 59,
-    temperature: 21.6,
-    lastReading: 'fa 4 min',
-  },
-]
-
-const chartData = [
-  { hour: '08:00', humidity: 44, temperature: 20.1 },
-  { hour: '10:00', humidity: 46, temperature: 20.8 },
-  { hour: '12:00', humidity: 49, temperature: 21.5 },
-  { hour: '14:00', humidity: 52, temperature: 22.1 },
-  { hour: '16:00', humidity: 55, temperature: 22.6 },
-  { hour: '18:00', humidity: 53, temperature: 22.2 },
-  { hour: '20:00', humidity: 51, temperature: 21.7 },
-]
-
-const latestReadings = [
-  {
-    plant: 'Monstera Deliciosa',
-    type: 'Humitat terra',
-    value: '68%',
-    device: 'esp32-plant-01',
-    time: 'fa 5 min',
-  },
-  {
-    plant: 'Ficus Lyrata',
-    type: 'Temperatura',
-    value: '25.1 °C',
-    device: 'esp32-plant-02',
-    time: 'fa 12 min',
-  },
-  {
-    plant: 'Calathea Orbifolia',
-    type: 'Humitat terra',
-    value: '21%',
-    device: 'esp32-plant-03',
-    time: 'fa 18 min',
-  },
-  {
-    plant: 'Pothos',
-    type: 'RSSI',
-    value: '-54 dBm',
-    device: 'esp32-plant-04',
-    time: 'fa 21 min',
-  },
-]
+const ICON_BY_TITLE = {
+  'Plantes totals': Leaf,
+  'Plantes actives': Activity,
+  'Devices online': Wifi,
+  'Lectures recents': TriangleAlert,
+}
 
 function statusBadgeClass(status) {
   switch (status) {
@@ -140,18 +44,22 @@ function statusBadgeClass(status) {
 }
 
 function humidityTone(value) {
+  if (value == null) return 'text-slate-500'
   if (value < 30) return 'text-red-600'
   if (value < 45) return 'text-amber-600'
   return 'text-emerald-600'
 }
 
 function progressTone(value) {
+  if (value == null) return 'bg-slate-300'
   if (value < 30) return 'bg-red-500'
   if (value < 45) return 'bg-amber-500'
   return 'bg-emerald-500'
 }
 
-function KpiCard({ title, value, subtitle, icon: Icon }) {
+function KpiCard({ title, value, subtitle }) {
+  const Icon = ICON_BY_TITLE[title] || Activity
+
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
@@ -177,13 +85,53 @@ function ActionButton({ children, primary = false }) {
           ? 'bg-emerald-600 text-white hover:bg-emerald-700'
           : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
       ].join(' ')}
+      type="button"
     >
       {children}
     </button>
   )
 }
 
+function EmptyState({ message }) {
+  return (
+    <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
+      {message}
+    </div>
+  )
+}
+
 export default function Dashboard() {
+  const [summary, setSummary] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function load() {
+      setIsLoading(true)
+      setError('')
+      try {
+        const payload = await dashboardService.getSummary()
+        setSummary(payload)
+      } catch (err) {
+        setError(err.message || 'No s’han pogut carregar les dades del dashboard.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    load()
+  }, [])
+
+  const kpis = summary?.kpis || []
+  const chartData = summary?.chart_data || []
+  const latestReadings = summary?.latest_readings || []
+  const plants = summary?.plants || []
+
+  const criticalPlants = useMemo(
+    () => plants.filter((item) => item.status === 'Critical').length,
+    [plants]
+  )
+
   return (
     <div className="space-y-6">
       <motion.div
@@ -199,7 +147,7 @@ export default function Dashboard() {
               Visió general de Greenlytics
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              Estat actual de plantes, sensors i alertes del teu entorn.
+              Estat actual de plantes, sensors i lectures reals de la plataforma.
             </p>
           </div>
 
@@ -217,186 +165,220 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {kpis.map((item, index) => (
-          <motion.div
-            key={item.title}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: index * 0.06 }}
-          >
-            <KpiCard {...item} />
-          </motion.div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.35fr_0.95fr]">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.15 }}
-          className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-        >
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold text-slate-900">
-              Tendència de lectures
-            </h2>
-            <p className="text-sm text-slate-500">
-              Humitat i temperatura de les últimes hores
-            </p>
-          </div>
-
-          <div className="h-[340px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="hour" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="humidity" strokeWidth={3} dot={false} />
-                <Line
-                  type="monotone"
-                  dataKey="temperature"
-                  strokeWidth={3}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.2 }}
-          className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-        >
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold text-slate-900">
-              Últimes lectures
-            </h2>
-            <p className="text-sm text-slate-500">
-              Activitat recent dels devices
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {latestReadings.map((reading) => (
-              <div
-                key={`${reading.plant}-${reading.type}`}
-                className="rounded-2xl border border-slate-100 p-4"
+      {isLoading ? (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm text-slate-500">
+          Carregant dades reals del dashboard...
+        </div>
+      ) : error ? (
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
+          {error}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {kpis.map((item, index) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: index * 0.06 }}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-slate-900">{reading.plant}</p>
-                    <p className="text-sm text-slate-500">
-                      {reading.type} · {reading.device}
-                    </p>
-                  </div>
-                  <span className="text-sm font-semibold text-slate-900">
-                    {reading.value}
-                  </span>
-                </div>
-                <p className="mt-2 text-xs text-slate-400">{reading.time}</p>
-              </div>
+                <KpiCard {...item} />
+              </motion.div>
             ))}
           </div>
-        </motion.div>
-      </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, delay: 0.25 }}
-        className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-      >
-        <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">
-              Estat de les plantes
-            </h2>
-            <p className="text-sm text-slate-500">
-              Resum ràpid per planta i últim valor disponible
-            </p>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.35fr_0.95fr]">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.15 }}
+              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+            >
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Tendència de lectures
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Humitat del sòl i llum de les últimes lectures disponibles.
+                </p>
+              </div>
+
+              {chartData.length === 0 ? (
+                <EmptyState message="Encara no hi ha prou dades per mostrar la gràfica." />
+              ) : (
+                <div className="h-[340px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="label" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="soil_percent" strokeWidth={3} dot={false} name="Humitat terra" />
+                      <Line type="monotone" dataKey="ldr_raw" strokeWidth={3} dot={false} name="Llum (raw)" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.2 }}
+              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+            >
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Últimes lectures
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Activitat real dels devices connectats.
+                </p>
+              </div>
+
+              {latestReadings.length === 0 ? (
+                <EmptyState message="No s’han trobat lectures recents." />
+              ) : (
+                <div className="space-y-4">
+                  {latestReadings.map((reading, index) => (
+                    <div
+                      key={`${reading.plant}-${reading.type}-${index}`}
+                      className="rounded-2xl border border-slate-100 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-slate-900">{reading.plant}</p>
+                          <p className="text-sm text-slate-500">
+                            {reading.type} · {reading.device}
+                          </p>
+                        </div>
+                        <span className="text-sm font-semibold text-slate-900">
+                          {reading.value}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs text-slate-400">{reading.time}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
           </div>
 
-          <button className="w-fit rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-            Veure totes
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {plants.map((plant) => (
-            <div
-              key={plant.id}
-              className="rounded-3xl border border-slate-100 bg-white p-5 transition-all hover:shadow-md"
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-slate-900">
-                      {plant.name}
-                    </h3>
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusBadgeClass(
-                        plant.status
-                      )}`}
-                    >
-                      {plant.status}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm text-slate-500">{plant.installation}</p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Última lectura: {plant.lastReading}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
-                  <Leaf className="h-5 w-5" />
-                </div>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.25 }}
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+          >
+            <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Estat de les plantes
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Resum ràpid per planta o device, amb l’últim valor disponible.
+                </p>
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-4">
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <Droplets className="h-4 w-4" />
-                    <span className="text-sm">Humitat terra</span>
-                  </div>
-
-                  <p
-                    className={`mt-2 text-2xl font-semibold ${humidityTone(
-                      plant.humidity
-                    )}`}
-                  >
-                    {plant.humidity}%
-                  </p>
-
-                  <div className="mt-3 h-2 w-full rounded-full bg-slate-200">
-                    <div
-                      className={`h-2 rounded-full ${progressTone(plant.humidity)}`}
-                      style={{ width: `${plant.humidity}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <Thermometer className="h-4 w-4" />
-                    <span className="text-sm">Temperatura</span>
-                  </div>
-
-                  <p className="mt-2 text-2xl font-semibold text-slate-900">
-                    {plant.temperature} °C
-                  </p>
-                  <p className="mt-3 text-xs text-slate-400">
-                    Valor disponible més recent
-                  </p>
-                </div>
+              <div className="rounded-2xl bg-slate-50 px-4 py-2 text-sm text-slate-600">
+                Crítiques: <span className="font-semibold text-slate-900">{criticalPlants}</span>
               </div>
             </div>
-          ))}
-        </div>
-      </motion.div>
+
+            {plants.length === 0 ? (
+              <EmptyState message="No hi ha plantes o devices amb dades per mostrar encara." />
+            ) : (
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {plants.map((plant) => (
+                  <div
+                    key={`${plant.plant_id || plant.name}-${plant.installation}`}
+                    className="rounded-3xl border border-slate-100 bg-white p-5 transition-all hover:shadow-md"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-slate-900">
+                            {plant.name}
+                          </h3>
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusBadgeClass(
+                              plant.status
+                            )}`}
+                          >
+                            {plant.status}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-sm text-slate-500">{plant.installation}</p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          Última lectura: {plant.last_reading || 'Sense dades'}
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
+                        <Leaf className="h-5 w-5" />
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-2 gap-4 xl:grid-cols-4">
+                      <div className="rounded-2xl bg-slate-50 p-4">
+                        <div className="flex items-center gap-2 text-slate-500">
+                          <Droplets className="h-4 w-4" />
+                          <span className="text-sm">Humitat terra</span>
+                        </div>
+                        <p className={`mt-2 text-2xl font-semibold ${humidityTone(plant.humidity)}`}>
+                          {plant.humidity == null ? '—' : `${Math.round(plant.humidity)}%`}
+                        </p>
+                        <div className="mt-3 h-2 w-full rounded-full bg-slate-200">
+                          <div
+                            className={`h-2 rounded-full ${progressTone(plant.humidity)}`}
+                            style={{ width: `${Math.max(0, Math.min(100, plant.humidity || 0))}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl bg-slate-50 p-4">
+                        <div className="flex items-center gap-2 text-slate-500">
+                          <Thermometer className="h-4 w-4" />
+                          <span className="text-sm">Temperatura</span>
+                        </div>
+                        <p className="mt-2 text-2xl font-semibold text-slate-900">
+                          {plant.temperature == null ? '—' : `${plant.temperature.toFixed(1)} °C`}
+                        </p>
+                        <p className="mt-3 text-xs text-slate-400">Dada més recent</p>
+                      </div>
+
+                      <div className="rounded-2xl bg-slate-50 p-4">
+                        <div className="flex items-center gap-2 text-slate-500">
+                          <SunMedium className="h-4 w-4" />
+                          <span className="text-sm">Llum</span>
+                        </div>
+                        <p className="mt-2 text-2xl font-semibold text-slate-900">
+                          {plant.light == null ? '—' : Math.round(plant.light)}
+                        </p>
+                        <p className="mt-3 text-xs text-slate-400">Valor raw</p>
+                      </div>
+
+                      <div className="rounded-2xl bg-slate-50 p-4">
+                        <div className="flex items-center gap-2 text-slate-500">
+                          <CloudRain className="h-4 w-4" />
+                          <span className="text-sm">Pluja / RSSI</span>
+                        </div>
+                        <p className="mt-2 text-base font-semibold text-slate-900">
+                          {plant.rain ? (plant.rain === 'rain' ? 'Plou' : 'Sec') : '—'}
+                        </p>
+                        <p className="mt-3 text-xs text-slate-400">
+                          {plant.rssi == null ? 'Sense RSSI' : `${plant.rssi} dBm`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </>
+      )}
     </div>
   )
 }
