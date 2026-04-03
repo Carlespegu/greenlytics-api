@@ -1,4 +1,5 @@
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <DHT.h>
@@ -8,7 +9,9 @@
 // =========================================================
 // GREENLYTICS ESP32 FIRMWARE
 // Sends readings to POST /device-readings using x-api-key
-// Compatible with backend schema: { ts?, plant_id?, values[] }
+// HTTPS via WiFiClientSecure
+// Payload format: { ts?, values[] }
+// No plant_id sent: backend should resolve plant automatically
 // =========================================================
 
 // -------------------------
@@ -23,17 +26,13 @@ const char* WIFI_PASSWORD = "h447xhrL";
 const char* API_URL = "https://api.greenlytics.app/device-readings";
 const char* API_KEY = "7I128ji0yiT-0CROHYefMuhAjoe-XiPT8vKxDEDJVqw";
 
-// Optional: assign the reading to a plant in the platform.
-// Leave empty if the device is not linked to a specific plant.
-const char* PLANT_ID = "";
-
 // -------------------------
 // TIMING
 // -------------------------
 const unsigned long WIFI_TIMEOUT_MS = 20000;
-const unsigned long HTTP_TIMEOUT_MS = 15000;
+const unsigned long HTTP_TIMEOUT_MS = 20000;
 const uint64_t SLEEP_MINUTES = 30;
-const bool USE_DEEP_SLEEP = false;
+const bool USE_DEEP_SLEEP = true;
 const bool ENABLE_NTP_TIME = true;
 
 // -------------------------
@@ -180,15 +179,11 @@ void addTextValue(JsonArray values, const char* code, const String& value) {
 }
 
 String buildJsonPayload(const SensorReading& reading) {
-  StaticJsonDocument<768> doc;
+  StaticJsonDocument<1024> doc;
 
-  String isoTs = getIsoTimestampUtc();
-  if (isoTs.length() > 0) {
-    doc["ts"] = isoTs;
-  }
-
-  if (strlen(PLANT_ID) > 0) {
-    doc["plant_id"] = PLANT_ID;
+  String ts = getIsoTimestampUtc();
+  if (ts.length() > 0) {
+    doc["ts"] = ts;
   }
 
   JsonArray values = doc.createNestedArray("values");
@@ -198,8 +193,8 @@ String buildJsonPayload(const SensorReading& reading) {
     addDecimalValue(values, "hum_air", reading.humAir);
   }
 
-  addIntegerValue(values, "soil_percent", reading.soilPercent);
   addIntegerValue(values, "ldr_raw", reading.ldrRaw);
+  addIntegerValue(values, "soil_percent", reading.soilPercent);
   addTextValue(values, "rain", reading.rain);
   addIntegerValue(values, "rssi", reading.rssi);
 
@@ -208,17 +203,21 @@ String buildJsonPayload(const SensorReading& reading) {
   return payload;
 }
 
-bool sendReadingToApi(const String& payload) {
-  if (WiFi.status() != WL_CONNECTED) {
-    logLine("[HTTP] WiFi not connected");
-    return false;
-  }
+bool postJsonOnce(const String& payload) {
+  WiFiClientSecure client;
+  client.setInsecure();  // For testing. For production, prefer setCACert(...)
 
   HTTPClient http;
   http.setTimeout(HTTP_TIMEOUT_MS);
-  http.begin(API_URL);
+
+  if (!http.begin(client, API_URL)) {
+    logLine("[HTTP] begin() failed");
+    return false;
+  }
+
   http.addHeader("Content-Type", "application/json");
   http.addHeader("x-api-key", API_KEY);
+  http.addHeader("Connection", "close");
 
   logLine("[HTTP] POST /device-readings");
   Serial.print("[HTTP] Payload: ");
@@ -234,6 +233,26 @@ bool sendReadingToApi(const String& payload) {
 
   http.end();
   return httpCode >= 200 && httpCode < 300;
+}
+
+bool sendReadingToApi(const String& payload) {
+  if (WiFi.status() != WL_CONNECTED) {
+    logLine("[HTTP] WiFi not connected");
+    return false;
+  }
+
+  bool ok = postJsonOnce(payload);
+  if (ok) return true;
+
+  logLine("[HTTP] First attempt failed, retrying in 2 seconds...");
+  delay(2000);
+
+  if (WiFi.status() != WL_CONNECTED) {
+    logLine("[HTTP] WiFi lost before retry");
+    return false;
+  }
+
+  return postJsonOnce(payload);
 }
 
 void printReading(const SensorReading& reading) {
@@ -282,6 +301,8 @@ void setup() {
   analogSetPinAttenuation(LDR_PIN, ADC_11db);
 
   dht.begin();
+  delay(2000);
+
   connectWiFi();
   syncTimeWithNtp();
 
