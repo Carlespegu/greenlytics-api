@@ -123,43 +123,43 @@ export default function ClientsPage() {
         <form onSubmit={handleSearch} className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <FilterInput
-              name=\"code\" value={filters.code}
+              value={filters.code}
               onChange={handleFilterChange}
               placeholder="Codi"
               name="code"
             />
             <FilterInput
-              name=\"name\" value={filters.name}
+              value={filters.name}
               onChange={handleFilterChange}
               placeholder="Nom"
               name="name"
             />
             <FilterInput
-              name=\"tradeName\" value={filters.tradeName}
+              value={filters.tradeName}
               onChange={handleFilterChange}
               placeholder="Nom comercial"
               name="tradeName"
             />
             <FilterInput
-              name=\"email\" value={filters.email}
+              value={filters.email}
               onChange={handleFilterChange}
               placeholder="Email"
               name="email"
             />
             <FilterInput
-              name=\"city\" value={filters.city}
+              value={filters.city}
               onChange={handleFilterChange}
               placeholder="Ciutat"
               name="city"
             />
             <FilterInput
-              name=\"country\" value={filters.country}
+              value={filters.country}
               onChange={handleFilterChange}
               placeholder="País"
               name="country"
             />
             <FilterInput
-              name=\"clientType\" value={filters.clientType}
+              value={filters.clientType}
               onChange={handleFilterChange}
               placeholder="Tipus client"
               name="clientType"
