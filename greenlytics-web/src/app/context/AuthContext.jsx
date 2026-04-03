@@ -93,6 +93,7 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(storage.getToken())
   const [user, setUser] = useState(storage.getUser())
   const [isLoading, setIsLoading] = useState(false)
+  const [isBootstrapping, setIsBootstrapping] = useState(Boolean(storage.getToken()))
 
   useEffect(() => {
     if (token) {
@@ -113,6 +114,37 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     applyBranding(extractBranding(user))
   }, [user])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function bootstrapAuth() {
+      if (!token) {
+        if (isMounted) {
+          setIsBootstrapping(false)
+        }
+        return
+      }
+
+      try {
+        await refreshCurrentUser(token)
+      } catch (error) {
+        if (isMounted) {
+          logout()
+        }
+      } finally {
+        if (isMounted) {
+          setIsBootstrapping(false)
+        }
+      }
+    }
+
+    bootstrapAuth()
+
+    return () => {
+      isMounted = false
+    }
+  }, [token])
 
   async function refreshCurrentUser(explicitToken) {
     const safeToken = explicitToken || token
@@ -156,15 +188,15 @@ export function AuthProvider({ children }) {
       token,
       user,
       branding,
-      isAuthenticated: Boolean(token),
-      isLoading,
+      isAuthenticated: Boolean(token) && !isBootstrapping,
+      isLoading: isLoading || isBootstrapping,
       login,
       logout,
       refreshCurrentUser,
       roleCode: extractRoleCode(user),
       canSeeAdminSection: canAccessAdminSection(user),
     }),
-    [token, user, branding, isLoading]
+    [token, user, branding, isLoading, isBootstrapping]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
