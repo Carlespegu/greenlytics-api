@@ -171,7 +171,7 @@ function UserModal({
               <option value="">{t('role')}</option>
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>
-                  {role.code === 'MANAGER' ? t('roleManager') : t('roleViewer')}
+                  {role.code === 'ADMIN' ? t('roleAdmin') : role.code === 'MANAGER' ? t('roleManager') : t('roleViewer')}
                 </option>
               ))}
             </select>
@@ -668,7 +668,7 @@ export default function ClientDetailPage() {
                             <td className="px-3 py-3">{item.first_name || '-'}</td>
                             <td className="px-3 py-3">{item.last_name || '-'}</td>
                             <td className="px-3 py-3">
-                              {role?.code === 'MANAGER' ? t('roleManager') : t('roleViewer')}
+                              {role?.code === 'ADMIN' ? t('roleAdmin') : role?.code === 'MANAGER' ? t('roleManager') : t('roleViewer')}
                             </td>
                             <td className="px-3 py-3">{item.is_active ? t('yes') : t('no')}</td>
                             <td className="px-3 py-3 text-right">

@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { clientsService } from '../services/clientsService'
 
-function FilterInput({ value, onChange, placeholder }) {
+function FilterInput({ value, onChange, placeholder, name }) {
   return (
     <input
+      name={name}
       value={value}
       onChange={onChange}
       placeholder={placeholder}
@@ -122,43 +123,43 @@ export default function ClientsPage() {
         <form onSubmit={handleSearch} className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <FilterInput
-              value={filters.code}
+              name=\"code\" value={filters.code}
               onChange={handleFilterChange}
               placeholder="Codi"
               name="code"
             />
             <FilterInput
-              value={filters.name}
+              name=\"name\" value={filters.name}
               onChange={handleFilterChange}
               placeholder="Nom"
               name="name"
             />
             <FilterInput
-              value={filters.tradeName}
+              name=\"tradeName\" value={filters.tradeName}
               onChange={handleFilterChange}
               placeholder="Nom comercial"
               name="tradeName"
             />
             <FilterInput
-              value={filters.email}
+              name=\"email\" value={filters.email}
               onChange={handleFilterChange}
               placeholder="Email"
               name="email"
             />
             <FilterInput
-              value={filters.city}
+              name=\"city\" value={filters.city}
               onChange={handleFilterChange}
               placeholder="Ciutat"
               name="city"
             />
             <FilterInput
-              value={filters.country}
+              name=\"country\" value={filters.country}
               onChange={handleFilterChange}
               placeholder="País"
               name="country"
             />
             <FilterInput
-              value={filters.clientType}
+              name=\"clientType\" value={filters.clientType}
               onChange={handleFilterChange}
               placeholder="Tipus client"
               name="clientType"
