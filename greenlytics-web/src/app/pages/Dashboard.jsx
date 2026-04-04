@@ -22,13 +22,13 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { dashboardService } from '../services/dashboardService'
+import { useLanguage } from '../context/LanguageContext'
 
-const ICON_BY_TITLE = {
-  'Plantes totals': Leaf,
-  'Plantes actives': Activity,
-  'Devices online': Wifi,
-  'Sensors online': Wifi,
-  'Lectures recents': TriangleAlert,
+const KPI_ICON_BY_KEY = {
+  totalPlants: Leaf,
+  activePlants: Activity,
+  onlineSensors: Wifi,
+  recentReadings: TriangleAlert,
 }
 
 function statusBadgeClass(status) {
@@ -58,31 +58,60 @@ function progressTone(value) {
   return 'bg-emerald-500'
 }
 
-function normalizeKpis(kpis) {
-  const source = Array.isArray(kpis) ? kpis : []
+function detectKpiKey(title = '') {
+  const normalized = title.toLowerCase()
 
-  const preferredOrder = [
-    'Plantes totals',
-    'Plantes actives',
-    'Sensors online',
-    'Devices online',
-    'Lectures recents',
-  ]
+  if (normalized.includes('plantes totals') || normalized.includes('total plants')) {
+    return 'totalPlants'
+  }
 
-  const map = new Map(source.map((item) => [item.title, item]))
+  if (normalized.includes('plantes actives') || normalized.includes('active plants')) {
+    return 'activePlants'
+  }
 
-  return preferredOrder
-    .map((title) => map.get(title))
-    .filter(Boolean)
-    .map((item) =>
-      item.title === 'Devices online'
-        ? { ...item, title: 'Sensors online' }
-        : item
-    )
+  if (
+    normalized.includes('devices online') ||
+    normalized.includes('device online') ||
+    normalized.includes('sensors online') ||
+    normalized.includes('sensor online')
+  ) {
+    return 'onlineSensors'
+  }
+
+  if (normalized.includes('lectures recents') || normalized.includes('recent readings')) {
+    return 'recentReadings'
+  }
+
+  return null
 }
 
-function KpiCard({ title, value, subtitle }) {
-  const Icon = ICON_BY_TITLE[title] || Activity
+function normalizeKpis(kpis, t) {
+  const base = Array.isArray(kpis) ? kpis : []
+  const map = new Map()
+
+  for (const item of base) {
+    const key = detectKpiKey(item.title)
+    if (!key) continue
+    map.set(key, item)
+  }
+
+  const orderedKeys = ['totalPlants', 'activePlants', 'onlineSensors', 'recentReadings']
+
+  return orderedKeys
+    .filter((key) => map.has(key))
+    .map((key) => {
+      const item = map.get(key)
+      return {
+        ...item,
+        key,
+        title: t(`dashboardKpi.${key}.title`),
+        subtitle: item.subtitle || t(`dashboardKpi.${key}.subtitle`),
+      }
+    })
+}
+
+function KpiCard({ kpiKey, title, value, subtitle }) {
+  const Icon = KPI_ICON_BY_KEY[kpiKey] || Activity
 
   return (
     <div className="flex h-full min-h-[132px] flex-col justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -118,13 +147,14 @@ function ActionButton({ children, primary = false }) {
 
 function EmptyState({ message }) {
   return (
-    <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
+    <div className="flex h-full items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
       {message}
     </div>
   )
 }
 
 export default function Dashboard() {
+  const { t } = useLanguage()
   const [summary, setSummary] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -137,16 +167,16 @@ export default function Dashboard() {
         const payload = await dashboardService.getSummary()
         setSummary(payload)
       } catch (err) {
-        setError(err.message || 'No s’han pogut carregar les dades del dashboard.')
+        setError(err.message || t('dashboardLoadError'))
       } finally {
         setIsLoading(false)
       }
     }
 
     load()
-  }, [])
+  }, [t])
 
-  const kpis = normalizeKpis(summary?.kpis || [])
+  const kpis = useMemo(() => normalizeKpis(summary?.kpis || [], t), [summary?.kpis, t])
   const chartData = summary?.chart_data || []
   const plants = summary?.plants || []
 
@@ -165,24 +195,24 @@ export default function Dashboard() {
       >
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <p className="text-sm font-medium text-emerald-600">Dashboard</p>
+            <p className="text-sm font-medium text-emerald-600">{t('dashboard')}</p>
             <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-              Visió general de Greenlytics
+              {t('dashboardTitle')}
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              Estat actual de plantes, sensors i lectures reals de la plataforma.
+              {t('dashboardSubtitle')}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
             <ActionButton>
               <Bell className="mr-2 h-4 w-4" />
-              Veure alertes
+              {t('viewAlerts')}
             </ActionButton>
 
             <ActionButton primary>
               <ArrowUpRight className="mr-2 h-4 w-4" />
-              Afegir device
+              {t('addSensor')}
             </ActionButton>
           </div>
         </div>
@@ -190,7 +220,7 @@ export default function Dashboard() {
 
       {isLoading ? (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm text-slate-500">
-          Carregant dades reals del dashboard...
+          {t('dashboardLoading')}
         </div>
       ) : error ? (
         <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm">
@@ -201,13 +231,18 @@ export default function Dashboard() {
           <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             {kpis.map((item, index) => (
               <motion.div
-                key={item.title}
+                key={item.key}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: index * 0.06 }}
                 className="h-full"
               >
-                <KpiCard {...item} />
+                <KpiCard
+                  kpiKey={item.key}
+                  title={item.title}
+                  value={item.value}
+                  subtitle={item.subtitle}
+                />
               </motion.div>
             ))}
           </section>
@@ -217,20 +252,20 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.15 }}
-              className="flex h-full min-h-[520px] flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+              className="flex min-h-[520px] flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
             >
               <div className="mb-4">
                 <h2 className="text-xl font-semibold text-slate-900">
-                  Tendències de lectures
+                  {t('readingTrends')}
                 </h2>
                 <p className="text-sm text-slate-500">
-                  Humitat del sòl i llum de les últimes lectures disponibles.
+                  {t('readingTrendsDescription')}
                 </p>
               </div>
 
               <div className="flex-1">
                 {chartData.length === 0 ? (
-                  <EmptyState message="Encara no hi ha prou dades per mostrar la gràfica." />
+                  <EmptyState message={t('readingTrendsEmpty')} />
                 ) : (
                   <div className="h-full min-h-[380px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -239,8 +274,8 @@ export default function Dashboard() {
                         <XAxis dataKey="label" />
                         <YAxis />
                         <Tooltip />
-                        <Line type="monotone" dataKey="soil_percent" strokeWidth={3} dot={false} name="Humitat terra" />
-                        <Line type="monotone" dataKey="ldr_raw" strokeWidth={3} dot={false} name="Llum (raw)" />
+                        <Line type="monotone" dataKey="soil_percent" strokeWidth={3} dot={false} name={t('soilHumidity')} />
+                        <Line type="monotone" dataKey="ldr_raw" strokeWidth={3} dot={false} name={t('lightRaw')} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -252,28 +287,28 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.2 }}
-              className="flex h-full min-h-[520px] flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+              className="flex min-h-[520px] flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
             >
               <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h2 className="text-xl font-semibold text-slate-900">
-                    Estat de les plantes
+                    {t('plantStatus')}
                   </h2>
                   <p className="text-sm text-slate-500">
-                    Resum ràpid per planta o device, amb l’últim valor disponible.
+                    {t('plantStatusDescription')}
                   </p>
                 </div>
 
                 <div className="rounded-2xl bg-slate-50 px-4 py-2 text-sm text-slate-600">
-                  Crítiques: <span className="font-semibold text-slate-900">{criticalPlants}</span>
+                  {t('criticalCount')} <span className="font-semibold text-slate-900">{criticalPlants}</span>
                 </div>
               </div>
 
               <div className="flex-1">
                 {plants.length === 0 ? (
-                  <EmptyState message="No hi ha plantes o devices amb dades per mostrar encara." />
+                  <EmptyState message={t('plantStatusEmpty')} />
                 ) : (
-                  <div className="grid h-full grid-cols-1 gap-4 overflow-auto pr-1">
+                  <div className="space-y-4 overflow-auto pr-1">
                     {plants.map((plant) => (
                       <div
                         key={`${plant.plant_id || plant.name}-${plant.installation}`}
@@ -295,7 +330,7 @@ export default function Dashboard() {
                             </div>
                             <p className="mt-1 text-sm text-slate-500">{plant.installation}</p>
                             <p className="mt-1 text-xs text-slate-400">
-                              Última lectura: {plant.last_reading || 'Sense dades'}
+                              {t('lastReading')} {plant.last_reading || t('noData')}
                             </p>
                           </div>
 
@@ -308,7 +343,7 @@ export default function Dashboard() {
                           <div className="rounded-2xl bg-slate-50 p-4">
                             <div className="flex items-center gap-2 text-slate-500">
                               <Droplets className="h-4 w-4" />
-                              <span className="text-sm">Humitat terra</span>
+                              <span className="text-sm">{t('soilHumidity')}</span>
                             </div>
                             <p className={`mt-2 text-2xl font-semibold ${humidityTone(plant.humidity)}`}>
                               {plant.humidity == null ? '—' : `${Math.round(plant.humidity)}%`}
@@ -324,35 +359,35 @@ export default function Dashboard() {
                           <div className="rounded-2xl bg-slate-50 p-4">
                             <div className="flex items-center gap-2 text-slate-500">
                               <Thermometer className="h-4 w-4" />
-                              <span className="text-sm">Temperatura</span>
+                              <span className="text-sm">{t('temperature')}</span>
                             </div>
                             <p className="mt-2 text-2xl font-semibold text-slate-900">
                               {plant.temperature == null ? '—' : `${plant.temperature.toFixed(1)} °C`}
                             </p>
-                            <p className="mt-3 text-xs text-slate-400">Dada més recent</p>
+                            <p className="mt-3 text-xs text-slate-400">{t('mostRecentData')}</p>
                           </div>
 
                           <div className="rounded-2xl bg-slate-50 p-4">
                             <div className="flex items-center gap-2 text-slate-500">
                               <SunMedium className="h-4 w-4" />
-                              <span className="text-sm">Llum</span>
+                              <span className="text-sm">{t('light')}</span>
                             </div>
                             <p className="mt-2 text-2xl font-semibold text-slate-900">
                               {plant.light == null ? '—' : Math.round(plant.light)}
                             </p>
-                            <p className="mt-3 text-xs text-slate-400">Valor raw</p>
+                            <p className="mt-3 text-xs text-slate-400">{t('rawValue')}</p>
                           </div>
 
                           <div className="rounded-2xl bg-slate-50 p-4">
                             <div className="flex items-center gap-2 text-slate-500">
                               <CloudRain className="h-4 w-4" />
-                              <span className="text-sm">Pluja / RSSI</span>
+                              <span className="text-sm">{t('rainRssi')}</span>
                             </div>
                             <p className="mt-2 text-base font-semibold text-slate-900">
-                              {plant.rain ? (plant.rain === 'rain' ? 'Plou' : 'Sec') : '—'}
+                              {plant.rain ? (plant.rain === 'rain' ? t('rainYes') : t('rainNo')) : '—'}
                             </p>
                             <p className="mt-3 text-xs text-slate-400">
-                              {plant.rssi == null ? 'Sense RSSI' : `${plant.rssi} dBm`}
+                              {plant.rssi == null ? t('noRssi') : `${plant.rssi} dBm`}
                             </p>
                           </div>
                         </div>

@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import defaultLogo from '../../assets/logo.png'
@@ -18,19 +18,32 @@ function SectionTitle({ children }) {
   )
 }
 
+function resolvePageTitle(pathname, t) {
+  if (pathname === '/') return t('dashboard')
+  if (pathname.startsWith('/devices')) return t('sensors')
+  if (pathname.startsWith('/installations')) return t('installations')
+  if (pathname.startsWith('/plants')) return t('plants')
+  if (pathname.startsWith('/readings')) return t('readings')
+  if (pathname.startsWith('/alerts')) return t('alerts')
+  if (pathname.startsWith('/clients')) return t('clients')
+  if (pathname.startsWith('/users')) return t('users')
+  if (pathname.startsWith('/settings')) return t('settings')
+  return 'Greenlytics'
+}
+
 export default function AppLayout() {
   const { user, logout, roleCode, branding } = useAuth()
   const { t } = useLanguage()
+  const location = useLocation()
 
-  const canAccessAdministration =
-    roleCode === 'ADMIN' || roleCode === 'MANAGER'
-
+  const canAccessAdministration = roleCode === 'ADMIN' || roleCode === 'MANAGER'
   const isAdmin = roleCode === 'ADMIN'
 
   const brandPrimary = branding?.primaryColor || '#059669'
   const brandSecondary = branding?.secondaryColor || '#0f172a'
   const brandName = branding?.appName || 'Greenlytics'
   const brandLogo = branding?.logoUrl || defaultLogo
+  const pageTitle = resolvePageTitle(location.pathname, t)
 
   function itemStyle(isActive) {
     if (isActive) {
@@ -45,9 +58,9 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-[1440px] px-4 py-4 md:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)]">
-          <aside className="self-start lg:sticky lg:top-4">
+      <div className="w-full px-3 py-3 md:px-5 lg:px-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)]">
+          <aside className="self-start lg:sticky lg:top-3">
             <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-6 flex items-center gap-3 px-2 pt-1">
                 <img
@@ -117,19 +130,28 @@ export default function AppLayout() {
           </aside>
 
           <div className="min-w-0">
-            <header className="mb-6 flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-end">
-              <div className="text-sm text-slate-600">
-                {user?.username || user?.email}
-                {roleCode ? ` · ${roleCode}` : ''}
+            <header className="mb-6 flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-emerald-600">{t('operations')}</p>
+                <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+                  {pageTitle}
+                </h1>
               </div>
 
-              <button
-                onClick={logout}
-                className="rounded-xl px-4 py-2 text-sm font-medium text-white"
-                style={{ backgroundColor: brandSecondary }}
-              >
-                {t('logout')}
-              </button>
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-slate-600">
+                  {user?.username || user?.email}
+                  {roleCode ? ` · ${roleCode}` : ''}
+                </div>
+
+                <button
+                  onClick={logout}
+                  className="rounded-xl px-4 py-2 text-sm font-medium text-white"
+                  style={{ backgroundColor: brandSecondary }}
+                >
+                  {t('logout')}
+                </button>
+              </div>
             </header>
 
             <main className="min-w-0">
