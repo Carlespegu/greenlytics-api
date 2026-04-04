@@ -9,3 +9,4 @@ from database.models.plant import Plant
 from database.models.reading import Reading
 from database.models.reading_type import ReadingType
 from database.models.reading_value import ReadingValue
+from database.models.alert import Alert

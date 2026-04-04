@@ -1,14 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function RowActionsDropdown({
-  actions = [],
-  disabled = false,
-  label = 'Accions',
-}) {
+export default function RowActionsDropdown({ actions = [], disabled = false }) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef(null)
-
-  const visibleActions = actions.filter((action) => !action.hidden)
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -17,37 +11,48 @@ export default function RowActionsDropdown({
       }
     }
 
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+      }
+    }
+
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
   }, [])
 
-  function handleAction(callback) {
-    setIsOpen(false)
-    if (typeof callback === 'function') {
-      callback()
-    }
-  }
+  const visibleActions = actions.filter((action) => !action.hidden)
 
   return (
-    <div ref={containerRef} className="relative inline-block text-left overflow-visible">
+    <div ref={containerRef} className="relative inline-flex justify-end text-left">
       <button
         type="button"
-        disabled={disabled || visibleActions.length === 0}
+        disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
-        className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-lg text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
       >
-        {label}
+        ⋯
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-full z-50 mt-2 min-w-44 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+        <div className="absolute right-0 top-11 z-50 min-w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white py-2 shadow-lg">
           {visibleActions.map((action) => (
             <button
-              key={action.key || action.label}
+              key={action.label}
               type="button"
-              onClick={() => handleAction(action.onClick)}
               disabled={action.disabled}
-              className="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => {
+                setIsOpen(false)
+                action.onClick?.()
+              }}
+              className="block w-full px-4 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {action.label}
             </button>
