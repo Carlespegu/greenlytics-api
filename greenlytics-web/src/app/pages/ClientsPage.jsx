@@ -4,7 +4,6 @@ import { clientsService } from '../services/clientsService'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
-import RowActionsDropdown from '../components/RowActionsDropdown'
 
 function FilterInput({ value, onChange, placeholder, name }) {
   return (
@@ -122,13 +121,13 @@ export default function ClientsPage() {
         </form>
       </CollapsibleFiltersCard>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-visible">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <BackofficeListHeader title="Llistat de clients" total={total} showNewButton onNew={() => navigate('/clients/new')} />
 
         {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
-        <div className="mt-4 overflow-visible">
+        <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
@@ -153,15 +152,9 @@ export default function ClientsPage() {
                   <td className="px-3 py-3">{item.country || '-'}</td>
                   <td className="px-3 py-3">{item.is_active ? 'Sí' : 'No'}</td>
                   <td className="px-3 py-3 text-right">
-                    <RowActionsDropdown
-                      actions={[
-                        {
-                          key: 'open',
-                          label: 'Obrir',
-                          onClick: () => navigate(`/clients/${item.id}`),
-                        },
-                      ]}
-                    />
+                    <button onClick={() => navigate(`/clients/${item.id}`)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                      Obrir
+                    </button>
                   </td>
                 </tr>
               ))}

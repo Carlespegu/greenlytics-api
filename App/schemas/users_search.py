@@ -44,8 +44,15 @@ class UserSearchRequest(BaseModel):
     role_id: Optional[UUIDFilter] = None
 
 
+class UserSearchItem(UserResponse):
+    client_code: Optional[str] = None
+    client_name: Optional[str] = None
+    role_code: Optional[str] = None
+    role_name: Optional[str] = None
+
+
 class UserSearchResponse(BaseModel):
-    items: List[UserResponse]
+    items: List[UserSearchItem]
     total: int
     page: int
     page_size: int

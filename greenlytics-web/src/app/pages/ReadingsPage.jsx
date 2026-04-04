@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
-import RowActionsDropdown from '../components/RowActionsDropdown'
 import { resourceService } from '../services/resourceService'
 
 function FilterInput({ name, value, onChange, placeholder }) {
@@ -36,18 +35,33 @@ export default function ReadingsPage() {
   const [pageSize, setPageSize] = useState(10)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filters, setFilters] = useState({
+  const initialFilters = {
     deviceId: deviceIdFromQuery,
     deviceName: deviceNameFromQuery,
     installationName: '',
     status: '',
     fromDate: '',
     toDate: '',
-  })
+  }
+
+  const [filters, setFilters] = useState(initialFilters)
+  const [appliedFilters, setAppliedFilters] = useState(initialFilters)
 
   const activeFilterCount = useMemo(() => {
     return Object.values(filters).filter((value) => value !== '').length
   }, [filters])
+
+  const totalPages = useMemo(() => {
+    const pages = Math.ceil((total || 0) / pageSize)
+    return Math.max(1, pages || 1)
+  }, [total, pageSize])
+
+  const visiblePages = useMemo(() => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1)
+    if (page <= 4) return [1, 2, 3, 4, 5, 'ellipsis', totalPages]
+    if (page >= totalPages - 3) return [1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
+    return [1, 'ellipsis', page - 1, page, page + 1, 'ellipsis', totalPages]
+  }, [page, totalPages])
 
   useEffect(() => {
     async function load() {
@@ -69,40 +83,40 @@ export default function ReadingsPage() {
   useEffect(() => {
     let filtered = [...allItems]
 
-    if (filters.deviceId) {
+    if (appliedFilters.deviceId) {
       filtered = filtered.filter((item) =>
-        String(item.deviceId || item.device_id || '').toLowerCase().includes(filters.deviceId.toLowerCase())
+        String(item.deviceId || item.device_id || '').toLowerCase().includes(appliedFilters.deviceId.toLowerCase())
       )
     }
 
-    if (filters.deviceName) {
+    if (appliedFilters.deviceName) {
       filtered = filtered.filter((item) =>
-        String(item.deviceName || item.device_name || item.device?.name || '').toLowerCase().includes(filters.deviceName.toLowerCase())
+        String(item.deviceName || item.device_name || item.device?.name || '').toLowerCase().includes(appliedFilters.deviceName.toLowerCase())
       )
     }
 
-    if (filters.installationName) {
+    if (appliedFilters.installationName) {
       filtered = filtered.filter((item) =>
-        String(item.installationName || item.installation_name || item.installation?.name || '').toLowerCase().includes(filters.installationName.toLowerCase())
+        String(item.installationName || item.installation_name || item.installation?.name || '').toLowerCase().includes(appliedFilters.installationName.toLowerCase())
       )
     }
 
-    if (filters.status) {
+    if (appliedFilters.status) {
       filtered = filtered.filter((item) =>
-        String(item.status || '').toLowerCase().includes(filters.status.toLowerCase())
+        String(item.status || '').toLowerCase().includes(appliedFilters.status.toLowerCase())
       )
     }
 
-    if (filters.fromDate) {
-      const from = new Date(filters.fromDate)
+    if (appliedFilters.fromDate) {
+      const from = new Date(appliedFilters.fromDate)
       filtered = filtered.filter((item) => {
         const value = item.readAt || item.recorded_at || item.created_at || item.timestamp
         return value ? new Date(value) >= from : false
       })
     }
 
-    if (filters.toDate) {
-      const to = new Date(filters.toDate)
+    if (appliedFilters.toDate) {
+      const to = new Date(appliedFilters.toDate)
       to.setHours(23, 59, 59, 999)
       filtered = filtered.filter((item) => {
         const value = item.readAt || item.recorded_at || item.created_at || item.timestamp
@@ -113,43 +127,32 @@ export default function ReadingsPage() {
     setTotal(filtered.length)
     const start = (page - 1) * pageSize
     setItems(filtered.slice(start, start + pageSize))
-  }, [allItems, filters, page, pageSize])
+  }, [allItems, appliedFilters, page, pageSize])
 
   function handleFilterChange(event) {
     const { name, value } = event.target
+    setPage(1)
     setFilters((prev) => ({ ...prev, [name]: value }))
   }
 
   function handleSearch(event) {
     event.preventDefault()
     setPage(1)
+    setAppliedFilters(filters)
   }
 
   function handleClearFilters() {
-    setPage(1)
-    setFilters({
+    const emptyFilters = {
       deviceId: '',
       deviceName: '',
       installationName: '',
       status: '',
       fromDate: '',
       toDate: '',
-    })
-  }
-
-  function handleFilterByDevice(item) {
+    }
     setPage(1)
-    setFilters((prev) => ({
-      ...prev,
-      deviceId: String(item.deviceId || item.device_id || ''),
-      deviceName: item.deviceName || item.device_name || item.device?.name || '',
-    }))
-  }
-
-  function handleGoToAlerts(item) {
-    const deviceId = item.deviceId || item.device_id || ''
-    const deviceName = item.deviceName || item.device_name || item.device?.name || ''
-    navigate(`/alerts?deviceId=${encodeURIComponent(deviceId)}&deviceName=${encodeURIComponent(deviceName)}`)
+    setFilters(emptyFilters)
+    setAppliedFilters(emptyFilters)
   }
 
   return (
@@ -187,7 +190,7 @@ export default function ReadingsPage() {
         </form>
       </CollapsibleFiltersCard>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-visible">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <BackofficeListHeader
           title="Llistat de lectures"
           total={total}
@@ -198,7 +201,7 @@ export default function ReadingsPage() {
         {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
-        <div className="mt-4 overflow-visible">
+        <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
@@ -210,7 +213,6 @@ export default function ReadingsPage() {
                 <th className="px-3 py-3">Temperatura</th>
                 <th className="px-3 py-3">Humitat</th>
                 <th className="px-3 py-3">Llum</th>
-                <th className="px-3 py-3 text-right">Accions</th>
               </tr>
             </thead>
             <tbody>
@@ -224,28 +226,12 @@ export default function ReadingsPage() {
                   <td className="px-3 py-3">{item.temperature ?? item.tempC ?? '-'}</td>
                   <td className="px-3 py-3">{item.humidity ?? item.humAir ?? item.soilPercent ?? '-'}</td>
                   <td className="px-3 py-3">{item.light ?? item.ldrRaw ?? '-'}</td>
-                  <td className="px-3 py-3 text-right">
-                    <RowActionsDropdown
-                      actions={[
-                        {
-                          key: 'filter-device',
-                          label: 'Filtrar dispositiu',
-                          onClick: () => handleFilterByDevice(item),
-                        },
-                        {
-                          key: 'alerts',
-                          label: 'Veure alertes',
-                          onClick: () => handleGoToAlerts(item),
-                        },
-                      ]}
-                    />
-                  </td>
                 </tr>
               ))}
 
               {!isLoading && items.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-3 py-6 text-center text-slate-500">
+                  <td colSpan={8} className="px-3 py-6 text-center text-slate-500">
                     No s’han trobat lectures.
                   </td>
                 </tr>
@@ -254,17 +240,28 @@ export default function ReadingsPage() {
           </table>
         </div>
 
-        <CompactPagination
-          page={page}
-          pageSize={pageSize}
-          total={total}
-          isLoading={isLoading}
-          onPageChange={setPage}
-          onPageSizeChange={(nextSize) => {
-            setPage(1)
-            setPageSize(nextSize)
-          }}
-        />
+        <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-slate-600">Files</label>
+            <select value={pageSize} onChange={(event) => { setPage(1); setPageSize(Number(event.target.value)) }} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm">
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <button onClick={() => setPage(page - 1)} disabled={page <= 1 || isLoading} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50">‹</button>
+            {visiblePages.map((pageItem, index) => pageItem === 'ellipsis' ? (
+              <span key={`ellipsis-${index}`} className="inline-flex h-9 min-w-9 items-center justify-center px-1 text-sm text-slate-400">…</span>
+            ) : (
+              <button key={pageItem} onClick={() => setPage(pageItem)} disabled={isLoading} className={['inline-flex h-9 min-w-9 items-center justify-center rounded-full px-3 text-sm font-medium transition', pageItem === page ? 'text-white shadow-sm' : 'border border-transparent bg-white text-slate-600 hover:bg-slate-50'].join(' ')} style={pageItem === page ? { backgroundColor: 'var(--brand-primary)' } : undefined}>
+                {pageItem}
+              </button>
+            ))}
+            <button onClick={() => setPage(page + 1)} disabled={page >= totalPages || isLoading} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50">›</button>
+          </div>
+        </div>
       </section>
     </div>
   )

@@ -17,6 +17,8 @@ function FilterInput({ name, value, onChange, placeholder }) {
   )
 }
 
+const EMPTY_FILTERS = { name: '', species: '', deviceId: '' }
+
 export default function PlantsPage() {
   const navigate = useNavigate()
   const [allItems, setAllItems] = useState([])
@@ -26,15 +28,16 @@ export default function PlantsPage() {
   const [pageSize, setPageSize] = useState(10)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filterState, setFilterState] = useState({ name: '', species: '', deviceId: '' })
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
+  const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS)
 
-  const activeFilterCount = useMemo(() => Object.values(filterState).filter((value) => value !== '').length, [filterState])
+  const activeFilterCount = useMemo(() => Object.values(filters).filter((value) => value !== '').length, [filters])
 
   useEffect(() => {
     async function load() {
       try {
         const data = await resourceService.listPlants()
-        setAllItems(data)
+        setAllItems(Array.isArray(data) ? data : [])
       } catch (err) {
         setError(err.message || 'No s’han pogut carregar les plantes.')
       } finally {
@@ -46,23 +49,29 @@ export default function PlantsPage() {
 
   useEffect(() => {
     let filtered = [...allItems]
-    if (filterState.name) filtered = filtered.filter((item) => String(item.name || '').toLowerCase().includes(filterState.name.toLowerCase()))
-    if (filterState.species) filtered = filtered.filter((item) => String(item.species || item.type || '').toLowerCase().includes(filterState.species.toLowerCase()))
-    if (filterState.deviceId) filtered = filtered.filter((item) => String(item.deviceId || item.device?.name || '').toLowerCase().includes(filterState.deviceId.toLowerCase()))
+    if (appliedFilters.name) filtered = filtered.filter((item) => String(item.name || '').toLowerCase().includes(appliedFilters.name.toLowerCase()))
+    if (appliedFilters.species) filtered = filtered.filter((item) => String(item.species || item.type || '').toLowerCase().includes(appliedFilters.species.toLowerCase()))
+    if (appliedFilters.deviceId) filtered = filtered.filter((item) => String(item.deviceId || item.device?.name || '').toLowerCase().includes(appliedFilters.deviceId.toLowerCase()))
     setTotal(filtered.length)
     const start = (page - 1) * pageSize
     setItems(filtered.slice(start, start + pageSize))
-  }, [allItems, filterState, page, pageSize])
+  }, [allItems, appliedFilters, page, pageSize])
 
   function handleFilterChange(event) {
     const { name, value } = event.target
+    setFilters((prev) => ({ ...prev, [name]: value }))
+  }
+
+  function handleSearch(event) {
+    event.preventDefault()
     setPage(1)
-    setFilterState((prev) => ({ ...prev, [name]: value }))
+    setAppliedFilters(filters)
   }
 
   function handleClear() {
     setPage(1)
-    setFilterState({ name: '', species: '', deviceId: '' })
+    setFilters(EMPTY_FILTERS)
+    setAppliedFilters(EMPTY_FILTERS)
   }
 
   return (
@@ -73,22 +82,22 @@ export default function PlantsPage() {
         activeCount={activeFilterCount}
         defaultExpanded={false}
       >
-        <div className="space-y-4">
+        <form onSubmit={handleSearch} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <FilterInput name="name" value={filterState.name} onChange={handleFilterChange} placeholder="Nom" />
-            <FilterInput name="species" value={filterState.species} onChange={handleFilterChange} placeholder="Espècie" />
-            <FilterInput name="deviceId" value={filterState.deviceId} onChange={handleFilterChange} placeholder="Device" />
+            <FilterInput name="name" value={filters.name} onChange={handleFilterChange} placeholder="Nom" />
+            <FilterInput name="species" value={filters.species} onChange={handleFilterChange} placeholder="Espècie" />
+            <FilterInput name="deviceId" value={filters.deviceId} onChange={handleFilterChange} placeholder="Device" />
           </div>
 
           <div className="flex justify-end gap-3">
-            <button type="button" className="rounded-xl px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: 'var(--brand-primary)' }}>
+            <button type="submit" className="rounded-xl px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: 'var(--brand-primary)' }}>
               Cercar
             </button>
             <button type="button" onClick={handleClear} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
               Netejar filtres
             </button>
           </div>
-        </div>
+        </form>
       </CollapsibleFiltersCard>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -110,14 +119,14 @@ export default function PlantsPage() {
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-slate-100">
-                  <td className="px-3 py-3">item.id</td>
-                  <td className="px-3 py-3">item.name || '-'</td>
-                  <td className="px-3 py-3">item.species || item.type || '-'</td>
-                  <td className="px-3 py-3">item.deviceId || item.device?.name || '-'</td>
+                  <td className="px-3 py-3">{item.id || '-'}</td>
+                  <td className="px-3 py-3">{item.name || '-'}</td>
+                  <td className="px-3 py-3">{item.species || item.type || '-'}</td>
+                  <td className="px-3 py-3">{item.deviceId || item.device?.name || '-'}</td>
                 </tr>
               ))}
               {!isLoading && items.length === 0 ? (
-                <tr><td colSpan={99} className="px-3 py-6 text-center text-slate-500">No s’han trobat plantes.</td></tr>
+                <tr><td colSpan={4} className="px-3 py-6 text-center text-slate-500">No s’han trobat plantes.</td></tr>
               ) : null}
             </tbody>
           </table>

@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
-import RowActionsDropdown from '../components/RowActionsDropdown'
 import { resourceService } from '../services/resourceService'
 
 function FilterInput({ name, value, onChange, placeholder }) {
@@ -25,10 +24,6 @@ function formatDate(value) {
 
 export default function AlertsPage() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const deviceIdFromQuery = searchParams.get('deviceId') || ''
-  const deviceNameFromQuery = searchParams.get('deviceName') || ''
-
   const [allItems, setAllItems] = useState([])
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
@@ -36,19 +31,33 @@ export default function AlertsPage() {
   const [pageSize, setPageSize] = useState(10)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filters, setFilters] = useState({
+  const initialFilters = {
     title: '',
-    deviceId: deviceIdFromQuery,
-    deviceName: deviceNameFromQuery,
+    deviceName: '',
     level: '',
     status: '',
     fromDate: '',
     toDate: '',
-  })
+  }
+
+  const [filters, setFilters] = useState(initialFilters)
+  const [appliedFilters, setAppliedFilters] = useState(initialFilters)
 
   const activeFilterCount = useMemo(() => {
     return Object.values(filters).filter((value) => value !== '').length
   }, [filters])
+
+  const totalPages = useMemo(() => {
+    const pages = Math.ceil((total || 0) / pageSize)
+    return Math.max(1, pages || 1)
+  }, [total, pageSize])
+
+  const visiblePages = useMemo(() => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1)
+    if (page <= 4) return [1, 2, 3, 4, 5, 'ellipsis', totalPages]
+    if (page >= totalPages - 3) return [1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
+    return [1, 'ellipsis', page - 1, page, page + 1, 'ellipsis', totalPages]
+  }, [page, totalPages])
 
   useEffect(() => {
     async function load() {
@@ -70,46 +79,40 @@ export default function AlertsPage() {
   useEffect(() => {
     let filtered = [...allItems]
 
-    if (filters.title) {
+    if (appliedFilters.title) {
       filtered = filtered.filter((item) =>
-        String(item.title || item.name || '').toLowerCase().includes(filters.title.toLowerCase())
+        String(item.title || item.name || '').toLowerCase().includes(appliedFilters.title.toLowerCase())
       )
     }
 
-    if (filters.deviceId) {
+    if (appliedFilters.deviceName) {
       filtered = filtered.filter((item) =>
-        String(item.deviceId || item.device_id || '').toLowerCase().includes(filters.deviceId.toLowerCase())
+        String(item.deviceName || item.device_name || item.device?.name || '').toLowerCase().includes(appliedFilters.deviceName.toLowerCase())
       )
     }
 
-    if (filters.deviceName) {
+    if (appliedFilters.level) {
       filtered = filtered.filter((item) =>
-        String(item.deviceName || item.device_name || item.device?.name || '').toLowerCase().includes(filters.deviceName.toLowerCase())
+        String(item.level || item.severity || '').toLowerCase().includes(appliedFilters.level.toLowerCase())
       )
     }
 
-    if (filters.level) {
+    if (appliedFilters.status) {
       filtered = filtered.filter((item) =>
-        String(item.level || item.severity || '').toLowerCase().includes(filters.level.toLowerCase())
+        String(item.status || '').toLowerCase().includes(appliedFilters.status.toLowerCase())
       )
     }
 
-    if (filters.status) {
-      filtered = filtered.filter((item) =>
-        String(item.status || '').toLowerCase().includes(filters.status.toLowerCase())
-      )
-    }
-
-    if (filters.fromDate) {
-      const from = new Date(filters.fromDate)
+    if (appliedFilters.fromDate) {
+      const from = new Date(appliedFilters.fromDate)
       filtered = filtered.filter((item) => {
         const value = item.created_at || item.createdAt || item.ts
         return value ? new Date(value) >= from : false
       })
     }
 
-    if (filters.toDate) {
-      const to = new Date(filters.toDate)
+    if (appliedFilters.toDate) {
+      const to = new Date(appliedFilters.toDate)
       to.setHours(23, 59, 59, 999)
       filtered = filtered.filter((item) => {
         const value = item.created_at || item.createdAt || item.ts
@@ -120,35 +123,32 @@ export default function AlertsPage() {
     setTotal(filtered.length)
     const start = (page - 1) * pageSize
     setItems(filtered.slice(start, start + pageSize))
-  }, [allItems, filters, page, pageSize])
+  }, [allItems, appliedFilters, page, pageSize])
 
   function handleFilterChange(event) {
     const { name, value } = event.target
+    setPage(1)
     setFilters((prev) => ({ ...prev, [name]: value }))
   }
 
   function handleSearch(event) {
     event.preventDefault()
     setPage(1)
+    setAppliedFilters(filters)
   }
 
   function handleClearFilters() {
-    setPage(1)
-    setFilters({
+    const emptyFilters = {
       title: '',
-      deviceId: '',
       deviceName: '',
       level: '',
       status: '',
       fromDate: '',
       toDate: '',
-    })
-  }
-
-  function handleViewReadings(item) {
-    const deviceId = item.deviceId || item.device_id || ''
-    const deviceName = item.deviceName || item.device_name || item.device?.name || ''
-    navigate(`/readings?deviceId=${encodeURIComponent(deviceId)}&deviceName=${encodeURIComponent(deviceName)}`)
+    }
+    setPage(1)
+    setFilters(emptyFilters)
+    setAppliedFilters(emptyFilters)
   }
 
   return (
@@ -157,22 +157,21 @@ export default function AlertsPage() {
         title="Filtres"
         description="Ajusta criteris per localitzar alertes més ràpidament."
         activeCount={activeFilterCount}
-        defaultExpanded={Boolean(deviceIdFromQuery)}
+        defaultExpanded={false}
       >
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <FilterInput name="title" value={filters.title} onChange={handleFilterChange} placeholder="Títol / alerta" />
-            <FilterInput name="deviceId" value={filters.deviceId} onChange={handleFilterChange} placeholder="Device ID" />
-            <FilterInput name="deviceName" value={filters.deviceName} onChange={handleFilterChange} placeholder="Nom dispositiu" />
-            <FilterInput name="level" value={filters.level} onChange={handleFilterChange} placeholder="Nivell" />
-            <FilterInput name="status" value={filters.status} onChange={handleFilterChange} placeholder="Status" />
+            <FilterInput name="title" value={appliedFilters.title} onChange={handleFilterChange} placeholder="Títol / alerta" />
+            <FilterInput name="deviceName" value={appliedFilters.deviceName} onChange={handleFilterChange} placeholder="Nom dispositiu" />
+            <FilterInput name="level" value={appliedFilters.level} onChange={handleFilterChange} placeholder="Nivell" />
+            <FilterInput name="status" value={appliedFilters.status} onChange={handleFilterChange} placeholder="Status" />
             <label className="space-y-2 text-sm text-slate-700">
               <span>Des de</span>
-              <input type="date" name="fromDate" value={filters.fromDate} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400" />
+              <input type="date" name="fromDate" value={appliedFilters.fromDate} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400" />
             </label>
             <label className="space-y-2 text-sm text-slate-700">
               <span>Fins a</span>
-              <input type="date" name="toDate" value={filters.toDate} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400" />
+              <input type="date" name="toDate" value={appliedFilters.toDate} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400" />
             </label>
           </div>
 
@@ -187,7 +186,7 @@ export default function AlertsPage() {
         </form>
       </CollapsibleFiltersCard>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-visible">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <BackofficeListHeader
           title="Llistat d'alertes"
           total={total}
@@ -198,7 +197,7 @@ export default function AlertsPage() {
         {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
-        <div className="mt-4 overflow-visible">
+        <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
@@ -208,7 +207,6 @@ export default function AlertsPage() {
                 <th className="px-3 py-3">Nivell</th>
                 <th className="px-3 py-3">Status</th>
                 <th className="px-3 py-3">Missatge</th>
-                <th className="px-3 py-3 text-right">Accions</th>
               </tr>
             </thead>
             <tbody>
@@ -220,23 +218,12 @@ export default function AlertsPage() {
                   <td className="px-3 py-3">{item.level || item.severity || '-'}</td>
                   <td className="px-3 py-3">{item.status || '-'}</td>
                   <td className="px-3 py-3">{item.message || item.description || '-'}</td>
-                  <td className="px-3 py-3 text-right">
-                    <RowActionsDropdown
-                      actions={[
-                        {
-                          key: 'readings',
-                          label: 'Veure lectures',
-                          onClick: () => handleViewReadings(item),
-                        },
-                      ]}
-                    />
-                  </td>
                 </tr>
               ))}
 
               {!isLoading && items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-6 text-center text-slate-500">
+                  <td colSpan={6} className="px-3 py-6 text-center text-slate-500">
                     No s’han trobat alertes.
                   </td>
                 </tr>
@@ -245,17 +232,28 @@ export default function AlertsPage() {
           </table>
         </div>
 
-        <CompactPagination
-          page={page}
-          pageSize={pageSize}
-          total={total}
-          isLoading={isLoading}
-          onPageChange={setPage}
-          onPageSizeChange={(nextSize) => {
-            setPage(1)
-            setPageSize(nextSize)
-          }}
-        />
+        <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-slate-600">Files</label>
+            <select value={pageSize} onChange={(event) => { setPage(1); setPageSize(Number(event.target.value)) }} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm">
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <button onClick={() => setPage(page - 1)} disabled={page <= 1 || isLoading} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50">‹</button>
+            {visiblePages.map((pageItem, index) => pageItem === 'ellipsis' ? (
+              <span key={`ellipsis-${index}`} className="inline-flex h-9 min-w-9 items-center justify-center px-1 text-sm text-slate-400">…</span>
+            ) : (
+              <button key={pageItem} onClick={() => setPage(pageItem)} disabled={isLoading} className={['inline-flex h-9 min-w-9 items-center justify-center rounded-full px-3 text-sm font-medium transition', pageItem === page ? 'text-white shadow-sm' : 'border border-transparent bg-white text-slate-600 hover:bg-slate-50'].join(' ')} style={pageItem === page ? { backgroundColor: 'var(--brand-primary)' } : undefined}>
+                {pageItem}
+              </button>
+            ))}
+            <button onClick={() => setPage(page + 1)} disabled={page >= totalPages || isLoading} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50">›</button>
+          </div>
+        </div>
       </section>
     </div>
   )
