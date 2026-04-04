@@ -6,11 +6,15 @@ from sqlalchemy.orm import Session
 from App.repositories.installation_devices_repository import get_active_assignment_by_device_id
 from App.repositories.installations_repository import get_installation_by_id
 from App.repositories.plants_repository import get_active_plants_by_installation_id
-from App.repositories.readings_repository import create_reading
+from App.repositories.readings_repository import create_reading, list_readings_with_context
 
 from database.models.reading import Reading
 from database.models.reading_value import ReadingValue
 from database.models.reading_type import ReadingType
+
+
+def list_device_readings_service(db: Session):
+    return list_readings_with_context(db)
 
 
 def create_device_reading_service(db: Session, device, payload):
