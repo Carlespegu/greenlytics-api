@@ -14,6 +14,7 @@ from App.api_routes.installation_devices import router as installation_devices_r
 from App.api_routes.plants import router as plants_router
 from App.api_routes.device_readings import router as device_readings_router
 from App.api_routes.dashboard import router as dashboard_router
+from App.api_routes.alerts import router as alerts_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -48,6 +49,7 @@ app.include_router(devices_router)
 app.include_router(installation_devices_router)
 app.include_router(plants_router)
 app.include_router(device_readings_router)
+app.include_router(alerts_router)
 app.include_router(dashboard_router)
 
 @app.get("/")
