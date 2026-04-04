@@ -4,9 +4,8 @@ import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
 import DeviceFilters from '../components/DeviceFilters'
+import DeviceActionsDropdown from '../components/DeviceActionsDropdown'
 import DeviceEditModal from '../components/DeviceEditModal'
-import BackofficeTableActionsDropdown from '../components/BackofficeTableActionsDropdown'
-import StatusBadge from '../components/StatusBadge'
 import { devicesService } from '../services/devicesService'
 
 function formatDate(value) {
@@ -35,6 +34,22 @@ function normalizeDevice(device) {
   }
 }
 
+function buildVisiblePages(currentPage, totalPages) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1)
+  }
+
+  if (currentPage <= 4) {
+    return [1, 2, 3, 4, 5, 'ellipsis', totalPages]
+  }
+
+  if (currentPage >= totalPages - 3) {
+    return [1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
+  }
+
+  return [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis', totalPages]
+}
+
 export default function DevicesPage() {
   const navigate = useNavigate()
   const [items, setItems] = useState([])
@@ -57,13 +72,33 @@ export default function DevicesPage() {
     is_active: '',
   })
 
-  const activeFilterCount = useMemo(() => Object.values(activeFilters).filter((value) => value !== '').length, [activeFilters])
+  const activeFilterCount = useMemo(() => {
+    return Object.values(activeFilters).filter((value) => value !== '').length
+  }, [activeFilters])
 
-  async function loadDevices({ filters = activeFilters, targetPage = page, targetPageSize = pageSize } = {}) {
+  const totalPages = useMemo(() => {
+    const pages = Math.ceil((total || 0) / pageSize)
+    return Math.max(1, pages || 1)
+  }, [total, pageSize])
+
+  const visiblePages = useMemo(() => {
+    return buildVisiblePages(page, totalPages)
+  }, [page, totalPages])
+
+  async function loadDevices({
+    filters = activeFilters,
+    targetPage = page,
+    targetPageSize = pageSize,
+  } = {}) {
     setIsLoading(true)
     setError('')
+
     try {
-      const payload = await devicesService.searchDevices(filters, { page: targetPage, pageSize: targetPageSize })
+      const payload = await devicesService.searchDevices(filters, {
+        page: targetPage,
+        pageSize: targetPageSize,
+      })
+
       setItems(payload.items || [])
       setTotal(payload.total || payload.items?.length || 0)
       setPage(payload.page || targetPage)
@@ -87,7 +122,13 @@ export default function DevicesPage() {
 
   async function handleReset() {
     const emptyFilters = {
-      code: '', name: '', serial_number: '', description: '', device_type_id: '', status: '', is_active: '',
+      code: '',
+      name: '',
+      serial_number: '',
+      description: '',
+      device_type_id: '',
+      status: '',
+      is_active: '',
     }
     setActiveFilters(emptyFilters)
     await loadDevices({ filters: emptyFilters, targetPage: 1 })
@@ -100,11 +141,17 @@ export default function DevicesPage() {
 
   async function handleSaveDevice(formData) {
     if (!selectedDevice?.id) return
+
     setIsSaving(true)
     setError('')
     setSuccess('')
+
     try {
-      await devicesService.updateDevice(selectedDevice.id, { ...normalizeDevice(selectedDevice), ...formData })
+      await devicesService.updateDevice(selectedDevice.id, {
+        ...normalizeDevice(selectedDevice),
+        ...formData,
+      })
+
       setSuccess('Dispositiu actualitzat correctament.')
       setIsEditOpen(false)
       setSelectedDevice(null)
@@ -118,15 +165,30 @@ export default function DevicesPage() {
 
   async function handleToggleActive(device) {
     const nextValue = !device.is_active
-    const confirmed = window.confirm(nextValue ? 'Vols activar aquest dispositiu?' : 'Vols desactivar aquest dispositiu?')
+    const confirmed = window.confirm(
+      nextValue
+        ? 'Vols activar aquest dispositiu?'
+        : 'Vols desactivar aquest dispositiu?'
+    )
+
     if (!confirmed) return
 
     setIsSaving(true)
     setError('')
     setSuccess('')
+
     try {
-      await devicesService.updateDevice(device.id, { ...normalizeDevice(device), is_active: nextValue })
-      setSuccess(nextValue ? 'Dispositiu activat correctament.' : 'Dispositiu desactivat correctament.')
+      await devicesService.updateDevice(device.id, {
+        ...normalizeDevice(device),
+        is_active: nextValue,
+      })
+
+      setSuccess(
+        nextValue
+          ? 'Dispositiu activat correctament.'
+          : 'Dispositiu desactivat correctament.'
+      )
+
       await loadDevices()
     } catch (err) {
       setError(err.message || 'No s’ha pogut actualitzar l’estat del dispositiu.')
@@ -141,18 +203,33 @@ export default function DevicesPage() {
 
   return (
     <div className="space-y-6">
-      <CollapsibleFiltersCard title="Filtres" description="Ajusta criteris per localitzar dispositius més ràpidament." activeCount={activeFilterCount} defaultExpanded={false}>
-        <DeviceFilters initialFilters={activeFilters} onSearch={handleSearch} onReset={handleReset} disabled={isLoading || isSaving} />
+      <CollapsibleFiltersCard
+        title="Filtres"
+        description="Ajusta criteris per localitzar dispositius més ràpidament."
+        activeCount={activeFilterCount}
+        defaultExpanded={false}
+      >
+        <DeviceFilters
+          initialFilters={activeFilters}
+          onSearch={handleSearch}
+          onReset={handleReset}
+          disabled={isLoading || isSaving}
+        />
       </CollapsibleFiltersCard>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-visible">
-        <BackofficeListHeader title="Llistat de dispositius" total={total} showNewButton onNew={() => navigate('/devices/new')} />
+        <BackofficeListHeader
+          title="Llistat de dispositius"
+          total={total}
+          showNewButton
+          onNew={() => navigate('/devices/new')}
+        />
 
         {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
         {success ? <p className="mt-4 text-sm text-emerald-600">{success}</p> : null}
 
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4 overflow-visible">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
@@ -173,49 +250,109 @@ export default function DevicesPage() {
                   <td className="px-3 py-3">{item.code || '-'}</td>
                   <td className="px-3 py-3">{item.serial_number || '-'}</td>
                   <td className="px-3 py-3">{item.mac_address || '-'}</td>
-                  <td className="px-3 py-3"><StatusBadge value={item.status || '-'} /></td>
-                  <td className="px-3 py-3"><StatusBadge value={item.is_active ? 'Active' : 'Inactive'} /></td>
+                  <td className="px-3 py-3">{item.status || '-'}</td>
+                  <td className="px-3 py-3">{item.is_active ? 'Sí' : 'No'}</td>
                   <td className="px-3 py-3">{formatDate(item.last_seen_on)}</td>
                   <td className="px-3 py-3 text-right">
-                    <BackofficeTableActionsDropdown
-                      item={item}
+                    <DeviceActionsDropdown
+                      device={item}
+                      onEdit={handleEdit}
+                      onToggleActive={handleToggleActive}
+                      onGoToReadings={handleGoToReadings}
                       disabled={isSaving}
-                      actions={[
-                        { key: 'edit', label: 'Editar', onClick: handleEdit },
-                        { key: 'toggle', label: item.is_active ? 'Desactivar' : 'Activar', onClick: handleToggleActive },
-                        { key: 'readings', label: 'Lectures', onClick: handleGoToReadings },
-                      ]}
                     />
                   </td>
                 </tr>
               ))}
+
               {!isLoading && items.length === 0 ? (
-                <tr><td colSpan={8} className="px-3 py-6 text-center text-slate-500">No s’han trobat dispositius.</td></tr>
+                <tr>
+                  <td colSpan={8} className="px-3 py-6 text-center text-slate-500">
+                    No s’han trobat dispositius.
+                  </td>
+                </tr>
               ) : null}
             </tbody>
           </table>
         </div>
 
-        <CompactPagination
-          page={page}
-          pageSize={pageSize}
-          total={total}
-          isLoading={isLoading || isSaving}
-          onPageChange={(nextPage) => loadDevices({ targetPage: nextPage })}
-          onPageSizeChange={(nextSize) => loadDevices({ targetPage: 1, targetPageSize: nextSize })}
-        />
+        <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-slate-600">Files</label>
+            <select
+              value={pageSize}
+              onChange={(event) => {
+                const nextPageSize = Number(event.target.value)
+                loadDevices({ targetPage: 1, targetPageSize: nextPageSize })
+              }}
+              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={() => loadDevices({ targetPage: page - 1 })}
+              disabled={page <= 1 || isLoading}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Pàgina anterior"
+              title="Pàgina anterior"
+            >
+              ‹
+            </button>
+
+            {visiblePages.map((pageItem, index) =>
+              pageItem === 'ellipsis' ? (
+                <span
+                  key={`ellipsis-${index}`}
+                  className="inline-flex h-9 min-w-9 items-center justify-center px-1 text-sm text-slate-400"
+                >
+                  …
+                </span>
+              ) : (
+                <button
+                  key={pageItem}
+                  onClick={() => loadDevices({ targetPage: pageItem })}
+                  disabled={isLoading}
+                  className={[
+                    'inline-flex h-9 min-w-9 items-center justify-center rounded-full px-3 text-sm font-medium transition',
+                    pageItem === page
+                      ? 'text-white shadow-sm'
+                      : 'border border-transparent bg-white text-slate-600 hover:bg-slate-50',
+                  ].join(' ')}
+                  style={pageItem === page ? { backgroundColor: 'var(--brand-primary)' } : undefined}
+                >
+                  {pageItem}
+                </button>
+              )
+            )}
+
+            <button
+              onClick={() => loadDevices({ targetPage: page + 1 })}
+              disabled={page >= totalPages || isLoading}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Pàgina següent"
+              title="Pàgina següent"
+            >
+              ›
+            </button>
+          </div>
+        </div>
       </section>
 
       <DeviceEditModal
         isOpen={isEditOpen}
         device={selectedDevice}
-        isSaving={isSaving}
         onClose={() => {
           if (isSaving) return
           setIsEditOpen(false)
           setSelectedDevice(null)
         }}
         onSave={handleSaveDevice}
+        isSaving={isSaving}
       />
     </div>
   )

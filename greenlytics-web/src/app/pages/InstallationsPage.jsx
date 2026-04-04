@@ -3,85 +3,95 @@ import { useNavigate } from 'react-router-dom'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
-import BackofficeFilterInput from '../components/BackofficeFilterInput'
-import BackofficeFilterActions from '../components/BackofficeFilterActions'
-import BackofficeTableActionsDropdown from '../components/BackofficeTableActionsDropdown'
-import StatusBadge from '../components/StatusBadge'
-import { installationsService } from '../services/installationsService'
+import { resourceService } from '../services/resourceService'
 
-const EMPTY_FILTERS = { code: '', name: '', city: '', country: '', isActive: '' }
+function FilterInput({ name, value, onChange, placeholder }) {
+  return (
+    <input
+      name={name}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400"
+    />
+  )
+}
 
 export default function InstallationsPage() {
   const navigate = useNavigate()
+  const [allItems, setAllItems] = useState([])
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filters, setFilters] = useState(EMPTY_FILTERS)
-  const [draftFilters, setDraftFilters] = useState(EMPTY_FILTERS)
+  const [filterState, setFilterState] = useState({ name: '', location: '', clientId: '' })
 
-  const activeFilterCount = useMemo(() => Object.values(filters).filter((value) => value !== '').length, [filters])
-
-  async function loadInstallations({ targetPage = page, targetPageSize = pageSize, targetFilters = filters } = {}) {
-    setIsLoading(true)
-    setError('')
-    try {
-      const payload = await installationsService.searchInstallations({ page: targetPage, pageSize: targetPageSize, filters: targetFilters })
-      setItems(payload.items || [])
-      setTotal(payload.total || 0)
-      setPage(payload.page || targetPage)
-      setPageSize(payload.page_size || targetPageSize)
-    } catch (err) {
-      setError(err.message || 'No s’han pogut carregar les instal·lacions.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const activeFilterCount = useMemo(() => Object.values(filterState).filter((value) => value !== '').length, [filterState])
 
   useEffect(() => {
-    loadInstallations({ targetPage: 1, targetFilters: EMPTY_FILTERS })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    async function load() {
+      try {
+        const data = await resourceService.listInstallations()
+        setAllItems(data)
+      } catch (err) {
+        setError(err.message || 'No s’han pogut carregar les instal·lacions.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    load()
   }, [])
+
+  useEffect(() => {
+    let filtered = [...allItems]
+    if (filterState.name) filtered = filtered.filter((item) => String(item.name || '').toLowerCase().includes(filterState.name.toLowerCase()))
+    if (filterState.location) filtered = filtered.filter((item) => String(item.location || '').toLowerCase().includes(filterState.location.toLowerCase()))
+    if (filterState.clientId) filtered = filtered.filter((item) => String(item.clientId || item.client?.name || '').toLowerCase().includes(filterState.clientId.toLowerCase()))
+    setTotal(filtered.length)
+    const start = (page - 1) * pageSize
+    setItems(filtered.slice(start, start + pageSize))
+  }, [allItems, filterState, page, pageSize])
 
   function handleFilterChange(event) {
     const { name, value } = event.target
-    setDraftFilters((prev) => ({ ...prev, [name]: value }))
-  }
-
-  function handleSearch(event) {
-    event.preventDefault()
-    setFilters(draftFilters)
-    loadInstallations({ targetPage: 1, targetFilters: draftFilters })
+    setPage(1)
+    setFilterState((prev) => ({ ...prev, [name]: value }))
   }
 
   function handleClear() {
-    setDraftFilters(EMPTY_FILTERS)
-    setFilters(EMPTY_FILTERS)
-    loadInstallations({ targetPage: 1, targetFilters: EMPTY_FILTERS })
+    setPage(1)
+    setFilterState({ name: '', location: '', clientId: '' })
   }
 
   return (
     <div className="space-y-6">
-      <CollapsibleFiltersCard title="Filtres" description="Ajusta criteris per localitzar instal·lacions més ràpidament." activeCount={activeFilterCount} defaultExpanded={false}>
-        <form onSubmit={handleSearch} className="space-y-4">
+      <CollapsibleFiltersCard
+        title="Filtres"
+        description="Llistat d’instal·lacions"
+        activeCount={activeFilterCount}
+        defaultExpanded={false}
+      >
+        <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <BackofficeFilterInput name="code" value={draftFilters.code} onChange={handleFilterChange} placeholder="Codi" />
-            <BackofficeFilterInput name="name" value={draftFilters.name} onChange={handleFilterChange} placeholder="Nom" />
-            <BackofficeFilterInput name="city" value={draftFilters.city} onChange={handleFilterChange} placeholder="Ciutat" />
-            <BackofficeFilterInput name="country" value={draftFilters.country} onChange={handleFilterChange} placeholder="País" />
-            <select name="isActive" value={draftFilters.isActive} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400">
-              <option value="">Activa: totes</option>
-              <option value="true">Sí</option>
-              <option value="false">No</option>
-            </select>
+            <FilterInput name="name" value={filterState.name} onChange={handleFilterChange} placeholder="Nom" />
+            <FilterInput name="location" value={filterState.location} onChange={handleFilterChange} placeholder="Ubicació" />
+            <FilterInput name="clientId" value={filterState.clientId} onChange={handleFilterChange} placeholder="Client" />
           </div>
-          <BackofficeFilterActions onClear={handleClear} disabled={isLoading} />
-        </form>
+
+          <div className="flex justify-end gap-3">
+            <button type="button" className="rounded-xl px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: 'var(--brand-primary)' }}>
+              Cercar
+            </button>
+            <button type="button" onClick={handleClear} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+              Netejar filtres
+            </button>
+          </div>
+        </div>
       </CollapsibleFiltersCard>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-visible">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <BackofficeListHeader title="Llistat d’instal·lacions" total={total} showNewButton onNew={() => navigate('/installations/new')} />
 
         {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
@@ -91,34 +101,24 @@ export default function InstallationsPage() {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
-                <th className="px-3 py-3">Codi</th>
+                <th className="px-3 py-3">Id</th>
                 <th className="px-3 py-3">Nom</th>
-                <th className="px-3 py-3">Ciutat</th>
-                <th className="px-3 py-3">País</th>
-                <th className="px-3 py-3">Activa</th>
-                <th className="px-3 py-3 text-right">Accions</th>
+                <th className="px-3 py-3">Client</th>
+                <th className="px-3 py-3">Ubicació</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-slate-100">
-                  <td className="px-3 py-3">{item.code || '-'}</td>
-                  <td className="px-3 py-3">{item.name || '-'}</td>
-                  <td className="px-3 py-3">{item.city || '-'}</td>
-                  <td className="px-3 py-3">{item.country || '-'}</td>
-                  <td className="px-3 py-3"><StatusBadge value={item.is_active ? 'Active' : 'Inactive'} /></td>
-                  <td className="px-3 py-3 text-right">
-                    <BackofficeTableActionsDropdown
-                      item={item}
-                      actions={[
-                        { key: 'open-plants', label: 'Veure plantes', onClick: () => navigate('/plants') },
-                        { key: 'open-devices', label: 'Veure devices', onClick: () => navigate('/devices') },
-                      ]}
-                    />
-                  </td>
+                  <td className="px-3 py-3">item.id</td>
+                  <td className="px-3 py-3">item.name || '-'</td>
+                  <td className="px-3 py-3">item.clientId || item.client?.name || '-'</td>
+                  <td className="px-3 py-3">item.location || '-'</td>
                 </tr>
               ))}
-              {!isLoading && items.length === 0 ? <tr><td colSpan={6} className="px-3 py-6 text-center text-slate-500">No s’han trobat instal·lacions.</td></tr> : null}
+              {!isLoading && items.length === 0 ? (
+                <tr><td colSpan={99} className="px-3 py-6 text-center text-slate-500">No s’han trobat instal·lacions.</td></tr>
+              ) : null}
             </tbody>
           </table>
         </div>
@@ -128,8 +128,11 @@ export default function InstallationsPage() {
           pageSize={pageSize}
           total={total}
           isLoading={isLoading}
-          onPageChange={(nextPage) => loadInstallations({ targetPage: nextPage })}
-          onPageSizeChange={(nextSize) => loadInstallations({ targetPage: 1, targetPageSize: nextSize })}
+          onPageChange={setPage}
+          onPageSizeChange={(nextSize) => {
+            setPage(1)
+            setPageSize(nextSize)
+          }}
         />
       </section>
     </div>

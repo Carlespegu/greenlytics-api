@@ -3,85 +3,95 @@ import { useNavigate } from 'react-router-dom'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
-import BackofficeFilterInput from '../components/BackofficeFilterInput'
-import BackofficeFilterActions from '../components/BackofficeFilterActions'
-import BackofficeTableActionsDropdown from '../components/BackofficeTableActionsDropdown'
-import StatusBadge from '../components/StatusBadge'
-import { plantsService } from '../services/plantsService'
+import { resourceService } from '../services/resourceService'
 
-const EMPTY_FILTERS = { code: '', name: '', commonName: '', status: '', isActive: '' }
+function FilterInput({ name, value, onChange, placeholder }) {
+  return (
+    <input
+      name={name}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400"
+    />
+  )
+}
 
 export default function PlantsPage() {
   const navigate = useNavigate()
+  const [allItems, setAllItems] = useState([])
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filters, setFilters] = useState(EMPTY_FILTERS)
-  const [draftFilters, setDraftFilters] = useState(EMPTY_FILTERS)
+  const [filterState, setFilterState] = useState({ name: '', species: '', deviceId: '' })
 
-  const activeFilterCount = useMemo(() => Object.values(filters).filter((value) => value !== '').length, [filters])
-
-  async function loadPlants({ targetPage = page, targetPageSize = pageSize, targetFilters = filters } = {}) {
-    setIsLoading(true)
-    setError('')
-    try {
-      const payload = await plantsService.searchPlants({ page: targetPage, pageSize: targetPageSize, filters: targetFilters })
-      setItems(payload.items || [])
-      setTotal(payload.total || 0)
-      setPage(payload.page || targetPage)
-      setPageSize(payload.page_size || targetPageSize)
-    } catch (err) {
-      setError(err.message || 'No s’han pogut carregar les plantes.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const activeFilterCount = useMemo(() => Object.values(filterState).filter((value) => value !== '').length, [filterState])
 
   useEffect(() => {
-    loadPlants({ targetPage: 1, targetFilters: EMPTY_FILTERS })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    async function load() {
+      try {
+        const data = await resourceService.listPlants()
+        setAllItems(data)
+      } catch (err) {
+        setError(err.message || 'No s’han pogut carregar les plantes.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    load()
   }, [])
+
+  useEffect(() => {
+    let filtered = [...allItems]
+    if (filterState.name) filtered = filtered.filter((item) => String(item.name || '').toLowerCase().includes(filterState.name.toLowerCase()))
+    if (filterState.species) filtered = filtered.filter((item) => String(item.species || item.type || '').toLowerCase().includes(filterState.species.toLowerCase()))
+    if (filterState.deviceId) filtered = filtered.filter((item) => String(item.deviceId || item.device?.name || '').toLowerCase().includes(filterState.deviceId.toLowerCase()))
+    setTotal(filtered.length)
+    const start = (page - 1) * pageSize
+    setItems(filtered.slice(start, start + pageSize))
+  }, [allItems, filterState, page, pageSize])
 
   function handleFilterChange(event) {
     const { name, value } = event.target
-    setDraftFilters((prev) => ({ ...prev, [name]: value }))
-  }
-
-  function handleSearch(event) {
-    event.preventDefault()
-    setFilters(draftFilters)
-    loadPlants({ targetPage: 1, targetFilters: draftFilters })
+    setPage(1)
+    setFilterState((prev) => ({ ...prev, [name]: value }))
   }
 
   function handleClear() {
-    setDraftFilters(EMPTY_FILTERS)
-    setFilters(EMPTY_FILTERS)
-    loadPlants({ targetPage: 1, targetFilters: EMPTY_FILTERS })
+    setPage(1)
+    setFilterState({ name: '', species: '', deviceId: '' })
   }
 
   return (
     <div className="space-y-6">
-      <CollapsibleFiltersCard title="Filtres" description="Ajusta criteris per localitzar plantes més ràpidament." activeCount={activeFilterCount} defaultExpanded={false}>
-        <form onSubmit={handleSearch} className="space-y-4">
+      <CollapsibleFiltersCard
+        title="Filtres"
+        description="Llistat de plantes"
+        activeCount={activeFilterCount}
+        defaultExpanded={false}
+      >
+        <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <BackofficeFilterInput name="code" value={draftFilters.code} onChange={handleFilterChange} placeholder="Codi" />
-            <BackofficeFilterInput name="name" value={draftFilters.name} onChange={handleFilterChange} placeholder="Nom" />
-            <BackofficeFilterInput name="commonName" value={draftFilters.commonName} onChange={handleFilterChange} placeholder="Nom comú" />
-            <BackofficeFilterInput name="status" value={draftFilters.status} onChange={handleFilterChange} placeholder="Status" />
-            <select name="isActive" value={draftFilters.isActive} onChange={handleFilterChange} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400">
-              <option value="">Activa: totes</option>
-              <option value="true">Sí</option>
-              <option value="false">No</option>
-            </select>
+            <FilterInput name="name" value={filterState.name} onChange={handleFilterChange} placeholder="Nom" />
+            <FilterInput name="species" value={filterState.species} onChange={handleFilterChange} placeholder="Espècie" />
+            <FilterInput name="deviceId" value={filterState.deviceId} onChange={handleFilterChange} placeholder="Device" />
           </div>
-          <BackofficeFilterActions onClear={handleClear} disabled={isLoading} />
-        </form>
+
+          <div className="flex justify-end gap-3">
+            <button type="button" className="rounded-xl px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: 'var(--brand-primary)' }}>
+              Cercar
+            </button>
+            <button type="button" onClick={handleClear} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+              Netejar filtres
+            </button>
+          </div>
+        </div>
       </CollapsibleFiltersCard>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-visible">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <BackofficeListHeader title="Llistat de plantes" total={total} showNewButton onNew={() => navigate('/plants/new')} />
 
         {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
@@ -91,36 +101,24 @@ export default function PlantsPage() {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
-                <th className="px-3 py-3">Codi</th>
+                <th className="px-3 py-3">Id</th>
                 <th className="px-3 py-3">Nom</th>
-                <th className="px-3 py-3">Nom comú</th>
-                <th className="px-3 py-3">Tipus</th>
-                <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3">Activa</th>
-                <th className="px-3 py-3 text-right">Accions</th>
+                <th className="px-3 py-3">Espècie</th>
+                <th className="px-3 py-3">Device</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-slate-100">
-                  <td className="px-3 py-3">{item.code || '-'}</td>
-                  <td className="px-3 py-3">{item.name || '-'}</td>
-                  <td className="px-3 py-3">{item.common_name || '-'}</td>
-                  <td className="px-3 py-3">{item.plant_type || '-'}</td>
-                  <td className="px-3 py-3"><StatusBadge value={item.status || '-'} /></td>
-                  <td className="px-3 py-3"><StatusBadge value={item.is_active ? 'Active' : 'Inactive'} /></td>
-                  <td className="px-3 py-3 text-right">
-                    <BackofficeTableActionsDropdown
-                      item={item}
-                      actions={[
-                        { key: 'readings', label: 'Veure lectures', onClick: () => navigate('/readings') },
-                        { key: 'alerts', label: 'Veure alertes', onClick: () => navigate('/alerts') },
-                      ]}
-                    />
-                  </td>
+                  <td className="px-3 py-3">item.id</td>
+                  <td className="px-3 py-3">item.name || '-'</td>
+                  <td className="px-3 py-3">item.species || item.type || '-'</td>
+                  <td className="px-3 py-3">item.deviceId || item.device?.name || '-'</td>
                 </tr>
               ))}
-              {!isLoading && items.length === 0 ? <tr><td colSpan={7} className="px-3 py-6 text-center text-slate-500">No s’han trobat plantes.</td></tr> : null}
+              {!isLoading && items.length === 0 ? (
+                <tr><td colSpan={99} className="px-3 py-6 text-center text-slate-500">No s’han trobat plantes.</td></tr>
+              ) : null}
             </tbody>
           </table>
         </div>
@@ -130,8 +128,11 @@ export default function PlantsPage() {
           pageSize={pageSize}
           total={total}
           isLoading={isLoading}
-          onPageChange={(nextPage) => loadPlants({ targetPage: nextPage })}
-          onPageSizeChange={(nextSize) => loadPlants({ targetPage: 1, targetPageSize: nextSize })}
+          onPageChange={setPage}
+          onPageSizeChange={(nextSize) => {
+            setPage(1)
+            setPageSize(nextSize)
+          }}
         />
       </section>
     </div>
