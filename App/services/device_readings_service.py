@@ -6,15 +6,12 @@ from sqlalchemy.orm import Session
 from App.repositories.installation_devices_repository import get_active_assignment_by_device_id
 from App.repositories.installations_repository import get_installation_by_id
 from App.repositories.plants_repository import get_active_plants_by_installation_id
-from App.repositories.readings_repository import create_reading, list_readings_with_context
+from App.repositories.readings_repository import create_reading
+from App.services.alerts_engine import enqueue_alert_jobs_for_reading
 
 from database.models.reading import Reading
 from database.models.reading_value import ReadingValue
 from database.models.reading_type import ReadingType
-
-
-def list_device_readings_service(db: Session):
-    return list_readings_with_context(db)
 
 
 def create_device_reading_service(db: Session, device, payload):
@@ -90,6 +87,9 @@ def create_device_reading_service(db: Session, device, payload):
     reading.values = reading_values
 
     created = create_reading(db, reading)
+
+    # Enqueue alert jobs asynchronously through persistent DB queue.
+    enqueue_alert_jobs_for_reading(db, created)
 
     device.last_seen_on = datetime.utcnow()
     device.status = "online"

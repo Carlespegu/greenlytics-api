@@ -58,3 +58,20 @@ def root():
         "message": "Plant API V2 is running",
         "version": settings.APP_VERSION,
     }
+
+import asyncio
+from App.services.alert_jobs_service import process_pending_jobs
+
+async def alert_worker():
+    while True:
+        try:
+            await process_pending_jobs()
+        except Exception as e:
+            print("Error in alert worker:", e)
+
+        await asyncio.sleep(60)
+
+
+@app.on_event("startup")
+async def startup_alert_worker():
+    asyncio.create_task(alert_worker())
