@@ -2,7 +2,7 @@ from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
-from database.database import Base
+from database.base import Base
 
 
 class Alert(Base):
