@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -147,10 +146,18 @@ def _is_alert_triggered(alert: Alert, reading_type: ReadingType | None, reading_
         return False
 
     if value_type in TEXT_VALUE_TYPES:
-        return condition == "EQUALS" and alert.exact_text_value is not None and str(actual_value) == str(alert.exact_text_value)
+        return (
+            condition == "EQUALS"
+            and alert.exact_text_value is not None
+            and str(actual_value) == str(alert.exact_text_value)
+        )
 
     if value_type in BOOLEAN_VALUE_TYPES:
-        return condition == "BOOLEAN_EQUALS" and alert.exact_boolean_value is not None and bool(actual_value) == bool(alert.exact_boolean_value)
+        return (
+            condition == "BOOLEAN_EQUALS"
+            and alert.exact_boolean_value is not None
+            and bool(actual_value) == bool(alert.exact_boolean_value)
+        )
 
     return False
 
@@ -186,7 +193,16 @@ def _build_condition_summary(alert: Alert):
     return condition
 
 
-def _build_email_payload(*, alert: Alert, reading: Reading, reading_value: ReadingValue, reading_type: ReadingType | None, client: Client | None, installation: Installation | None, plant: Plant | None):
+def _build_email_payload(
+    *,
+    alert: Alert,
+    reading: Reading,
+    reading_value: ReadingValue,
+    reading_type: ReadingType | None,
+    client: Client | None,
+    installation: Installation | None,
+    plant: Plant | None,
+):
     current_value = _format_current_value(reading_type, reading_value)
     condition_summary = _build_condition_summary(alert)
     reading_type_name = reading_type.name if reading_type else str(reading_value.reading_type_id)
@@ -195,17 +211,19 @@ def _build_email_payload(*, alert: Alert, reading: Reading, reading_value: Readi
     client_name = client.name if client else "-"
 
     subject = f"[Greenlytics] Alert triggered - {plant_name} - {reading_type_name}"
-    body = """
-            Hello,
-            A Greenlytics alert has been triggered.
-            Client: {client_name}
-            Installation: {installation_name}
-            Plant: {plant_name}
-            Reading type: {reading_type_name}
-            Current value: {value}
-            
-            Greenlytics
-            """
+    body = f"""Hello,
+
+A Greenlytics alert has been triggered.
+
+Client: {client_name}
+Installation: {installation_name}
+Plant: {plant_name}
+Reading type: {reading_type_name}
+Current value: {current_value}
+Condition: {condition_summary}
+
+Greenlytics
+"""
 
     return {
         "to_email": alert.recipient_email,
