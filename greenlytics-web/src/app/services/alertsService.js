@@ -1,5 +1,13 @@
 import { api } from '../lib/api'
 
+function normalizeList(payload) {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.items)) return payload.items
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.results)) return payload.results
+  return []
+}
+
 export const alertsService = {
   async searchAlerts({
     page = 1,
@@ -24,36 +32,8 @@ export const alertsService = {
     if (filters.plantId) {
       body.plant_id = { filter_value: filters.plantId, comparator: 'equals' }
     }
-    if (filters.readingTypeId) {
-      body.reading_type_id = { filter_value: filters.readingTypeId, comparator: 'equals' }
-    }
-
     if (filters.name) {
       body.name = { filter_value: filters.name, comparator: 'contains' }
-    }
-    if (filters.clientName) {
-      body.client_name = { filter_value: filters.clientName, comparator: 'contains' }
-    }
-    if (filters.installationName) {
-      body.installation_name = { filter_value: filters.installationName, comparator: 'contains' }
-    }
-    if (filters.plantName) {
-      body.plant_name = { filter_value: filters.plantName, comparator: 'contains' }
-    }
-    if (filters.readingTypeName) {
-      body.reading_type_name = { filter_value: filters.readingTypeName, comparator: 'contains' }
-    }
-    if (filters.channel) {
-      body.channel = { filter_value: filters.channel, comparator: 'contains' }
-    }
-    if (filters.conditionType) {
-      body.condition_type = { filter_value: filters.conditionType, comparator: 'contains' }
-    }
-    if (filters.recipientEmail) {
-      body.recipient_email = { filter_value: filters.recipientEmail, comparator: 'contains' }
-    }
-    if (filters.isActive !== '') {
-      body.is_active = { filter_value: filters.isActive === 'true', comparator: 'equals' }
     }
 
     return api.post('/alerts/search', body)
@@ -73,5 +53,14 @@ export const alertsService = {
 
   async deleteAlert(alertId) {
     return api.delete(`/alerts/${alertId}`)
+  },
+
+  async listReadingTypes() {
+    try {
+      const payload = await api.get('/reading-types')
+      return normalizeList(payload)
+    } catch {
+      return []
+    }
   },
 }

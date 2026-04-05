@@ -10,6 +10,7 @@ import PlantsPage from './pages/PlantsPage'
 import ReadingsPage from './pages/ReadingsPage'
 import UsersPage from './pages/UsersPage'
 import AlertsPage from './pages/AlertsPage'
+import AlertDetailPage from './pages/AlertDetailPage'
 import SettingsPage from './pages/SettingsPage'
 import ClientsPage from './pages/ClientsPage'
 import ClientDetailPage from './pages/ClientDetailPage'
@@ -32,6 +33,8 @@ export const router = createBrowserRouter([
           { path: 'plants', element: <PlantsPage /> },
           { path: 'readings', element: <ReadingsPage /> },
           { path: 'alerts', element: <AlertsPage /> },
+          { path: 'alerts/new', element: <AlertDetailPage /> },
+          { path: 'alerts/:alertId', element: <AlertDetailPage /> },
 
           {
             element: <RoleProtectedRoute allowedRoles={['ADMIN']} />,

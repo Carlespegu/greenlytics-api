@@ -195,36 +195,17 @@ def _build_email_payload(*, alert: Alert, reading: Reading, reading_value: Readi
     client_name = client.name if client else "-"
 
     subject = f"[Greenlytics] Alert triggered - {plant_name} - {reading_type_name}"
-    body = (
-        "Hello,
-
-"
-        "A Greenlytics alert has been triggered.
-
-"
-        f"Alert: {alert.name}
-"
-        f"Client: {client_name}
-"
-        f"Installation: {installation_name}
-"
-        f"Plant: {plant_name}
-"
-        f"Reading type: {reading_type_name}
-"
-        f"Current value: {current_value}
-"
-        f"Condition: {condition_summary}
-"
-        f"Reading date: {reading.ts}
-
-"
-        "Please review the plant status.
-
-"
-        "Greenlytics
-"
-    )
+    body = """
+            Hello,
+            A Greenlytics alert has been triggered.
+            Client: {client_name}
+            Installation: {installation_name}
+            Plant: {plant_name}
+            Reading type: {reading_type_name}
+            Current value: {value}
+            
+            Greenlytics
+            """
 
     return {
         "to_email": alert.recipient_email,
