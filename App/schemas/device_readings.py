@@ -60,15 +60,14 @@ class DeviceReadingResponse(BaseModel):
 class DeviceReadingListItem(BaseModel):
     id: UUID
     device_id: UUID
-    deviceId: str
     device_name: Optional[str] = None
-    deviceName: Optional[str] = None
     installation_id: Optional[UUID] = None
     installation_name: Optional[str] = None
-    installationName: Optional[str] = None
     status: Optional[str] = None
     readAt: datetime
     created_at: datetime
     temperature: Optional[float] = None
     humidity: Optional[float] = None
     light: Optional[float] = None
+    humudity_soil: Optional[float] = None
+    rain: Optional[float] = None
