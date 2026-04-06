@@ -47,11 +47,9 @@ def list_readings_with_context(db: Session, limit: int = 500):
                 "id": reading.id,
                 "device_id": reading.device_id,
                 "device_name": row.device_name,
-                "deviceName": row.device_name,
                 "installation_id": reading.installation_id,
                 "installation_name": row.installation_name,
                 "status": row.device_status,
-                "readAt": reading.ts,
                 "created_at": reading.created_on,
                 "temperature": None,
                 "humidity": None,
@@ -71,13 +69,13 @@ def list_readings_with_context(db: Session, limit: int = 500):
 
         if code in {"TEMP", "TEMPERATURE", "TEMP_C", "TEMPC"} and value is not None:
             readings_map[reading_id]["temperature"] = float(value)
-        elif code in {"HUM", "HUMIDITY", "HUM_AIR", "HUMAIR", "SOIL", "SOIL_PERCENT", "SOILPERCENT"} and value is not None:
+        elif code in {"HUM", "HUMIDITY", "HUM_AIR", "HUMAIR"} and value is not None:
             readings_map[reading_id]["humidity"] = float(value)
         elif code in {"LIGHT", "LDR", "LUX", "LIGHT_INTENSITY", "LDR_RAW"} and value is not None:
             readings_map[reading_id]["light"] = float(value)
-        elif code in {"SOIL_PERCENT"} and value is not None:
+        elif code in {"SOIL", "SOIL_PERCENT", "SOILPERCENT"} and value is not None:
             readings_map[reading_id]["humudity_soil"] = float(value)
         elif code in {"RAIN"} and value is not None:
-            readings_map[reading_id]["rain"] = float(value)
+            readings_map[reading_id]["rain"] = value
 
     return list(readings_map.values())

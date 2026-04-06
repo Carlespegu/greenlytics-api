@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
-import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
 import { resourceService } from '../services/resourceService'
 
@@ -34,6 +33,7 @@ export default function ReadingsPage() {
   const [pageSize, setPageSize] = useState(10)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+
   const initialFilters = {
     deviceName: deviceNameFromQuery,
     installationName: '',
@@ -83,13 +83,13 @@ export default function ReadingsPage() {
 
     if (appliedFilters.deviceName) {
       filtered = filtered.filter((item) =>
-        String(item.deviceName || item.device_name || item.device?.name || '').toLowerCase().includes(appliedFilters.deviceName.toLowerCase())
+        String(item.device_name || '').toLowerCase().includes(appliedFilters.deviceName.toLowerCase())
       )
     }
 
     if (appliedFilters.installationName) {
       filtered = filtered.filter((item) =>
-        String(item.installationName || item.installation_name || item.installation?.name || '').toLowerCase().includes(appliedFilters.installationName.toLowerCase())
+        String(item.installation_name || '').toLowerCase().includes(appliedFilters.installationName.toLowerCase())
       )
     }
 
@@ -102,7 +102,7 @@ export default function ReadingsPage() {
     if (appliedFilters.fromDate) {
       const from = new Date(appliedFilters.fromDate)
       filtered = filtered.filter((item) => {
-        const value = item.readAt || item.recorded_at || item.created_at || item.timestamp
+        const value = item.created_at
         return value ? new Date(value) >= from : false
       })
     }
@@ -111,7 +111,7 @@ export default function ReadingsPage() {
       const to = new Date(appliedFilters.toDate)
       to.setHours(23, 59, 59, 999)
       filtered = filtered.filter((item) => {
-        const value = item.readAt || item.recorded_at || item.created_at || item.timestamp
+        const value = item.created_at
         return value ? new Date(value) <= to : false
       })
     }
@@ -152,7 +152,7 @@ export default function ReadingsPage() {
         title="Filtres"
         description="Ajusta criteris per localitzar lectures més ràpidament."
         activeCount={activeFilterCount}
-        defaultExpanded={Boolean(device_name)}
+        defaultExpanded={Boolean(deviceNameFromQuery)}
       >
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -196,35 +196,34 @@ export default function ReadingsPage() {
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
                 <th className="px-3 py-3">Data lectura</th>
-                <th className="px-3 py-3">Device ID</th>
                 <th className="px-3 py-3">Nom dispositiu</th>
                 <th className="px-3 py-3">Instal·lació</th>
                 <th className="px-3 py-3">Status</th>
                 <th className="px-3 py-3">Temperatura</th>
                 <th className="px-3 py-3">Humitat</th>
                 <th className="px-3 py-3">Llum</th>
-                <th className="px-3 py-3">Humutat del sol</th>
+                <th className="px-3 py-3">Humutat del sòl</th>
                 <th className="px-3 py-3">Pluja</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, index) => (
-                <tr key={`${item.device_name}-${index}`} className="border-b border-slate-100">
-                  <td className="px-3 py-3">{formatDate(item.readAt || item.recorded_at || item.created_at || item.timestamp)}</td>
-                  <td className="px-3 py-3">{item.device_name || item.device?.name || '-'}</td>
-                  <td className="px-3 py-3">{item.installationName || item.installation_name || item.installation?.name || '-'}</td>
+                <tr key={`${item.id}-${index}`} className="border-b border-slate-100">
+                  <td className="px-3 py-3">{formatDate(item.created_at)}</td>
+                  <td className="px-3 py-3">{item.device_name || '-'}</td>
+                  <td className="px-3 py-3">{item.installation_name || '-'}</td>
                   <td className="px-3 py-3">{item.status || '-'}</td>
-                  <td className="px-3 py-3">{item.temperature ?? item.tempC ?? '-'}</td>
-                  <td className="px-3 py-3">{item.humidity ?? item.humAir ?? item.soilPercent ?? '-'}</td>
-                  <td className="px-3 py-3">{item.light ?? item.ldrRaw ?? '-'}</td>
-                  <td className="px-3 py-3">{item.sol ?? item.ldrRaw ?? '-'}</td>
-                  <td className="px-3 py-3">{item.rain ?? item.rain ?? '-'}</td>
+                  <td className="px-3 py-3">{item.temperature ?? '-'}</td>
+                  <td className="px-3 py-3">{item.humidity ?? '-'}</td>
+                  <td className="px-3 py-3">{item.light ?? '-'}</td>
+                  <td className="px-3 py-3">{item.humudity_soil ?? '-'}</td>
+                  <td className="px-3 py-3">{item.rain ?? '-'}</td>
                 </tr>
               ))}
 
               {!isLoading && items.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-3 py-6 text-center text-slate-500">
+                  <td colSpan={9} className="px-3 py-6 text-center text-slate-500">
                     No s’han trobat lectures.
                   </td>
                 </tr>
