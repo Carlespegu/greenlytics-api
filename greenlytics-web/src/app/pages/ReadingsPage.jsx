@@ -25,7 +25,6 @@ function formatDate(value) {
 export default function ReadingsPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const deviceIdFromQuery = searchParams.get('deviceId') || ''
   const deviceNameFromQuery = searchParams.get('deviceName') || ''
 
   const [allItems, setAllItems] = useState([])
@@ -36,7 +35,6 @@ export default function ReadingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const initialFilters = {
-    deviceId: deviceIdFromQuery,
     deviceName: deviceNameFromQuery,
     installationName: '',
     status: '',
@@ -82,12 +80,6 @@ export default function ReadingsPage() {
 
   useEffect(() => {
     let filtered = [...allItems]
-
-    if (appliedFilters.deviceId) {
-      filtered = filtered.filter((item) =>
-        String(item.deviceId || item.device_id || '').toLowerCase().includes(appliedFilters.deviceId.toLowerCase())
-      )
-    }
 
     if (appliedFilters.deviceName) {
       filtered = filtered.filter((item) =>
@@ -143,7 +135,6 @@ export default function ReadingsPage() {
 
   function handleClearFilters() {
     const emptyFilters = {
-      deviceId: '',
       deviceName: '',
       installationName: '',
       status: '',
@@ -161,11 +152,10 @@ export default function ReadingsPage() {
         title="Filtres"
         description="Ajusta criteris per localitzar lectures més ràpidament."
         activeCount={activeFilterCount}
-        defaultExpanded={Boolean(deviceIdFromQuery)}
+        defaultExpanded={Boolean(device_name)}
       >
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <FilterInput name="deviceId" value={filters.deviceId} onChange={handleFilterChange} placeholder="Device ID" />
             <FilterInput name="deviceName" value={filters.deviceName} onChange={handleFilterChange} placeholder="Nom dispositiu" />
             <FilterInput name="installationName" value={filters.installationName} onChange={handleFilterChange} placeholder="Instal·lació" />
             <FilterInput name="status" value={filters.status} onChange={handleFilterChange} placeholder="Status" />
@@ -213,19 +203,22 @@ export default function ReadingsPage() {
                 <th className="px-3 py-3">Temperatura</th>
                 <th className="px-3 py-3">Humitat</th>
                 <th className="px-3 py-3">Llum</th>
+                <th className="px-3 py-3">Humutat del sol</th>
+                <th className="px-3 py-3">Pluja</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, index) => (
-                <tr key={item.id || `${item.deviceId || item.device_id}-${index}`} className="border-b border-slate-100">
+                <tr key={`${item.device_name}-${index}`} className="border-b border-slate-100">
                   <td className="px-3 py-3">{formatDate(item.readAt || item.recorded_at || item.created_at || item.timestamp)}</td>
-                  <td className="px-3 py-3">{item.deviceId || item.device_id || '-'}</td>
-                  <td className="px-3 py-3">{item.deviceName || item.device_name || item.device?.name || '-'}</td>
+                  <td className="px-3 py-3">{item.device_name || item.device?.name || '-'}</td>
                   <td className="px-3 py-3">{item.installationName || item.installation_name || item.installation?.name || '-'}</td>
                   <td className="px-3 py-3">{item.status || '-'}</td>
                   <td className="px-3 py-3">{item.temperature ?? item.tempC ?? '-'}</td>
                   <td className="px-3 py-3">{item.humidity ?? item.humAir ?? item.soilPercent ?? '-'}</td>
                   <td className="px-3 py-3">{item.light ?? item.ldrRaw ?? '-'}</td>
+                  <td className="px-3 py-3">{item.sol ?? item.ldrRaw ?? '-'}</td>
+                  <td className="px-3 py-3">{item.rain ?? item.rain ?? '-'}</td>
                 </tr>
               ))}
 
