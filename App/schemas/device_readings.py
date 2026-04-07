@@ -30,7 +30,25 @@ class ReadingValueIn(BaseModel):
 class DeviceReadingIn(BaseModel):
     ts: Optional[datetime] = None
     plant_id: Optional[UUID] = None
+    ts_source: Optional[str] = None
+    device_cycle: Optional[int] = None
+    sleep_minutes: Optional[int] = None
     values: List[ReadingValueIn]
+
+
+class DeviceReadingsBatchIn(BaseModel):
+    device_id: Optional[str] = None
+    sent_at: Optional[datetime] = None
+    batch_size: Optional[int] = None
+    readings: List[DeviceReadingIn]
+
+    @model_validator(mode="after")
+    def validate_batch_size(self):
+        if self.batch_size is not None and self.batch_size != len(self.readings):
+            raise ValueError("batch_size must match readings length")
+        if not self.readings:
+            raise ValueError("readings[] is required")
+        return self
 
 
 class ReadingValueResponse(BaseModel):
@@ -55,6 +73,14 @@ class DeviceReadingResponse(BaseModel):
     ts: datetime
     created_on: datetime
     values: List[ReadingValueResponse]
+
+
+class DeviceReadingsBatchResponse(BaseModel):
+    device_id: UUID
+    sent_at: Optional[datetime] = None
+    batch_size: int
+    created_count: int
+    created_ids: List[UUID]
 
 
 class DeviceReadingListItem(BaseModel):

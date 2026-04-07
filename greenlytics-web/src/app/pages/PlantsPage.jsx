@@ -119,10 +119,9 @@ export default function PlantsPage() {
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-slate-100">
-                  <td className="px-3 py-3">{item.id || '-'}</td>
                   <td className="px-3 py-3">{item.name || '-'}</td>
                   <td className="px-3 py-3">{item.species || item.type || '-'}</td>
-                  <td className="px-3 py-3">{item.deviceId || item.device?.name || '-'}</td>
+                  <td className="px-3 py-3">{item.device?.name || '-'}</td>
                 </tr>
               ))}
               {!isLoading && items.length === 0 ? (

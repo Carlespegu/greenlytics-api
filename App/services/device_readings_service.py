@@ -10,15 +10,15 @@ from App.repositories.readings_repository import create_reading, list_readings_w
 from App.services.alerts_engine import enqueue_alert_jobs_for_reading
 
 from database.models.reading import Reading
-from database.models.reading_value import ReadingValue
 from database.models.reading_type import ReadingType
+from database.models.reading_value import ReadingValue
 
 
 def list_device_readings_service(db: Session):
     return list_readings_with_context(db)
 
 
-def create_device_reading_service(db: Session, device, payload):
+def _resolve_context(db: Session, device, payload):
     installation_id = None
     client_id = None
 
@@ -33,7 +33,6 @@ def create_device_reading_service(db: Session, device, payload):
 
     if plant_id is None and installation_id is not None:
         plants = get_active_plants_by_installation_id(db, installation_id)
-
         if len(plants) == 1:
             plant_id = plants[0].id
         elif len(plants) > 1:
@@ -42,16 +41,10 @@ def create_device_reading_service(db: Session, device, payload):
                 detail="More than one active plant found for installation. Automatic plant mapping is ambiguous.",
             )
 
-    reading = Reading(
-        device_id=device.id,
-        installation_id=installation_id,
-        client_id=client_id,
-        plant_id=plant_id,
-        ts=getattr(payload, "ts", None) or datetime.utcnow(),
-    )
+    return installation_id, client_id, plant_id
 
-    values = getattr(payload, "values", [])
 
+def _build_reading_values(db: Session, reading, values):
     if not values:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -85,19 +78,68 @@ def create_device_reading_service(db: Session, device, payload):
             value_text=getattr(item, "value_text", None),
             value_boolean=getattr(item, "value_boolean", None),
         )
-
         reading_values.append(rv)
 
-    reading.values = reading_values
+    if not reading_values:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="values[] is required",
+        )
 
+    return reading_values
+
+
+def _create_single_device_reading(db: Session, device, payload):
+    installation_id, client_id, plant_id = _resolve_context(db, device, payload)
+
+    reading = Reading(
+        device_id=device.id,
+        installation_id=installation_id,
+        client_id=client_id,
+        plant_id=plant_id,
+        ts=getattr(payload, "ts", None) or datetime.utcnow(),
+    )
+
+    reading.values = _build_reading_values(db, reading, getattr(payload, "values", []))
     created = create_reading(db, reading)
 
     enqueue_alert_jobs_for_reading(db, created)
 
+    return created
+
+
+def create_device_reading_service(db: Session, device, payload):
+    created = _create_single_device_reading(db, device, payload)
+
     device.last_seen_on = datetime.utcnow()
     device.status = "online"
-
     db.commit()
     db.refresh(device)
 
     return created
+
+
+def create_device_readings_batch_service(db: Session, device, payload):
+    incoming_device_id = getattr(payload, "device_id", None)
+    if incoming_device_id and incoming_device_id not in {str(device.id), device.code}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="payload.device_id does not match authenticated device",
+        )
+
+    created_items = []
+    for item in getattr(payload, "readings", []):
+        created_items.append(_create_single_device_reading(db, device, item))
+
+    device.last_seen_on = datetime.utcnow()
+    device.status = "online"
+    db.commit()
+    db.refresh(device)
+
+    return {
+        "device_id": device.id,
+        "sent_at": getattr(payload, "sent_at", None),
+        "batch_size": len(getattr(payload, "readings", [])),
+        "created_count": len(created_items),
+        "created_ids": [reading.id for reading in created_items],
+    }

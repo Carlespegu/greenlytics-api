@@ -17,7 +17,32 @@ function FilterInput({ name, value, onChange, placeholder }) {
   )
 }
 
-const EMPTY_FILTERS = { name: '', location: '', clientId: '' }
+function ToggleSwitch({ checked, onChange, label }) {
+  return (
+    <label className="flex items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={[
+          'relative inline-flex h-6 w-11 items-center rounded-full transition',
+          checked ? 'bg-slate-800' : 'bg-slate-300',
+        ].join(' ')}
+      >
+        <span
+          className={[
+            'inline-block h-5 w-5 transform rounded-full bg-white transition',
+            checked ? 'translate-x-5' : 'translate-x-1',
+          ].join(' ')}
+        />
+      </button>
+      <span>{label}</span>
+    </label>
+  )
+}
+
+const EMPTY_FILTERS = { name: '', state: '', code: '', is_active: null }
 
 export default function InstallationsPage() {
   const navigate = useNavigate()
@@ -31,7 +56,10 @@ export default function InstallationsPage() {
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS)
 
-  const activeFilterCount = useMemo(() => Object.values(filters).filter((value) => value !== '').length, [filters])
+  const activeFilterCount = useMemo(
+    () => Object.values(filters).filter((value) => value !== '' && value !== null).length,
+    [filters]
+  )
 
   useEffect(() => {
     async function load() {
@@ -49,9 +77,29 @@ export default function InstallationsPage() {
 
   useEffect(() => {
     let filtered = [...allItems]
-    if (appliedFilters.name) filtered = filtered.filter((item) => String(item.name || '').toLowerCase().includes(appliedFilters.name.toLowerCase()))
-    if (appliedFilters.location) filtered = filtered.filter((item) => String(item.location || '').toLowerCase().includes(appliedFilters.location.toLowerCase()))
-    if (appliedFilters.clientId) filtered = filtered.filter((item) => String(item.clientId || item.client?.name || '').toLowerCase().includes(appliedFilters.clientId.toLowerCase()))
+
+    if (appliedFilters.name) {
+      filtered = filtered.filter((item) =>
+        String(item.name || '').toLowerCase().includes(appliedFilters.name.toLowerCase())
+      )
+    }
+
+    if (appliedFilters.state) {
+      filtered = filtered.filter((item) =>
+        String(item.state || '').toLowerCase().includes(appliedFilters.state.toLowerCase())
+      )
+    }
+
+    if (appliedFilters.code) {
+      filtered = filtered.filter((item) =>
+        String(item.code || '').toLowerCase().includes(appliedFilters.code.toLowerCase())
+      )
+    }
+
+    if (appliedFilters.is_active !== null) {
+      filtered = filtered.filter((item) => Boolean(item.is_active) === appliedFilters.is_active)
+    }
+
     setTotal(filtered.length)
     const start = (page - 1) * pageSize
     setItems(filtered.slice(start, start + pageSize))
@@ -60,6 +108,10 @@ export default function InstallationsPage() {
   function handleFilterChange(event) {
     const { name, value } = event.target
     setFilters((prev) => ({ ...prev, [name]: value }))
+  }
+
+  function handleIsActiveChange(value) {
+    setFilters((prev) => ({ ...prev, is_active: value }))
   }
 
   function handleSearch(event) {
@@ -85,8 +137,27 @@ export default function InstallationsPage() {
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <FilterInput name="name" value={filters.name} onChange={handleFilterChange} placeholder="Nom" />
-            <FilterInput name="location" value={filters.location} onChange={handleFilterChange} placeholder="Ubicació" />
-            <FilterInput name="clientId" value={filters.clientId} onChange={handleFilterChange} placeholder="Client" />
+            <FilterInput name="state" value={filters.state} onChange={handleFilterChange} placeholder="Ubicació" />
+            <FilterInput name="code" value={filters.code} onChange={handleFilterChange} placeholder="Codi" />
+            <div className="space-y-2 text-sm text-slate-700">
+              <span className="block">Activa</span>
+              <div className="flex items-center gap-2">
+                <ToggleSwitch
+                  checked={filters.is_active === true}
+                  onChange={(checked) => handleIsActiveChange(checked ? true : null)}
+                  label={filters.is_active === true ? 'Sí' : 'Totes'}
+                />
+                {filters.is_active !== null ? (
+                  <button
+                    type="button"
+                    onClick={() => handleIsActiveChange(null)}
+                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    Reset
+                  </button>
+                ) : null}
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3">
@@ -110,23 +181,25 @@ export default function InstallationsPage() {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
-                <th className="px-3 py-3">Id</th>
                 <th className="px-3 py-3">Nom</th>
-                <th className="px-3 py-3">Client</th>
+                <th className="px-3 py-3">Code</th>
                 <th className="px-3 py-3">Ubicació</th>
+                <th className="px-3 py-3">Latitut</th>
+                <th className="px-3 py-3">Longitut</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-slate-100">
-                  <td className="px-3 py-3">{item.id || '-'}</td>
                   <td className="px-3 py-3">{item.name || '-'}</td>
-                  <td className="px-3 py-3">{item.clientId || item.client?.name || '-'}</td>
-                  <td className="px-3 py-3">{item.location || '-'}</td>
+                  <td className="px-3 py-3">{item.code || '-'}</td>
+                  <td className="px-3 py-3">{item.state || '-'}</td>
+                  <td className="px-3 py-3">{item.latitude || '-'}</td>
+                  <td className="px-3 py-3">{item.longitude || '-'}</td>
                 </tr>
               ))}
               {!isLoading && items.length === 0 ? (
-                <tr><td colSpan={4} className="px-3 py-6 text-center text-slate-500">No s’han trobat instal·lacions.</td></tr>
+                <tr><td colSpan={5} className="px-3 py-6 text-center text-slate-500">No s’han trobat instal·lacions.</td></tr>
               ) : null}
             </tbody>
           </table>
