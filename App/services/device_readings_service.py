@@ -14,8 +14,9 @@ from database.models.reading_type import ReadingType
 from database.models.reading_value import ReadingValue
 
 
-def list_device_readings_service(db: Session):
-    return list_readings_with_context(db)
+def list_device_readings_service(db: Session, current_user):
+    client_id = None if current_user.role_code.upper() == "ADMIN" else current_user.client_id
+    return list_readings_with_context(db, client_id=client_id)
 
 
 def _resolve_context(db: Session, device, payload):

@@ -1,3 +1,4 @@
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from database.models.device import Device
@@ -14,8 +15,8 @@ def create_reading(db: Session, reading: Reading):
     return reading
 
 
-def list_readings_with_context(db: Session, limit: int = 500):
-    rows = (
+def list_readings_with_context(db: Session, limit: int = 500, client_id=None):
+    query = (
         db.query(
             Reading,
             Device.name.label("device_name"),
@@ -32,9 +33,17 @@ def list_readings_with_context(db: Session, limit: int = 500):
         .outerjoin(ReadingValue, ReadingValue.reading_id == Reading.id)
         .outerjoin(ReadingType, ReadingType.id == ReadingValue.reading_type_id)
         .order_by(Reading.ts.desc())
-        .limit(limit)
-        .all()
     )
+
+    if client_id is not None:
+        query = query.filter(
+            or_(
+                Reading.client_id == client_id,
+                Installation.client_id == client_id,
+            )
+        )
+
+    rows = query.limit(limit).all()
 
     readings_map = {}
 

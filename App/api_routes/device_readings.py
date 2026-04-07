@@ -27,7 +27,7 @@ def list_device_readings(
     db: Session = Depends(get_db),
     current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
-    return list_device_readings_service(db)
+    return list_device_readings_service(db, current_user)
 
 
 @router.post("", response_model=Union[DeviceReadingResponse, DeviceReadingsBatchResponse])

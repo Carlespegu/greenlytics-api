@@ -9,9 +9,7 @@ const EMPTY_FORM = {
   mac_address: '',
   firmware_version: '',
   hardware_version: '',
-  api_key: '',
   wifi_name: '',
-  wifi_password: '',
   status: '',
   last_seen_on: '',
   is_active: true,
@@ -139,18 +137,8 @@ export default function DeviceEditModal({
             </label>
 
             <label className="space-y-2 text-sm text-slate-700">
-              <span>API key</span>
-              <input name="api_key" value={form.api_key} onChange={handleChange} className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-400" />
-            </label>
-
-            <label className="space-y-2 text-sm text-slate-700">
               <span>WiFi name</span>
               <input name="wifi_name" value={form.wifi_name} onChange={handleChange} className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-400" />
-            </label>
-
-            <label className="space-y-2 text-sm text-slate-700">
-              <span>WiFi password</span>
-              <input name="wifi_password" value={form.wifi_password} onChange={handleChange} className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-400" />
             </label>
 
             <label className="space-y-2 text-sm text-slate-700">

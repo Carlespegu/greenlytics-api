@@ -69,10 +69,7 @@ class DeviceResponse(BaseModel):
     firmware_version: Optional[str] = None
     hardware_version: Optional[str] = None
 
-    api_key: Optional[str] = None
-
     wifi_name: Optional[str] = None
-    wifi_password: Optional[str] = None
 
     status: Optional[str] = None
     last_seen_on: Optional[datetime] = None

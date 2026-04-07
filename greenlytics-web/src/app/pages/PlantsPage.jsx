@@ -110,7 +110,6 @@ export default function PlantsPage() {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
-                <th className="px-3 py-3">Id</th>
                 <th className="px-3 py-3">Nom</th>
                 <th className="px-3 py-3">Espècie</th>
                 <th className="px-3 py-3">Device</th>
