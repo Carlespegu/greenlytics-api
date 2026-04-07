@@ -13,6 +13,20 @@ def get_all_roles(db: Session):
     )
 
 
+def get_roles_by_codes(db: Session, codes: list[str]):
+    normalized_codes = [code.strip().upper() for code in codes if str(code).strip()]
+
+    return (
+        db.query(Role)
+        .filter(
+            Role.is_deleted == False,  # noqa: E712
+            Role.code.in_(normalized_codes),
+        )
+        .order_by(Role.name.asc())
+        .all()
+    )
+
+
 def get_role_by_id(db: Session, role_id: UUID):
     return (
         db.query(Role)

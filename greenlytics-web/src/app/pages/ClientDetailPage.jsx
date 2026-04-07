@@ -112,6 +112,14 @@ function UserModal({
 }) {
   if (!isOpen) return null
 
+  function getRoleLabel(role) {
+    const code = String(role?.code || '').trim().toUpperCase()
+    if (code === 'ADMIN') return t('roleAdmin')
+    if (code === 'MANAGER') return t('roleManager')
+    if (code === 'VIEWER') return t('roleViewer')
+    return role?.name || role?.code || t('role')
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
       <div className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl">
@@ -164,14 +172,14 @@ function UserModal({
 
           <Field label={t('role')} required>
             <select
-              value={form.role_id}
+              value={String(form.role_id || '')}
               onChange={(e) => setForm((prev) => ({ ...prev, role_id: e.target.value }))}
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400"
             >
               <option value="">{t('role')}</option>
               {roles.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.code === 'MANAGER' ? t('roleManager') : t('roleViewer')}
+                <option key={String(role.id)} value={String(role.id)}>
+                  {getRoleLabel(role)}
                 </option>
               ))}
             </select>
@@ -416,7 +424,7 @@ export default function ClientDetailPage() {
     setUserModalOpen(true)
   }
 
-  function openEditUserModal(item) {
+function openEditUserModal(item) {
     setUserSaveError('')
     setUserForm({
       id: item.id,
@@ -425,7 +433,7 @@ export default function ClientDetailPage() {
       first_name: item.first_name || '',
       last_name: item.last_name || '',
       password: '',
-      role_id: item.role_id || '',
+      role_id: String(item.role_id || ''),
       is_active: Boolean(item.is_active),
     })
     setUserModalOpen(true)
@@ -462,7 +470,7 @@ export default function ClientDetailPage() {
           email: userForm.email.trim(),
           password: userForm.password.trim(),
           client_id: clientId,
-          role_id: userForm.role_id,
+          role_id: String(userForm.role_id).trim(),
           first_name: userForm.first_name.trim(),
           last_name: userForm.last_name.trim() || null,
           is_active: userForm.is_active,
@@ -472,7 +480,7 @@ export default function ClientDetailPage() {
           username: userForm.username.trim(),
           email: userForm.email.trim(),
           password: userForm.password.trim() || undefined,
-          role_id: userForm.role_id,
+          role_id: String(userForm.role_id).trim(),
           first_name: userForm.first_name.trim(),
           last_name: userForm.last_name.trim() || null,
           is_active: userForm.is_active,
@@ -660,7 +668,7 @@ export default function ClientDetailPage() {
                     </thead>
                     <tbody>
                       {users.map((item) => {
-                        const role = roles.find((r) => r.id === item.role_id)
+                        const role = roles.find((r) => String(r.id) === String(item.role_id))
                         return (
                           <tr key={item.id} className="border-b border-slate-100">
                             <td className="px-3 py-3">{item.username}</td>
@@ -668,7 +676,13 @@ export default function ClientDetailPage() {
                             <td className="px-3 py-3">{item.first_name || '-'}</td>
                             <td className="px-3 py-3">{item.last_name || '-'}</td>
                             <td className="px-3 py-3">
-                              {role?.code === 'MANAGER' ? t('roleManager') : t('roleViewer')}
+                              {role?.code === 'ADMIN'
+                                ? 'Admin'
+                                : role?.code === 'MANAGER'
+                                ? t('roleManager')
+                                : role?.code === 'VIEWER'
+                                  ? t('roleViewer')
+                                  : role?.name || '-'}
                             </td>
                             <td className="px-3 py-3">{item.is_active ? t('yes') : t('no')}</td>
                             <td className="px-3 py-3 text-right">

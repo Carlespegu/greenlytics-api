@@ -9,14 +9,24 @@ from App.repositories.roles_repository import (
     get_all_roles,
     get_role_by_code,
     get_role_by_id,
+    get_roles_by_codes,
     update_role,
 )
 from App.schemas.roles import RoleCreate, RoleUpdate
 from database.models.roles import Role
 
 
-def list_roles_service(db: Session):
-    return get_all_roles(db)
+def list_roles_service(db: Session, current_user=None):
+    if current_user is None:
+        return get_all_roles(db)
+
+    role_code = (current_user.role_code or "").upper()
+    if role_code == "ADMIN":
+        return get_roles_by_codes(db, ["ADMIN", "MANAGER", "VIEWER"])
+    if role_code == "MANAGER":
+        return get_roles_by_codes(db, ["MANAGER", "VIEWER"])
+
+    return []
 
 
 def get_role_service(db: Session, role_id: UUID):

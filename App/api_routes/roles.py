@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from App.dependencies.auth import require_roles
+from App.dependencies.auth import CurrentUserContext, require_roles
 from App.schemas.roles import RoleCreate, RoleResponse, RoleUpdate
 from App.services.roles_service import (
     create_role_service,
@@ -21,9 +21,9 @@ router = APIRouter(prefix="/roles", tags=["Roles"])
 @router.get("", response_model=List[RoleResponse])
 def list_roles(
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("ADMIN")),
+    current_user: CurrentUserContext = Depends(require_roles("ADMIN", "MANAGER")),
 ):
-    return list_roles_service(db)
+    return list_roles_service(db, current_user=current_user)
 
 
 @router.get("/{role_id}", response_model=RoleResponse)
