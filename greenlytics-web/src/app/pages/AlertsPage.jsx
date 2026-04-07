@@ -15,7 +15,7 @@ const INITIAL_FILTERS = {
   channel: '',
   conditionType: '',
   recipientEmail: '',
-  isActive: '',
+  isActive: null,
 }
 
 function FilterInput({ name, value, onChange, placeholder }) {
@@ -44,6 +44,48 @@ function FilterSelect({ name, value, onChange, options }) {
         </option>
       ))}
     </select>
+  )
+}
+
+function TriStateSwitch({ value, onChange }) {
+  function handleClick() {
+    if (value === null) onChange(true)
+    else if (value === true) onChange(false)
+    else onChange(null)
+  }
+
+  const bgClass =
+    value === true
+      ? 'bg-emerald-600'
+      : value === false
+        ? 'bg-slate-500'
+        : 'bg-slate-300'
+
+  const thumbClass =
+    value === true
+      ? 'translate-x-8'
+      : value === false
+        ? 'translate-x-1'
+        : 'translate-x-4'
+
+  const label = value === true ? 'Sí' : value === false ? 'No' : 'Tots'
+
+  return (
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={value === true}
+        aria-label={`Activa: ${label}`}
+        onClick={handleClick}
+        className={`relative inline-flex h-7 w-14 items-center rounded-full transition ${bgClass}`}
+      >
+        <span
+          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${thumbClass}`}
+        />
+      </button>
+      <span className="text-sm text-slate-700">{label}</span>
+    </div>
   )
 }
 
@@ -99,7 +141,7 @@ export default function AlertsPage() {
   const [activeFilters, setActiveFilters] = useState(INITIAL_FILTERS)
 
   const activeFilterCount = useMemo(() => {
-    return Object.values(activeFilters).filter((value) => value !== '').length
+    return Object.values(activeFilters).filter((value) => value !== '' && value !== null).length
   }, [activeFilters])
 
   async function loadAlerts({
@@ -276,16 +318,13 @@ export default function AlertsPage() {
                 { value: 'BOOLEAN_EQUALS', label: 'BOOLEAN_EQUALS' },
               ]}
             />
-            <FilterSelect
-              name="isActive"
-              value={draftFilters.isActive}
-              onChange={(event) => setDraftFilters((prev) => ({ ...prev, isActive: event.target.value }))}
-              options={[
-                { value: '', label: 'Estat' },
-                { value: 'true', label: 'Activa' },
-                { value: 'false', label: 'Inactiva' },
-              ]}
-            />
+            <div className="space-y-2 text-sm text-slate-700">
+              <span className="block">Activa</span>
+              <TriStateSwitch
+                value={draftFilters.isActive}
+                onChange={(value) => setDraftFilters((prev) => ({ ...prev, isActive: value }))}
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-3">
@@ -299,8 +338,8 @@ export default function AlertsPage() {
             </button>
             <button
               type="button"
-              onClick={handleReset}
               disabled={isLoading || isSaving}
+              onClick={handleReset}
               className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Netejar filtres
@@ -309,7 +348,7 @@ export default function AlertsPage() {
         </form>
       </CollapsibleFiltersCard>
 
-      <section className="overflow-visible rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <BackofficeListHeader
           title="Llistat d'alertes"
           total={total}
@@ -321,7 +360,7 @@ export default function AlertsPage() {
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
         {success ? <p className="mt-4 text-sm text-emerald-600">{success}</p> : null}
 
-        <div className="mt-4 overflow-visible">
+        <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
@@ -340,10 +379,7 @@ export default function AlertsPage() {
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-slate-100">
-                  <td className="px-3 py-3">
-                    <div className="font-medium text-slate-900">{item.name || '-'}</div>
-                    <div className="text-xs text-slate-500">{item.channel || '-'}</div>
-                  </td>
+                  <td className="px-3 py-3">{item.name || '-'}</td>
                   <td className="px-3 py-3">{item.client_name || item.client_code || '-'}</td>
                   <td className="px-3 py-3">{item.installation_name || item.installation_code || '-'}</td>
                   <td className="px-3 py-3">{item.plant_name || item.plant_code || '-'}</td>

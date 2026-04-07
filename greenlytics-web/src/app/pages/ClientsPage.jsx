@@ -4,6 +4,7 @@ import { clientsService } from '../services/clientsService'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
+import RowActionsDropdown from '../components/RowActionsDropdown'
 
 function FilterInput({ value, onChange, placeholder, name }) {
   return (
@@ -14,6 +15,48 @@ function FilterInput({ value, onChange, placeholder, name }) {
       placeholder={placeholder}
       className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400"
     />
+  )
+}
+
+function TriStateSwitch({ value, onChange }) {
+  function handleClick() {
+    if (value === null) onChange(true)
+    else if (value === true) onChange(false)
+    else onChange(null)
+  }
+
+  const bgClass =
+    value === true
+      ? 'bg-emerald-600'
+      : value === false
+        ? 'bg-slate-500'
+        : 'bg-slate-300'
+
+  const thumbClass =
+    value === true
+      ? 'translate-x-8'
+      : value === false
+        ? 'translate-x-1'
+        : 'translate-x-4'
+
+  const label = value === true ? 'Sí' : value === false ? 'No' : 'Tots'
+
+  return (
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={value === true}
+        aria-label={`Actiu: ${label}`}
+        onClick={handleClick}
+        className={`relative inline-flex h-7 w-14 items-center rounded-full transition ${bgClass}`}
+      >
+        <span
+          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${thumbClass}`}
+        />
+      </button>
+      <span className="text-sm text-slate-700">{label}</span>
+    </div>
   )
 }
 
@@ -33,10 +76,13 @@ export default function ClientsPage() {
     city: '',
     country: '',
     clientType: '',
-    isActive: '',
+    isActive: null,
   })
 
-  const activeFilterCount = useMemo(() => Object.values(filters).filter((value) => value !== '').length, [filters])
+  const activeFilterCount = useMemo(
+    () => Object.values(filters).filter((value) => value !== '' && value !== null).length,
+    [filters]
+  )
 
   async function loadClients({ targetPage = page, targetPageSize = pageSize, targetFilters = filters } = {}) {
     setIsLoading(true)
@@ -75,7 +121,7 @@ export default function ClientsPage() {
 
   function handleClearFilters() {
     const emptyFilters = {
-      code: '', name: '', tradeName: '', email: '', city: '', country: '', clientType: '', isActive: '',
+      code: '', name: '', tradeName: '', email: '', city: '', country: '', clientType: '', isActive: null,
     }
     setFilters(emptyFilters)
     loadClients({ targetPage: 1, targetFilters: emptyFilters })
@@ -98,16 +144,13 @@ export default function ClientsPage() {
             <FilterInput value={filters.city} onChange={handleFilterChange} placeholder="Ciutat" name="city" />
             <FilterInput value={filters.country} onChange={handleFilterChange} placeholder="País" name="country" />
             <FilterInput value={filters.clientType} onChange={handleFilterChange} placeholder="Tipus client" name="clientType" />
-            <select
-              name="isActive"
-              value={filters.isActive}
-              onChange={handleFilterChange}
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400"
-            >
-              <option value="">Actiu: tots</option>
-              <option value="true">Sí</option>
-              <option value="false">No</option>
-            </select>
+            <div className="space-y-2 text-sm text-slate-700">
+              <span className="block">Actiu</span>
+              <TriStateSwitch
+                value={filters.isActive}
+                onChange={(value) => setFilters((prev) => ({ ...prev, isActive: value }))}
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-3">
@@ -121,13 +164,13 @@ export default function ClientsPage() {
         </form>
       </CollapsibleFiltersCard>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-visible">
         <BackofficeListHeader title="Llistat de clients" total={total} showNewButton onNew={() => navigate('/clients/new')} />
 
         {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4 overflow-visible">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
@@ -152,9 +195,15 @@ export default function ClientsPage() {
                   <td className="px-3 py-3">{item.country || '-'}</td>
                   <td className="px-3 py-3">{item.is_active ? 'Sí' : 'No'}</td>
                   <td className="px-3 py-3 text-right">
-                    <button onClick={() => navigate(`/clients/${item.id}`)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
-                      Obrir
-                    </button>
+                    <RowActionsDropdown
+                      actions={[
+                        {
+                          key: 'open',
+                          label: 'Obrir',
+                          onClick: () => navigate(`/clients/${item.id}`),
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

@@ -17,28 +17,46 @@ function FilterInput({ name, value, onChange, placeholder }) {
   )
 }
 
-function ToggleSwitch({ checked, onChange, label }) {
+function TriStateSwitch({ value, onChange }) {
+  function handleClick() {
+    if (value === null) onChange(true)
+    else if (value === true) onChange(false)
+    else onChange(null)
+  }
+
+  const bgClass =
+    value === true
+      ? 'bg-emerald-600'
+      : value === false
+        ? 'bg-slate-500'
+        : 'bg-slate-300'
+
+  const thumbClass =
+    value === true
+      ? 'translate-x-8'
+      : value === false
+        ? 'translate-x-1'
+        : 'translate-x-4'
+
+  const label =
+    value === true ? 'Sí' : value === false ? 'No' : 'Tots'
+
   return (
-    <label className="flex items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
+    <div className="flex items-center gap-3">
       <button
         type="button"
         role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={[
-          'relative inline-flex h-6 w-11 items-center rounded-full transition',
-          checked ? 'bg-slate-800' : 'bg-slate-300',
-        ].join(' ')}
+        aria-checked={value === true}
+        aria-label={`Actiu: ${label}`}
+        onClick={handleClick}
+        className={`relative inline-flex h-7 w-14 items-center rounded-full transition ${bgClass}`}
       >
         <span
-          className={[
-            'inline-block h-5 w-5 transform rounded-full bg-white transition',
-            checked ? 'translate-x-5' : 'translate-x-1',
-          ].join(' ')}
+          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${thumbClass}`}
         />
       </button>
-      <span>{label}</span>
-    </label>
+      <span className="text-sm text-slate-700">{label}</span>
+    </div>
   )
 }
 
@@ -72,6 +90,7 @@ export default function InstallationsPage() {
         setIsLoading(false)
       }
     }
+
     load()
   }, [])
 
@@ -110,10 +129,6 @@ export default function InstallationsPage() {
     setFilters((prev) => ({ ...prev, [name]: value }))
   }
 
-  function handleIsActiveChange(value) {
-    setFilters((prev) => ({ ...prev, is_active: value }))
-  }
-
   function handleSearch(event) {
     event.preventDefault()
     setPage(1)
@@ -139,32 +154,29 @@ export default function InstallationsPage() {
             <FilterInput name="name" value={filters.name} onChange={handleFilterChange} placeholder="Nom" />
             <FilterInput name="state" value={filters.state} onChange={handleFilterChange} placeholder="Ubicació" />
             <FilterInput name="code" value={filters.code} onChange={handleFilterChange} placeholder="Codi" />
+
             <div className="space-y-2 text-sm text-slate-700">
-              <span className="block">Activa</span>
-              <div className="flex items-center gap-2">
-                <ToggleSwitch
-                  checked={filters.is_active === true}
-                  onChange={(checked) => handleIsActiveChange(checked ? true : null)}
-                  label={filters.is_active === true ? 'Sí' : 'Totes'}
-                />
-                {filters.is_active !== null ? (
-                  <button
-                    type="button"
-                    onClick={() => handleIsActiveChange(null)}
-                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                  >
-                    Reset
-                  </button>
-                ) : null}
-              </div>
+              <span className="block">Actiu</span>
+              <TriStateSwitch
+                value={filters.is_active}
+                onChange={(value) => setFilters((prev) => ({ ...prev, is_active: value }))}
+              />
             </div>
           </div>
 
           <div className="flex justify-end gap-3">
-            <button type="submit" className="rounded-xl px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: 'var(--brand-primary)' }}>
+            <button
+              type="submit"
+              className="rounded-xl px-4 py-2 text-sm font-medium text-white"
+              style={{ backgroundColor: 'var(--brand-primary)' }}
+            >
               Cercar
             </button>
-            <button type="button" onClick={handleClear} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            <button
+              type="button"
+              onClick={handleClear}
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
               Netejar filtres
             </button>
           </div>
@@ -172,7 +184,12 @@ export default function InstallationsPage() {
       </CollapsibleFiltersCard>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <BackofficeListHeader title="Llistat d’instal·lacions" total={total} showNewButton onNew={() => navigate('/installations/new')} />
+        <BackofficeListHeader
+          title="Llistat d’instal·lacions"
+          total={total}
+          showNewButton
+          onNew={() => navigate('/installations/new')}
+        />
 
         {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
@@ -198,8 +215,13 @@ export default function InstallationsPage() {
                   <td className="px-3 py-3">{item.longitude || '-'}</td>
                 </tr>
               ))}
+
               {!isLoading && items.length === 0 ? (
-                <tr><td colSpan={5} className="px-3 py-6 text-center text-slate-500">No s’han trobat instal·lacions.</td></tr>
+                <tr>
+                  <td colSpan={5} className="px-3 py-6 text-center text-slate-500">
+                    No s’han trobat instal·lacions.
+                  </td>
+                </tr>
               ) : null}
             </tbody>
           </table>

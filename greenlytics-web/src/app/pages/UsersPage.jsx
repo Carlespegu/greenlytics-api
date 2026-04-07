@@ -17,6 +17,48 @@ function FilterInput({ value, onChange, placeholder, name }) {
   )
 }
 
+function TriStateSwitch({ value, onChange, trueLabel, falseLabel, emptyLabel, fieldLabel }) {
+  function handleClick() {
+    if (value === null) onChange(true)
+    else if (value === true) onChange(false)
+    else onChange(null)
+  }
+
+  const bgClass =
+    value === true
+      ? 'bg-emerald-600'
+      : value === false
+        ? 'bg-slate-500'
+        : 'bg-slate-300'
+
+  const thumbClass =
+    value === true
+      ? 'translate-x-8'
+      : value === false
+        ? 'translate-x-1'
+        : 'translate-x-4'
+
+  const label = value === true ? trueLabel : value === false ? falseLabel : emptyLabel
+
+  return (
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={value === true}
+        aria-label={`${fieldLabel}: ${label}`}
+        onClick={handleClick}
+        className={`relative inline-flex h-7 w-14 items-center rounded-full transition ${bgClass}`}
+      >
+        <span
+          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${thumbClass}`}
+        />
+      </button>
+      <span className="text-sm text-slate-700">{label}</span>
+    </div>
+  )
+}
+
 function resolveRoleLabel(item, t) {
   const roleCode = (item.role_code || '').toUpperCase()
 
@@ -39,11 +81,11 @@ export default function UsersPage() {
     email: '',
     firstName: '',
     lastName: '',
-    isActive: '',
+    isActive: null,
   })
 
   const activeFilterCount = useMemo(
-    () => Object.values(filters).filter((value) => value !== '').length,
+    () => Object.values(filters).filter((value) => value !== '' && value !== null).length,
     [filters],
   )
 
@@ -90,7 +132,7 @@ export default function UsersPage() {
       email: '',
       firstName: '',
       lastName: '',
-      isActive: '',
+      isActive: null,
     }
 
     setFilters(emptyFilters)
@@ -131,16 +173,17 @@ export default function UsersPage() {
               placeholder={t('lastName')}
               name="lastName"
             />
-            <select
-              name="isActive"
-              value={filters.isActive}
-              onChange={handleFilterChange}
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400"
-            >
-              <option value="">{t('active')}: tots</option>
-              <option value="true">{t('yes')}</option>
-              <option value="false">{t('no')}</option>
-            </select>
+            <div className="space-y-2 text-sm text-slate-700">
+              <span className="block">{t('active')}</span>
+              <TriStateSwitch
+                value={filters.isActive}
+                onChange={(value) => setFilters((prev) => ({ ...prev, isActive: value }))}
+                trueLabel={t('yes')}
+                falseLabel={t('no')}
+                emptyLabel="Tots"
+                fieldLabel={t('active')}
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-3">
