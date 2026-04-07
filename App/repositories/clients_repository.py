@@ -5,13 +5,13 @@ from sqlalchemy.orm import Session
 from database.models.clients import Client
 
 
-def get_all_clients(db: Session):
-    return (
-        db.query(Client)
-        .filter(Client.is_deleted == False)  # noqa: E712
-        .order_by(Client.name.asc())
-        .all()
-    )
+def get_all_clients(db: Session, client_id: UUID | None = None):
+    query = db.query(Client).filter(Client.is_deleted == False)  # noqa: E712
+
+    if client_id is not None:
+        query = query.filter(Client.id == client_id)
+
+    return query.order_by(Client.name.asc()).all()
 
 
 def get_client_by_id(db: Session, client_id: UUID):
@@ -84,6 +84,9 @@ def update_client(db: Session, client: Client):
 
 def search_clients(db: Session, payload):
     query = db.query(Client).filter(Client.is_deleted == False)  # noqa: E712
+
+    if getattr(payload, "client_id", None) and payload.client_id.filter_value:
+        query = query.filter(Client.id == payload.client_id.filter_value)
 
     if getattr(payload, "code", None) and payload.code.filter_value:
         query = query.filter(Client.code.ilike(f"%{payload.code.filter_value}%"))

@@ -194,7 +194,7 @@ export default function AlertDetailPage() {
 
         if (!Array.isArray(readingTypesData) || readingTypesData.length === 0) {
           setReadingTypesLoadError(
-            "No s'han pogut carregar els reading types des de l'API. Pots informar el Reading type ID manualment."
+            "No s'han pogut carregar els reading types des de l'API."
           )
         }
       } catch (error) {

@@ -8,6 +8,7 @@ from App.schemas.users_search import (
     PaginationParams,
     SortingParam,
     StringFilter,
+    UUIDFilter,
 )
 
 
@@ -25,6 +26,7 @@ class ClientSearchRequest(BaseModel):
     country: Optional[StringFilter] = None
     client_type: Optional[StringFilter] = None
     is_active: Optional[BooleanFilter] = None
+    client_id: Optional[UUIDFilter] = None
 
 
 class ClientSearchResponse(BaseModel):

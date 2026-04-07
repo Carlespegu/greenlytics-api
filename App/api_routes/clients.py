@@ -22,17 +22,21 @@ router = APIRouter(prefix="/clients", tags=["Clients"])
 @router.get("", response_model=List[ClientResponse])
 def list_clients(
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("ADMIN")),
+    current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
-    return list_clients_service(db)
+    effective_client_id = None if current_user.role_code.upper() == "ADMIN" else current_user.client_id
+    return list_clients_service(db, client_id=effective_client_id)
 
 
 @router.post("/search", response_model=ClientSearchResponse)
 def search_clients(
     payload: ClientSearchRequest,
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("ADMIN")),
+    current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
+    if current_user.role_code.upper() != "ADMIN":
+        payload.client_id = {"filter_value": current_user.client_id, "comparator": "equals"}  # type: ignore
+
     return search_clients_service(db, payload)
 
 
@@ -40,7 +44,7 @@ def search_clients(
 def get_client(
     client_id: UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
     ensure_client_scope(current_user, client_id)
     return get_client_service(db, client_id)

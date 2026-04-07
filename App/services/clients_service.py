@@ -20,8 +20,8 @@ from App.schemas.clients import ClientCreate, ClientUpdate
 from database.models.clients import Client
 
 
-def list_clients_service(db: Session):
-    return get_all_clients(db)
+def list_clients_service(db: Session, client_id: UUID | None = None):
+    return get_all_clients(db, client_id=client_id)
 
 
 def search_clients_service(db: Session, payload):

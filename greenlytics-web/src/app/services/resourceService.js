@@ -9,18 +9,19 @@ function normalizeList(payload) {
 }
 
 function buildAlertFromReading(reading) {
-  const humidity = Number(reading.humidity ?? reading.humAir ?? reading.soilPercent)
-  const temperature = Number(reading.temperature ?? reading.tempC)
-  const light = Number(reading.light ?? reading.ldrRaw)
+  const soilPercent = Number(reading.soil_percent ?? reading.soilPercent)
+  const humidity = Number(reading.hum_air ?? reading.humidity ?? reading.humAir)
+  const temperature = Number(reading.temp_c ?? reading.temperature ?? reading.tempC)
+  const light = Number(reading.ldr_raw ?? reading.light ?? reading.ldrRaw)
 
   let level = 'info'
   let title = 'Lectura registrada'
   let message = 'Lectura registrada correctament.'
 
-  if (Number.isFinite(humidity) && humidity <= 20) {
+  if (Number.isFinite(soilPercent) && soilPercent <= 20) {
     level = 'high'
     title = 'Humitat baixa'
-    message = `Humitat detectada massa baixa (${humidity}).`
+    message = `Humitat detectada massa baixa (${soilPercent}).`
   } else if (Number.isFinite(temperature) && temperature >= 35) {
     level = 'medium'
     title = 'Temperatura alta'
@@ -39,7 +40,7 @@ function buildAlertFromReading(reading) {
     message,
     deviceId: reading.deviceId || reading.device_id || '',
     deviceName: reading.deviceName || reading.device_name || '',
-    created_at: reading.readAt || reading.recorded_at || reading.created_at || reading.timestamp,
+    created_at: reading.ts || reading.created_on || reading.created_at || reading.timestamp,
   }
 }
 
@@ -60,7 +61,7 @@ export const resourceService = {
   },
 
   async listReadings() {
-    const payload = await api.get('/device-readings')
+    const payload = await api.get('/readings')
     return normalizeList(payload)
   },
 

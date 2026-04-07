@@ -14,6 +14,8 @@ from App.api_routes.health import router as health_router
 from App.api_routes.installation_devices import router as installation_devices_router
 from App.api_routes.installations import router as installations_router
 from App.api_routes.plants import router as plants_router
+from App.api_routes.reading_types import router as reading_types_router
+from App.api_routes.readings import router as readings_router
 from App.api_routes.roles import router as roles_router
 from App.api_routes.users import router as users_router
 from App.core.config import settings
@@ -50,7 +52,9 @@ app.include_router(device_types_router)
 app.include_router(devices_router)
 app.include_router(installation_devices_router)
 app.include_router(plants_router)
+app.include_router(reading_types_router)
 app.include_router(device_readings_router)
+app.include_router(readings_router)
 app.include_router(alerts_router)
 app.include_router(dashboard_router)
 

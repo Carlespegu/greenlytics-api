@@ -209,14 +209,14 @@ export default function ReadingsPage() {
             <tbody>
               {items.map((item, index) => (
                 <tr key={`${item.id}-${index}`} className="border-b border-slate-100">
-                  <td className="px-3 py-3">{formatDate(item.created_at)}</td>
+                  <td className="px-3 py-3">{formatDate(item.ts || item.created_on || item.created_at)}</td>
                   <td className="px-3 py-3">{item.device_name || '-'}</td>
                   <td className="px-3 py-3">{item.installation_name || '-'}</td>
                   <td className="px-3 py-3">{item.status || '-'}</td>
-                  <td className="px-3 py-3">{item.temperature ?? '-'}</td>
-                  <td className="px-3 py-3">{item.humidity ?? '-'}</td>
-                  <td className="px-3 py-3">{item.light ?? '-'}</td>
-                  <td className="px-3 py-3">{item.humudity_soil ?? '-'}</td>
+                  <td className="px-3 py-3">{item.temp_c ?? item.temperature ?? '-'}</td>
+                  <td className="px-3 py-3">{item.hum_air ?? item.humidity ?? '-'}</td>
+                  <td className="px-3 py-3">{item.ldr_raw ?? item.light ?? '-'}</td>
+                  <td className="px-3 py-3">{item.soil_percent ?? item.humudity_soil ?? '-'}</td>
                   <td className="px-3 py-3">{item.rain ?? '-'}</td>
                 </tr>
               ))}

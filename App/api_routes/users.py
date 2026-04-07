@@ -29,7 +29,7 @@ def list_users(
     first_name: Optional[str] = Query(None),
     last_name: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
     effective_client_id = client_id
     if current_user.role_code.upper() != "ADMIN":
@@ -50,7 +50,7 @@ def list_users(
 def search_users(
     payload: UserSearchRequest,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
     if current_user.role_code.upper() != "ADMIN":
         payload.client_id = {"filter_value": current_user.client_id, "comparator": "equals"}  # type: ignore
@@ -62,7 +62,7 @@ def search_users(
 def get_user(
     user_id: UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
     user = get_user_service(db, user_id)
     ensure_client_scope(current_user, user.client_id)
