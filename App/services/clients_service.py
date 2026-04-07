@@ -13,9 +13,11 @@ from App.repositories.clients_repository import (
     get_client_by_email,
     get_client_by_id,
     get_client_by_tax_id,
+    search_client_combo,
     search_clients,
     update_client,
 )
+from App.schemas.clients_combo import ClientComboSearchRequest
 from App.schemas.clients import ClientCreate, ClientUpdate
 from database.models.clients import Client
 
@@ -32,6 +34,15 @@ def search_clients_service(db: Session, payload):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+
+
+def search_client_combo_service(db: Session, payload: ClientComboSearchRequest):
+    return search_client_combo(
+        db,
+        query_text=payload.query,
+        page=payload.page,
+        page_size=payload.page_size,
+    )
 
 
 def get_client_service(db: Session, client_id: UUID):

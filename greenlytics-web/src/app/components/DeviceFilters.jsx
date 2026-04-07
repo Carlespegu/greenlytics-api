@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { clientsService } from '../services/clientsService'
 
 function FilterInput({ name, value, onChange, placeholder, disabled = false }) {
   return (
@@ -64,14 +65,207 @@ const EMPTY_FILTERS = {
   serial_number: '',
   description: '',
   device_type_id: '',
+  client_ids: [],
+  client_items: [],
   status: '',
   is_active: null,
+}
+
+function mergeUniqueById(items = []) {
+  const seen = new Map()
+
+  for (const item of items) {
+    if (!item?.id) continue
+    seen.set(item.id, item)
+  }
+
+  return Array.from(seen.values())
+}
+
+function ClientMultiSelectFilter({ selectedItems = [], onChange, disabled = false }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [options, setOptions] = useState([])
+  const [total, setTotal] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+  const cacheRef = useRef(new Map())
+
+  const normalizedQuery = useMemo(() => searchQuery.trim().toLowerCase(), [searchQuery])
+
+  function applyCacheEntry(entry) {
+    setOptions(entry?.items || [])
+    setTotal(entry?.total || 0)
+  }
+
+  async function loadQueryPage(query, page = 1) {
+    const key = query.trim().toLowerCase()
+    const cachedEntry = cacheRef.current.get(key)
+
+    if (cachedEntry?.pagesLoaded?.has(page)) {
+      applyCacheEntry(cachedEntry)
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const payload = await clientsService.searchClientOptions({
+        query,
+        page,
+        pageSize: 10,
+      })
+
+      const previousItems = page === 1 ? [] : (cachedEntry?.items || [])
+      const nextItems = mergeUniqueById([...previousItems, ...(payload.items || [])])
+      const pagesLoaded = new Set(cachedEntry?.pagesLoaded || [])
+      pagesLoaded.add(page)
+
+      const nextEntry = {
+        items: nextItems,
+        total: payload.total || 0,
+        pagesLoaded,
+      }
+
+      cacheRef.current.set(key, nextEntry)
+      applyCacheEntry(nextEntry)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!isOpen || disabled) return
+    loadQueryPage(searchQuery, 1)
+  }, [disabled, isOpen, searchQuery])
+
+  function toggleOption(option) {
+    const exists = selectedItems.some((item) => item.id === option.id)
+    const nextItems = exists
+      ? selectedItems.filter((item) => item.id !== option.id)
+      : [...selectedItems, option]
+
+    onChange(mergeUniqueById(nextItems))
+  }
+
+  async function handleLoadMore() {
+    const cacheEntry = cacheRef.current.get(normalizedQuery)
+    const loadedCount = cacheEntry?.items?.length || 0
+
+    if (loadedCount >= (cacheEntry?.total || 0)) return
+
+    const nextPage = (cacheEntry?.pagesLoaded?.size || 0) + 1
+    await loadQueryPage(searchQuery, nextPage)
+  }
+
+  const selectedLabel = selectedItems.length
+    ? `${selectedItems.length} client${selectedItems.length === 1 ? '' : 's'} seleccionats`
+    : 'Clients: tots'
+
+  return (
+    <div className="space-y-2 text-sm text-slate-700">
+      <span className="block">Clients</span>
+      <div className="relative">
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="flex w-full items-center justify-between rounded-xl border border-slate-300 bg-white px-4 py-3 text-left text-sm outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50"
+        >
+          <span className="truncate">{selectedLabel}</span>
+          <span className="text-slate-400">{isOpen ? '▲' : '▼'}</span>
+        </button>
+
+        {isOpen ? (
+          <div className="absolute z-30 mt-2 w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Buscar client..."
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400"
+            />
+
+            {selectedItems.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {selectedItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => toggleOption(item)}
+                    className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="mt-3 max-h-64 space-y-2 overflow-y-auto">
+              {options.map((item) => {
+                const checked = selectedItems.some((selected) => selected.id === item.id)
+
+                return (
+                  <label
+                    key={item.id}
+                    className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleOption(item)}
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-slate-800">
+                        {item.name}
+                      </span>
+                      <span className="block truncate text-xs text-slate-500">
+                        {item.code}
+                      </span>
+                    </span>
+                  </label>
+                )
+              })}
+
+              {!isLoading && options.length === 0 ? (
+                <p className="px-3 py-2 text-sm text-slate-500">No s&apos;han trobat clients.</p>
+              ) : null}
+            </div>
+
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  onChange([])
+                  setSearchQuery('')
+                }}
+                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Netejar selecció
+              </button>
+
+              {options.length < total ? (
+                <button
+                  type="button"
+                  onClick={handleLoadMore}
+                  disabled={isLoading}
+                  className="rounded-xl px-3 py-2 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{ backgroundColor: 'var(--brand-primary)' }}
+                >
+                  {isLoading ? 'Carregant...' : 'Carregar més'}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
 }
 
 export default function DeviceFilters({
   initialFilters,
   onSearch,
   onReset,
+  showClientFilter = false,
   disabled = false,
 }) {
   const [filters, setFilters] = useState(initialFilters ?? EMPTY_FILTERS)
@@ -136,6 +330,20 @@ export default function DeviceFilters({
           placeholder="Tipus dispositiu (ID)"
           disabled={disabled}
         />
+
+        {showClientFilter ? (
+          <ClientMultiSelectFilter
+            selectedItems={filters.client_items ?? []}
+            onChange={(items) =>
+              setFilters((prev) => ({
+                ...prev,
+                client_items: items,
+                client_ids: items.map((item) => item.id),
+              }))
+            }
+            disabled={disabled}
+          />
+        ) : null}
 
         <select
           name="status"

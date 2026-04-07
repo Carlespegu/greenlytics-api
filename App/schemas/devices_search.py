@@ -1,4 +1,5 @@
 from typing import List, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -21,6 +22,7 @@ class DeviceSearchRequest(BaseModel):
     wifi_name: Optional[StringFilter] = None
     status: Optional[StringFilter] = None
     is_active: Optional[BooleanFilter] = None
+    client_ids: Optional[List[UUID]] = None
 
 
 class DeviceSearchResponse(BaseModel):

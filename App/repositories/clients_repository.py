@@ -135,3 +135,30 @@ def search_clients(db: Session, payload):
         "page": page,
         "page_size": page_size,
     }
+
+
+def search_client_combo(db: Session, query_text: str | None = None, page: int = 1, page_size: int = 10):
+    query = db.query(Client).filter(Client.is_deleted == False)  # noqa: E712
+
+    safe_query = (query_text or "").strip()
+    if safe_query:
+        ilike_value = f"%{safe_query}%"
+        query = query.filter(
+            (Client.name.ilike(ilike_value)) |
+            (Client.code.ilike(ilike_value))
+        )
+
+    total = query.count()
+    items = (
+        query.order_by(Client.name.asc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }

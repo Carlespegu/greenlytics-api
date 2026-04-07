@@ -1,8 +1,10 @@
 from uuid import UUID
-from sqlalchemy import func
+from sqlalchemy import and_, exists, func
 from sqlalchemy.orm import Session
 
 from database.models.device import Device
+from database.models.installation import Installation
+from database.models.installation_device import InstallationDevice
 
 
 def get_all_devices(db: Session):
@@ -82,6 +84,19 @@ def _apply_uuid_filter(query, column, filter_obj):
 
 def search_devices(db: Session, payload):
     query = db.query(Device).filter(Device.is_deleted == False)  # noqa: E712
+
+    if payload.client_ids:
+        query = query.filter(
+            exists().where(
+                and_(
+                    InstallationDevice.device_id == Device.id,
+                    InstallationDevice.is_active == True,  # noqa: E712
+                    InstallationDevice.installation_id == Installation.id,
+                    Installation.client_id.in_(payload.client_ids),
+                    Installation.is_deleted == False,  # noqa: E712
+                )
+            )
+        )
 
     if payload.device_type_id is not None:
         query = _apply_uuid_filter(query, Device.device_type_id, payload.device_type_id)

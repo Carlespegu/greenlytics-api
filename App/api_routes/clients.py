@@ -5,12 +5,14 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from App.dependencies.auth import ensure_client_scope, get_current_active_user, require_roles
+from App.schemas.clients_combo import ClientComboSearchRequest, ClientComboSearchResponse
 from App.schemas.clients import ClientCreate, ClientResponse, ClientUpdate
 from App.schemas.clients_search import ClientSearchRequest, ClientSearchResponse
 from App.services.clients_service import (
     create_client_service,
     get_client_service,
     list_clients_service,
+    search_client_combo_service,
     search_clients_service,
     update_client_service,
 )
@@ -38,6 +40,15 @@ def search_clients(
         payload.client_id = {"filter_value": current_user.client_id, "comparator": "equals"}  # type: ignore
 
     return search_clients_service(db, payload)
+
+
+@router.post("/search-combo", response_model=ClientComboSearchResponse)
+def search_clients_combo(
+    payload: ClientComboSearchRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles("ADMIN")),
+):
+    return search_client_combo_service(db, payload)
 
 
 @router.get("/{client_id}", response_model=ClientResponse)

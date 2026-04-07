@@ -6,6 +6,7 @@ import BackofficeListHeader from '../components/BackofficeListHeader'
 import DeviceFilters from '../components/DeviceFilters'
 import DeviceEditModal from '../components/DeviceEditModal'
 import RowActionsDropdown from '../components/RowActionsDropdown'
+import { useAuth } from '../context/AuthContext'
 import { devicesService } from '../services/devicesService'
 
 function formatDate(value) {
@@ -38,12 +39,15 @@ const EMPTY_FILTERS = {
   serial_number: '',
   description: '',
   device_type_id: '',
+  client_ids: [],
+  client_items: [],
   status: '',
   is_active: null,
 }
 
 export default function DevicesPage() {
   const navigate = useNavigate()
+  const { roleCode } = useAuth()
   const [items, setItems] = useState([])
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -57,7 +61,16 @@ export default function DevicesPage() {
   const [activeFilters, setActiveFilters] = useState(EMPTY_FILTERS)
 
   const activeFilterCount = useMemo(() => {
-    return Object.values(activeFilters).filter((value) => value !== '' && value !== null).length
+    return [
+      activeFilters.code,
+      activeFilters.name,
+      activeFilters.serial_number,
+      activeFilters.description,
+      activeFilters.device_type_id,
+      activeFilters.status,
+      activeFilters.is_active,
+      Array.isArray(activeFilters.client_ids) && activeFilters.client_ids.length > 0 ? '__clients__' : null,
+    ].filter((value) => value !== '' && value !== null).length
   }, [activeFilters])
 
   async function loadDevices({
@@ -179,6 +192,7 @@ export default function DevicesPage() {
           initialFilters={activeFilters}
           onSearch={handleSearch}
           onReset={handleReset}
+          showClientFilter={roleCode?.toUpperCase() === 'ADMIN'}
           disabled={isLoading || isSaving}
         />
       </CollapsibleFiltersCard>

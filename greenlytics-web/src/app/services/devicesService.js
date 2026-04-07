@@ -15,6 +15,10 @@ function normalizeSearchPayload(filters = {}, pagination = {}) {
     }
   }
 
+  if (Array.isArray(filters.client_ids) && filters.client_ids.length > 0) {
+    payload.client_ids = filters.client_ids
+  }
+
   if (filters.code) {
     payload.code = {
       filter_value: filters.code,
@@ -50,9 +54,9 @@ function normalizeSearchPayload(filters = {}, pagination = {}) {
     }
   }
 
-  if (filters.is_active !== '') {
+  if (filters.is_active !== '' && filters.is_active !== null && filters.is_active !== undefined) {
     payload.is_active = {
-      filter_value: filters.is_active === 'true',
+      filter_value: Boolean(filters.is_active),
       comparator: 'equals',
     }
   }

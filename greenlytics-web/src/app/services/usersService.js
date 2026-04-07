@@ -39,8 +39,8 @@ export const usersService = {
     if (filters.lastName) {
       body.last_name = { filter_value: filters.lastName, comparator: 'contains' }
     }
-    if (filters.isActive !== '') {
-      body.is_active = { filter_value: filters.isActive === 'true', comparator: 'equals' }
+    if (filters.isActive !== '' && filters.isActive !== null && filters.isActive !== undefined) {
+      body.is_active = { filter_value: Boolean(filters.isActive), comparator: 'equals' }
     }
 
     return api.post('/users/search', body)
