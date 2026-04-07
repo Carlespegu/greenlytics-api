@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from App.core.device_type_i18n import localize_device_type_item, localize_device_type_items
 from App.repositories.device_types_repository import (
     create_device_type,
     get_all_device_types,
@@ -18,13 +19,15 @@ from App.schemas.device_types import DeviceTypeCreate, DeviceTypeUpdate
 from database.models.device_type import DeviceType
 
 
-def list_device_types_service(db: Session):
-    return get_all_device_types(db)
+def list_device_types_service(db: Session, language: str = "ca"):
+    return localize_device_type_items(get_all_device_types(db), language)
 
 
-def search_device_types_service(db: Session, payload):
+def search_device_types_service(db: Session, payload, language: str = "ca"):
     try:
-        return search_device_types(db, payload)
+        response = search_device_types(db, payload)
+        response["items"] = localize_device_type_items(response.get("items", []), language)
+        return response
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -32,23 +35,25 @@ def search_device_types_service(db: Session, payload):
         ) from exc
 
 
-def search_device_type_combo_service(db: Session, payload: DeviceTypeComboSearchRequest):
-    return search_device_type_combo(
+def search_device_type_combo_service(db: Session, payload: DeviceTypeComboSearchRequest, language: str = "ca"):
+    response = search_device_type_combo(
         db,
         query_text=payload.query,
         page=payload.page,
         page_size=payload.page_size,
     )
+    response["items"] = localize_device_type_items(response.get("items", []), language)
+    return response
 
 
-def get_device_type_service(db: Session, device_type_id: UUID):
+def get_device_type_service(db: Session, device_type_id: UUID, language: str = "ca"):
     device_type = get_device_type_by_id(db, device_type_id)
     if not device_type:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Device type not found",
         )
-    return device_type
+    return localize_device_type_item(device_type, language)
 
 
 def create_device_type_service(db: Session, payload: DeviceTypeCreate):

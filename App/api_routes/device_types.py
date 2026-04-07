@@ -1,9 +1,10 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
+from App.core.device_type_i18n import normalize_language
 from App.dependencies.auth import require_roles
 from App.schemas.device_types_combo import DeviceTypeComboSearchRequest, DeviceTypeComboSearchResponse
 from App.schemas.device_types import DeviceTypeCreate, DeviceTypeResponse, DeviceTypeUpdate
@@ -24,37 +25,45 @@ router = APIRouter(prefix="/device-types", tags=["Device Types"])
 
 @router.get("", response_model=List[DeviceTypeResponse])
 def list_device_types(
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles("ADMIN")),
 ):
-    return list_device_types_service(db)
+    language = normalize_language(request.headers.get("Accept-Language"))
+    return list_device_types_service(db, language=language)
 
 
 @router.post("/search", response_model=DeviceTypeSearchResponse)
 def search_device_types(
     payload: DeviceTypeSearchRequest,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles("ADMIN")),
 ):
-    return search_device_types_service(db, payload)
+    language = normalize_language(request.headers.get("Accept-Language"))
+    return search_device_types_service(db, payload, language=language)
 
 
 @router.post("/search-combo", response_model=DeviceTypeComboSearchResponse)
 def search_device_types_combo(
     payload: DeviceTypeComboSearchRequest,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles("ADMIN")),
 ):
-    return search_device_type_combo_service(db, payload)
+    language = normalize_language(request.headers.get("Accept-Language"))
+    return search_device_type_combo_service(db, payload, language=language)
 
 
 @router.get("/{device_type_id}", response_model=DeviceTypeResponse)
 def get_device_type(
     device_type_id: UUID,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(require_roles("ADMIN")),
 ):
-    return get_device_type_service(db, device_type_id)
+    language = normalize_language(request.headers.get("Accept-Language"))
+    return get_device_type_service(db, device_type_id, language=language)
 
 
 @router.post("", response_model=DeviceTypeResponse, status_code=status.HTTP_201_CREATED)

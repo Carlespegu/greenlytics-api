@@ -1,11 +1,15 @@
 import { config } from './config'
 import { storage } from './storage'
 
+const LANGUAGE_STORAGE_KEY = 'greenlytics_language'
+
 async function request(path, options = {}) {
   const token = storage.getToken()
+  const language = localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'ca'
 
   const headers = {
     'Content-Type': 'application/json',
+    'Accept-Language': language,
     ...(options.headers || {}),
   }
 
