@@ -8,7 +8,9 @@ function normalizeSearchPayload(filters = {}, pagination = {}) {
     },
   }
 
-  if (filters.device_type_id) {
+  if (Array.isArray(filters.device_type_ids) && filters.device_type_ids.length > 0) {
+    payload.device_type_ids = filters.device_type_ids
+  } else if (filters.device_type_id) {
     payload.device_type_id = {
       filter_value: filters.device_type_id,
       comparator: 'equals',

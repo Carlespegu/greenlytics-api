@@ -9,9 +9,11 @@ from App.repositories.device_types_repository import (
     get_all_device_types,
     get_device_type_by_code,
     get_device_type_by_id,
+    search_device_type_combo,
     search_device_types,
     update_device_type,
 )
+from App.schemas.device_types_combo import DeviceTypeComboSearchRequest
 from App.schemas.device_types import DeviceTypeCreate, DeviceTypeUpdate
 from database.models.device_type import DeviceType
 
@@ -28,6 +30,15 @@ def search_device_types_service(db: Session, payload):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+
+
+def search_device_type_combo_service(db: Session, payload: DeviceTypeComboSearchRequest):
+    return search_device_type_combo(
+        db,
+        query_text=payload.query,
+        page=payload.page,
+        page_size=payload.page_size,
+    )
 
 
 def get_device_type_service(db: Session, device_type_id: UUID):

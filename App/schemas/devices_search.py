@@ -12,6 +12,7 @@ class DeviceSearchRequest(BaseModel):
     sorting_params: List[SortingParam] = Field(default_factory=list)
 
     device_type_id: Optional[UUIDFilter] = None
+    device_type_ids: Optional[List[UUID]] = None
     code: Optional[StringFilter] = None
     name: Optional[StringFilter] = None
     description: Optional[StringFilter] = None

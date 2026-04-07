@@ -112,3 +112,35 @@ def search_device_types(db: Session, payload):
         "page": page,
         "page_size": page_size,
     }
+
+
+def search_device_type_combo(
+    db: Session,
+    query_text: str | None = None,
+    page: int = 1,
+    page_size: int = 10,
+):
+    query = db.query(DeviceType).filter(DeviceType.is_deleted == False)  # noqa: E712
+
+    safe_query = (query_text or "").strip()
+    if safe_query:
+        ilike_value = f"%{safe_query}%"
+        query = query.filter(
+            (DeviceType.name.ilike(ilike_value)) |
+            (DeviceType.code.ilike(ilike_value))
+        )
+
+    total = query.count()
+    items = (
+        query.order_by(DeviceType.name.asc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }

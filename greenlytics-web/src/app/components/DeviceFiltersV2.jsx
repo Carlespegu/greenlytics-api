@@ -1,0 +1,440 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { clientsService } from '../services/clientsService'
+import { deviceTypesService } from '../services/deviceTypesService'
+
+function FilterInput({ name, value, onChange, placeholder, disabled = false }) {
+  return (
+    <input
+      name={name}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      disabled={disabled}
+      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50"
+    />
+  )
+}
+
+function TriStateSwitch({ value, onChange, disabled = false }) {
+  function handleClick() {
+    if (disabled) return
+
+    if (value === null) onChange(true)
+    else if (value === true) onChange(false)
+    else onChange(null)
+  }
+
+  const bgClass =
+    value === true
+      ? 'bg-emerald-600'
+      : value === false
+        ? 'bg-slate-500'
+        : 'bg-slate-300'
+
+  const thumbClass =
+    value === true
+      ? 'translate-x-8'
+      : value === false
+        ? 'translate-x-1'
+        : 'translate-x-4'
+
+  const label = value === true ? 'Si' : value === false ? 'No' : 'Tots'
+
+  return (
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={value === true}
+        aria-label={`Actiu: ${label}`}
+        onClick={handleClick}
+        disabled={disabled}
+        className={`relative inline-flex h-7 w-14 items-center rounded-full transition ${bgClass} disabled:cursor-not-allowed disabled:opacity-50`}
+      >
+        <span
+          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${thumbClass}`}
+        />
+      </button>
+      <span className="text-sm text-slate-700">{label}</span>
+    </div>
+  )
+}
+
+const EMPTY_FILTERS = {
+  code: '',
+  name: '',
+  serial_number: '',
+  description: '',
+  device_type_id: '',
+  device_type_ids: [],
+  device_type_items: [],
+  client_ids: [],
+  client_items: [],
+  status: '',
+  is_active: null,
+}
+
+function mergeUniqueById(items = []) {
+  const seen = new Map()
+
+  for (const item of items) {
+    if (!item?.id) continue
+    seen.set(item.id, item)
+  }
+
+  return Array.from(seen.values())
+}
+
+function LazyMultiSelectFilter({
+  label,
+  placeholder,
+  emptyMessage,
+  selectedItems = [],
+  onChange,
+  loadOptions,
+  getSummaryLabel,
+  disabled = false,
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [options, setOptions] = useState([])
+  const [total, setTotal] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+  const cacheRef = useRef(new Map())
+
+  const normalizedQuery = useMemo(() => searchQuery.trim().toLowerCase(), [searchQuery])
+
+  function applyCacheEntry(entry) {
+    setOptions(entry?.items || [])
+    setTotal(entry?.total || 0)
+  }
+
+  async function loadQueryPage(query, page = 1) {
+    const key = query.trim().toLowerCase()
+    const cachedEntry = cacheRef.current.get(key)
+
+    if (cachedEntry?.pagesLoaded?.has(page)) {
+      applyCacheEntry(cachedEntry)
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const payload = await loadOptions({
+        query,
+        page,
+        pageSize: 10,
+      })
+
+      const previousItems = page === 1 ? [] : (cachedEntry?.items || [])
+      const nextItems = mergeUniqueById([...previousItems, ...(payload.items || [])])
+      const pagesLoaded = new Set(cachedEntry?.pagesLoaded || [])
+      pagesLoaded.add(page)
+
+      const nextEntry = {
+        items: nextItems,
+        total: payload.total || 0,
+        pagesLoaded,
+      }
+
+      cacheRef.current.set(key, nextEntry)
+      applyCacheEntry(nextEntry)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!isOpen || disabled) return
+    loadQueryPage(searchQuery, 1)
+  }, [disabled, isOpen, searchQuery])
+
+  function toggleOption(option) {
+    const exists = selectedItems.some((item) => item.id === option.id)
+    const nextItems = exists
+      ? selectedItems.filter((item) => item.id !== option.id)
+      : [...selectedItems, option]
+
+    onChange(mergeUniqueById(nextItems))
+  }
+
+  async function handleLoadMore() {
+    const cacheEntry = cacheRef.current.get(normalizedQuery)
+    const loadedCount = cacheEntry?.items?.length || 0
+
+    if (loadedCount >= (cacheEntry?.total || 0)) return
+
+    const nextPage = (cacheEntry?.pagesLoaded?.size || 0) + 1
+    await loadQueryPage(searchQuery, nextPage)
+  }
+
+  return (
+    <div className="space-y-2 text-sm text-slate-700">
+      <span className="block">{label}</span>
+      <div className="relative">
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="flex w-full items-center justify-between rounded-xl border border-slate-300 bg-white px-4 py-3 text-left text-sm outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50"
+        >
+          <span className="truncate">{getSummaryLabel(selectedItems)}</span>
+          <span className="text-slate-400">{isOpen ? '^' : 'v'}</span>
+        </button>
+
+        {isOpen ? (
+          <div className="absolute z-30 mt-2 w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder={placeholder}
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400"
+            />
+
+            {selectedItems.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {selectedItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => toggleOption(item)}
+                    className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="mt-3 max-h-64 space-y-2 overflow-y-auto">
+              {options.map((item) => {
+                const checked = selectedItems.some((selected) => selected.id === item.id)
+
+                return (
+                  <label
+                    key={item.id}
+                    className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleOption(item)}
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-slate-800">
+                        {item.name}
+                      </span>
+                      <span className="block truncate text-xs text-slate-500">
+                        {item.code}
+                      </span>
+                    </span>
+                  </label>
+                )
+              })}
+
+              {!isLoading && options.length === 0 ? (
+                <p className="px-3 py-2 text-sm text-slate-500">{emptyMessage}</p>
+              ) : null}
+            </div>
+
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  onChange([])
+                  setSearchQuery('')
+                }}
+                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Netejar seleccio
+              </button>
+
+              {options.length < total ? (
+                <button
+                  type="button"
+                  onClick={handleLoadMore}
+                  disabled={isLoading}
+                  className="rounded-xl px-3 py-2 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{ backgroundColor: 'var(--brand-primary)' }}
+                >
+                  {isLoading ? 'Carregant...' : 'Carregar mes'}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function ClientMultiSelectFilter(props) {
+  return (
+    <LazyMultiSelectFilter
+      {...props}
+      label="Clients"
+      placeholder="Buscar client..."
+      emptyMessage="No s'han trobat clients."
+      getSummaryLabel={(items) =>
+        items.length
+          ? `${items.length} client${items.length === 1 ? '' : 's'} seleccionats`
+          : 'Clients: tots'
+      }
+      loadOptions={clientsService.searchClientOptions}
+    />
+  )
+}
+
+function DeviceTypeMultiSelectFilter(props) {
+  return (
+    <LazyMultiSelectFilter
+      {...props}
+      label="Tipus de dispositiu"
+      placeholder="Buscar tipus de dispositiu..."
+      emptyMessage="No s'han trobat tipus de dispositiu."
+      getSummaryLabel={(items) =>
+        items.length
+          ? `${items.length} tipus de dispositiu seleccionats`
+          : 'Tipus de dispositiu: tots'
+      }
+      loadOptions={deviceTypesService.searchDeviceTypeOptions}
+    />
+  )
+}
+
+export default function DeviceFiltersV2({
+  initialFilters,
+  onSearch,
+  onReset,
+  showClientFilter = false,
+  disabled = false,
+}) {
+  const [filters, setFilters] = useState(initialFilters ?? EMPTY_FILTERS)
+
+  useEffect(() => {
+    setFilters(initialFilters ?? EMPTY_FILTERS)
+  }, [initialFilters])
+
+  function handleChange(event) {
+    const { name, value } = event.target
+    setFilters((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault()
+    onSearch(filters)
+  }
+
+  function handleResetClick() {
+    setFilters(EMPTY_FILTERS)
+    onReset()
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <FilterInput
+          name="code"
+          value={filters.code ?? ''}
+          onChange={handleChange}
+          placeholder="Codi"
+          disabled={disabled}
+        />
+        <FilterInput
+          name="name"
+          value={filters.name ?? ''}
+          onChange={handleChange}
+          placeholder="Nom"
+          disabled={disabled}
+        />
+        <FilterInput
+          name="description"
+          value={filters.description ?? ''}
+          onChange={handleChange}
+          placeholder="Descripcio"
+          disabled={disabled}
+        />
+        <FilterInput
+          name="serial_number"
+          value={filters.serial_number ?? ''}
+          onChange={handleChange}
+          placeholder="Serial"
+          disabled={disabled}
+        />
+        <DeviceTypeMultiSelectFilter
+          selectedItems={filters.device_type_items ?? []}
+          onChange={(items) =>
+            setFilters((prev) => ({
+              ...prev,
+              device_type_id: '',
+              device_type_items: items,
+              device_type_ids: items.map((item) => item.id),
+            }))
+          }
+          disabled={disabled}
+        />
+
+        {showClientFilter ? (
+          <ClientMultiSelectFilter
+            selectedItems={filters.client_items ?? []}
+            onChange={(items) =>
+              setFilters((prev) => ({
+                ...prev,
+                client_items: items,
+                client_ids: items.map((item) => item.id),
+              }))
+            }
+            disabled={disabled}
+          />
+        ) : null}
+
+        <select
+          name="status"
+          value={filters.status ?? ''}
+          onChange={handleChange}
+          disabled={disabled}
+          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50"
+        >
+          <option value="">Status: tots</option>
+          <option value="online">online</option>
+          <option value="offline">offline</option>
+          <option value="warning">warning</option>
+          <option value="error">error</option>
+        </select>
+
+        <div className="space-y-2 text-sm text-slate-700">
+          <span className="block">Actiu</span>
+          <TriStateSwitch
+            value={filters.is_active ?? null}
+            onChange={(value) => setFilters((prev) => ({ ...prev, is_active: value }))}
+            disabled={disabled}
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-3">
+        <button
+          type="submit"
+          disabled={disabled}
+          className="rounded-xl px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+          style={{ backgroundColor: 'var(--brand-primary)' }}
+        >
+          Cercar
+        </button>
+
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={handleResetClick}
+          className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Netejar filtres
+        </button>
+      </div>
+    </form>
+  )
+}

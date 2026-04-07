@@ -98,6 +98,9 @@ def search_devices(db: Session, payload):
             )
         )
 
+    if payload.device_type_ids:
+        query = query.filter(Device.device_type_id.in_(payload.device_type_ids))
+
     if payload.device_type_id is not None:
         query = _apply_uuid_filter(query, Device.device_type_id, payload.device_type_id)
 

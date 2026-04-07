@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from App.dependencies.auth import require_roles
+from App.schemas.device_types_combo import DeviceTypeComboSearchRequest, DeviceTypeComboSearchResponse
 from App.schemas.device_types import DeviceTypeCreate, DeviceTypeResponse, DeviceTypeUpdate
 from App.schemas.device_types_search import DeviceTypeSearchRequest, DeviceTypeSearchResponse
 from App.services.device_types_service import (
@@ -12,6 +13,7 @@ from App.services.device_types_service import (
     delete_device_type_service,
     get_device_type_service,
     list_device_types_service,
+    search_device_type_combo_service,
     search_device_types_service,
     update_device_type_service,
 )
@@ -35,6 +37,15 @@ def search_device_types(
     current_user=Depends(require_roles("ADMIN")),
 ):
     return search_device_types_service(db, payload)
+
+
+@router.post("/search-combo", response_model=DeviceTypeComboSearchResponse)
+def search_device_types_combo(
+    payload: DeviceTypeComboSearchRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles("ADMIN")),
+):
+    return search_device_type_combo_service(db, payload)
 
 
 @router.get("/{device_type_id}", response_model=DeviceTypeResponse)

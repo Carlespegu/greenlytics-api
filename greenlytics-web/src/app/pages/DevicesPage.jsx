@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
-import DeviceFilters from '../components/DeviceFilters'
+import DeviceFilters from '../components/DeviceFiltersV2'
 import DeviceEditModal from '../components/DeviceEditModal'
 import RowActionsDropdown from '../components/RowActionsDropdown'
 import { useAuth } from '../context/AuthContext'
@@ -39,6 +39,8 @@ const EMPTY_FILTERS = {
   serial_number: '',
   description: '',
   device_type_id: '',
+  device_type_ids: [],
+  device_type_items: [],
   client_ids: [],
   client_items: [],
   status: '',
@@ -67,6 +69,7 @@ export default function DevicesPage() {
       activeFilters.serial_number,
       activeFilters.description,
       activeFilters.device_type_id,
+      Array.isArray(activeFilters.device_type_ids) && activeFilters.device_type_ids.length > 0 ? '__device_types__' : null,
       activeFilters.status,
       activeFilters.is_active,
       Array.isArray(activeFilters.client_ids) && activeFilters.client_ids.length > 0 ? '__clients__' : null,
