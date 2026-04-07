@@ -125,6 +125,10 @@ export const devicesService = {
     return api.put(`/devices/${deviceId}`, body)
   },
 
+  async createDevice(body) {
+    return api.post('/devices', body)
+  },
+
   async deleteDevice(deviceId) {
     return api.delete(`/devices/${deviceId}`)
   },

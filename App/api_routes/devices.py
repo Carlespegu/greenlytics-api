@@ -50,9 +50,9 @@ def get_device(
 def create_device(
     payload: DeviceCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("ADMIN")),
+    current_user: CurrentUserContext = Depends(require_roles("ADMIN", "MANAGER")),
 ):
-    return create_device_service(db, payload)
+    return create_device_service(db, payload, created_by=current_user.username)
 
 
 @router.put("/{device_id}", response_model=DeviceResponse)

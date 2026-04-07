@@ -37,6 +37,28 @@ function normalizeDevice(device) {
   }
 }
 
+function createEmptyDevice() {
+  return {
+    device_type_id: '',
+    code: '',
+    name: '',
+    description: '',
+    serial_number: '',
+    mac_address: '',
+    firmware_version: '',
+    hardware_version: '',
+    wifi_name: '',
+    status: 'offline',
+    last_seen_on: null,
+    is_active: true,
+    created_by: '',
+    created_on: null,
+    modified_by: '',
+    modified_on: null,
+    deleted_on: null,
+  }
+}
+
 const EMPTY_FILTERS = {
   code: '',
   name: '',
@@ -60,6 +82,7 @@ export default function DevicesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [selectedDevice, setSelectedDevice] = useState(null)
+  const [modalMode, setModalMode] = useState('edit')
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -121,6 +144,7 @@ export default function DevicesPage() {
   }
 
   async function handleEdit(device) {
+    setModalMode('edit')
     setIsSaving(true)
     setError('')
 
@@ -136,20 +160,27 @@ export default function DevicesPage() {
   }
 
   async function handleSaveDevice(formData) {
-    if (!selectedDevice?.id) return
-
     setIsSaving(true)
     setError('')
     setSuccess('')
 
     try {
-      await devicesService.updateDevice(selectedDevice.id, {
-        ...normalizeDevice(selectedDevice),
-        ...formData,
-        modified_by: user?.username || selectedDevice.modified_by || '',
-      })
+      if (modalMode === 'create') {
+        await devicesService.createDevice({
+          ...createEmptyDevice(),
+          ...formData,
+          created_by: user?.username || '',
+        })
+      } else {
+        await devicesService.updateDevice(selectedDevice.id, {
+          ...normalizeDevice(selectedDevice),
+          ...formData,
+          modified_by: user?.username || selectedDevice.modified_by || '',
+        })
 
-      setSuccess('Dispositiu actualitzat correctament.')
+        setSuccess('Dispositiu actualitzat correctament.')
+      }
+
       setIsEditOpen(false)
       setSelectedDevice(null)
       await loadDevices()
@@ -178,6 +209,13 @@ export default function DevicesPage() {
     } finally {
       setIsSaving(false)
     }
+  }
+
+  function handleNewDevice() {
+    setModalMode('create')
+    setError('')
+    setSelectedDevice(createEmptyDevice())
+    setIsEditOpen(true)
   }
 
   async function handleToggleActive(device) {
@@ -240,7 +278,8 @@ export default function DevicesPage() {
           title="Llistat de dispositius"
           total={total}
           showNewButton
-          onNew={() => navigate('/devices/new')}
+          onNew={handleNewDevice}
+          newDisabled={!['ADMIN', 'MANAGER'].includes((roleCode || '').toUpperCase()) || isLoading || isSaving}
         />
 
         {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
@@ -320,10 +359,12 @@ export default function DevicesPage() {
       <DeviceEditModal
         isOpen={isEditOpen}
         device={selectedDevice}
+        mode={modalMode}
         onClose={() => {
           if (isSaving) return
           setIsEditOpen(false)
           setSelectedDevice(null)
+          setModalMode('edit')
         }}
         onSave={handleSaveDevice}
         onDelete={handleDeleteDevice}

@@ -27,7 +27,7 @@ router = APIRouter(prefix="/device-types", tags=["Device Types"])
 def list_device_types(
     request: Request,
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("ADMIN")),
+    current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
     language = normalize_language(request.headers.get("Accept-Language"))
     return list_device_types_service(db, language=language)
@@ -38,7 +38,7 @@ def search_device_types(
     payload: DeviceTypeSearchRequest,
     request: Request,
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("ADMIN")),
+    current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
     language = normalize_language(request.headers.get("Accept-Language"))
     return search_device_types_service(db, payload, language=language)
@@ -49,7 +49,7 @@ def search_device_types_combo(
     payload: DeviceTypeComboSearchRequest,
     request: Request,
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("ADMIN")),
+    current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
     language = normalize_language(request.headers.get("Accept-Language"))
     return search_device_type_combo_service(db, payload, language=language)
@@ -60,7 +60,7 @@ def get_device_type(
     device_type_id: UUID,
     request: Request,
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("ADMIN")),
+    current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
     language = normalize_language(request.headers.get("Accept-Language"))
     return get_device_type_service(db, device_type_id, language=language)

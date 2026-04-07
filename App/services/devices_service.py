@@ -61,7 +61,7 @@ def get_device_service(db: Session, device_id):
     return device
 
 
-def create_device_service(db: Session, payload: DeviceCreate):
+def create_device_service(db: Session, payload: DeviceCreate, created_by: str | None = None):
     existing = get_device_by_code(db, payload.code)
     if existing:
         raise HTTPException(
@@ -96,7 +96,7 @@ def create_device_service(db: Session, payload: DeviceCreate):
         status=_normalize_device_status(payload.status) or "offline",
         last_seen_on=payload.last_seen_on,
         is_active=payload.is_active,
-        created_by=payload.created_by,
+        created_by=created_by or payload.created_by,
     )
 
     return create_device(db, device)

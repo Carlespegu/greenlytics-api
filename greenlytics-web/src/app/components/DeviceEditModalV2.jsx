@@ -26,6 +26,7 @@ const STATUS_OPTIONS = ['online', 'offline', 'warning', 'error']
 
 const UI_TEXT = {
   ca: {
+    createDevice: 'Nou dispositiu',
     editDevice: 'Editar dispositiu',
     editDeviceHelp: 'Actualitza les dades principals del dispositiu seleccionat.',
     delete: 'Eliminar',
@@ -56,6 +57,7 @@ const UI_TEXT = {
     error: 'Error',
   },
   es: {
+    createDevice: 'Nuevo dispositivo',
     editDevice: 'Editar dispositivo',
     editDeviceHelp: 'Actualiza los datos principales del dispositivo seleccionado.',
     delete: 'Eliminar',
@@ -86,6 +88,7 @@ const UI_TEXT = {
     error: 'Error',
   },
   en: {
+    createDevice: 'New device',
     editDevice: 'Edit device',
     editDeviceHelp: 'Update the main data of the selected device.',
     delete: 'Delete',
@@ -176,6 +179,7 @@ function ReadOnlyField({ label, value }) {
 export default function DeviceEditModalV2({
   isOpen,
   device,
+  mode = 'edit',
   onClose,
   onSave,
   onDelete,
@@ -189,6 +193,7 @@ export default function DeviceEditModalV2({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
+    setShowDeleteConfirm(false)
     if (!device) {
       setForm(EMPTY_FORM)
       return
@@ -231,8 +236,11 @@ export default function DeviceEditModalV2({
   }, [isOpen])
 
   const title = useMemo(() => {
+    if (mode === 'create') {
+      return text.createDevice || text.editDevice
+    }
     return device?.name ? `${text.editDevice} - ${device.name}` : text.editDevice
-  }, [device, text.editDevice])
+  }, [device, mode, text.createDevice, text.editDevice])
 
   if (!isOpen) return null
 
@@ -262,14 +270,16 @@ export default function DeviceEditModalV2({
             <p className="mt-1 text-sm text-slate-500">{text.editDeviceHelp}</p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={isSaving}
-            className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {text.delete}
-          </button>
+          {mode === 'edit' ? (
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isSaving}
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {text.delete}
+            </button>
+          ) : null}
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
@@ -399,8 +409,8 @@ export default function DeviceEditModalV2({
 
             <ReadOnlyField label={text.createdBy} value={form.created_by} />
             <ReadOnlyField label={text.createdOn} value={formatMetaDate(form.created_on)} />
-            <ReadOnlyField label={text.modifiedBy} value={form.modified_by} />
-            <ReadOnlyField label={text.modifiedOn} value={formatMetaDate(form.modified_on)} />
+            {mode === 'edit' ? <ReadOnlyField label={text.modifiedBy} value={form.modified_by} /> : null}
+            {mode === 'edit' ? <ReadOnlyField label={text.modifiedOn} value={formatMetaDate(form.modified_on)} /> : null}
           </div>
 
           <div className="flex justify-end gap-3">
@@ -424,7 +434,7 @@ export default function DeviceEditModalV2({
           </div>
         </form>
 
-        {showDeleteConfirm ? (
+        {mode === 'edit' && showDeleteConfirm ? (
           <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/40 p-4">
             <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
               <p className="text-sm text-slate-700">{text.confirmDelete}</p>

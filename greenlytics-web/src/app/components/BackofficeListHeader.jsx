@@ -4,6 +4,7 @@ export default function BackofficeListHeader({
   showNewButton = false,
   newLabel = 'Nou',
   onNew,
+  newDisabled = false,
 }) {
   return (
     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -18,7 +19,8 @@ export default function BackofficeListHeader({
         <button
           type="button"
           onClick={onNew}
-          className="rounded-xl px-4 py-2 text-sm font-medium text-white"
+          disabled={newDisabled}
+          className="rounded-xl px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
           style={{ backgroundColor: 'var(--brand-primary)' }}
         >
           {newLabel}
