@@ -4,7 +4,7 @@ import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
 import DeviceFilters from '../components/DeviceFiltersV2'
-import DeviceEditModal from '../components/DeviceEditModal'
+import DeviceEditModal from '../components/DeviceEditModalV2'
 import RowActionsDropdown from '../components/RowActionsDropdown'
 import { useAuth } from '../context/AuthContext'
 import { devicesService } from '../services/devicesService'
@@ -29,6 +29,10 @@ function normalizeDevice(device) {
     status: device.status || '',
     last_seen_on: device.last_seen_on || null,
     is_active: Boolean(device.is_active),
+    created_by: device.created_by || '',
+    created_on: device.created_on || null,
+    modified_on: device.modified_on || null,
+    deleted_on: device.deleted_on || null,
     modified_by: device.modified_by || '',
   }
 }
@@ -49,7 +53,7 @@ const EMPTY_FILTERS = {
 
 export default function DevicesPage() {
   const navigate = useNavigate()
-  const { roleCode } = useAuth()
+  const { roleCode, user } = useAuth()
   const [items, setItems] = useState([])
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -116,9 +120,19 @@ export default function DevicesPage() {
     await loadDevices({ filters: EMPTY_FILTERS, targetPage: 1 })
   }
 
-  function handleEdit(device) {
-    setSelectedDevice(normalizeDevice(device))
-    setIsEditOpen(true)
+  async function handleEdit(device) {
+    setIsSaving(true)
+    setError('')
+
+    try {
+      const payload = await devicesService.getDevice(device.id)
+      setSelectedDevice(normalizeDevice(payload))
+      setIsEditOpen(true)
+    } catch (err) {
+      setError(err.message || 'No sâ€™ha pogut carregar el detall del dispositiu.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   async function handleSaveDevice(formData) {
@@ -132,6 +146,7 @@ export default function DevicesPage() {
       await devicesService.updateDevice(selectedDevice.id, {
         ...normalizeDevice(selectedDevice),
         ...formData,
+        modified_by: user?.username || selectedDevice.modified_by || '',
       })
 
       setSuccess('Dispositiu actualitzat correctament.')
@@ -140,6 +155,26 @@ export default function DevicesPage() {
       await loadDevices()
     } catch (err) {
       setError(err.message || 'No s’ha pogut actualitzar el dispositiu.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function handleDeleteDevice() {
+    if (!selectedDevice?.id) return
+
+    setIsSaving(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      await devicesService.deleteDevice(selectedDevice.id)
+      setSuccess('Dispositiu eliminat correctament.')
+      setIsEditOpen(false)
+      setSelectedDevice(null)
+      await loadDevices()
+    } catch (err) {
+      setError(err.message || 'No sâ€™ha pogut eliminar el dispositiu.')
     } finally {
       setIsSaving(false)
     }
@@ -290,7 +325,8 @@ export default function DevicesPage() {
           setIsEditOpen(false)
           setSelectedDevice(null)
         }}
-        onSubmit={handleSaveDevice}
+        onSave={handleSaveDevice}
+        onDelete={handleDeleteDevice}
         isSaving={isSaving}
       />
     </div>

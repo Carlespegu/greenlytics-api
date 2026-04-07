@@ -112,6 +112,10 @@ function normalizeSearchResponse(payload, pagination = {}) {
 }
 
 export const devicesService = {
+  async getDevice(deviceId) {
+    return api.get(`/devices/${deviceId}`)
+  },
+
   async searchDevices(filters = {}, pagination = {}) {
     const payload = await api.post('/devices/search', normalizeSearchPayload(filters, pagination))
     return normalizeSearchResponse(payload, pagination)
@@ -119,5 +123,9 @@ export const devicesService = {
 
   async updateDevice(deviceId, body) {
     return api.put(`/devices/${deviceId}`, body)
+  },
+
+  async deleteDevice(deviceId) {
+    return api.delete(`/devices/${deviceId}`)
   },
 }

@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from App.dependencies.auth import require_roles
+from App.dependencies.auth import CurrentUserContext, require_roles
 from App.schemas.devices import DeviceCreate, DeviceResponse, DeviceUpdate
 from App.schemas.devices_search import DeviceSearchRequest, DeviceSearchResponse
 from App.services.devices_service import (
@@ -60,16 +60,16 @@ def update_device(
     device_id: UUID,
     payload: DeviceUpdate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("ADMIN")),
+    current_user: CurrentUserContext = Depends(require_roles("ADMIN")),
 ):
-    return update_device_service(db, device_id, payload)
+    return update_device_service(db, device_id, payload, modified_by=current_user.username)
 
 
 @router.delete("/{device_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_device(
     device_id: UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("ADMIN")),
+    current_user: CurrentUserContext = Depends(require_roles("ADMIN")),
 ):
-    delete_device_service(db, device_id)
+    delete_device_service(db, device_id, modified_by=current_user.username)
     return None

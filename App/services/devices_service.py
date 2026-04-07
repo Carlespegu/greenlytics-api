@@ -17,6 +17,25 @@ from App.repositories.device_types_repository import get_device_type_by_id
 from App.schemas.devices import DeviceCreate, DeviceUpdate
 from database.models.device import Device
 
+ALLOWED_DEVICE_STATUSES = {"online", "offline", "warning", "error"}
+
+
+def _normalize_device_status(value: str | None) -> str | None:
+    if value is None:
+        return None
+
+    normalized = value.strip().lower()
+    if not normalized:
+        return None
+
+    if normalized not in ALLOWED_DEVICE_STATUSES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid device status",
+        )
+
+    return normalized
+
 
 def list_devices_service(db: Session):
     return get_all_devices(db)
@@ -74,7 +93,7 @@ def create_device_service(db: Session, payload: DeviceCreate):
         api_key=api_key,
         wifi_name=payload.wifi_name,
         wifi_password=payload.wifi_password,
-        status=payload.status,
+        status=_normalize_device_status(payload.status) or "offline",
         last_seen_on=payload.last_seen_on,
         is_active=payload.is_active,
         created_by=payload.created_by,
@@ -83,7 +102,7 @@ def create_device_service(db: Session, payload: DeviceCreate):
     return create_device(db, device)
 
 
-def update_device_service(db: Session, device_id, payload: DeviceUpdate):
+def update_device_service(db: Session, device_id, payload: DeviceUpdate, modified_by: str | None = None):
     device = get_device_by_id(db, device_id)
     if not device:
         raise HTTPException(
@@ -135,12 +154,14 @@ def update_device_service(db: Session, device_id, payload: DeviceUpdate):
     if payload.wifi_password is not None:
         device.wifi_password = payload.wifi_password
     if payload.status is not None:
-        device.status = payload.status
+        device.status = _normalize_device_status(payload.status)
     if payload.last_seen_on is not None:
         device.last_seen_on = payload.last_seen_on
     if payload.is_active is not None:
         device.is_active = payload.is_active
-    if payload.modified_by is not None:
+    if modified_by:
+        device.modified_by = modified_by
+    elif payload.modified_by is not None:
         device.modified_by = payload.modified_by
 
     device.modified_on = datetime.utcnow()
@@ -148,7 +169,7 @@ def update_device_service(db: Session, device_id, payload: DeviceUpdate):
     return update_device(db, device)
 
 
-def delete_device_service(db: Session, device_id):
+def delete_device_service(db: Session, device_id, modified_by: str | None = None):
     device = get_device_by_id(db, device_id)
     if not device:
         raise HTTPException(
@@ -159,6 +180,8 @@ def delete_device_service(db: Session, device_id):
     device.is_deleted = True
     device.deleted_on = datetime.utcnow()
     device.modified_on = datetime.utcnow()
+    if modified_by:
+        device.modified_by = modified_by
     device.is_active = False
 
     return update_device(db, device)
