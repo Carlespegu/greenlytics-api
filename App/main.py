@@ -14,13 +14,17 @@ from App.api_routes.health import router as health_router
 from App.api_routes.installation_devices import router as installation_devices_router
 from App.api_routes.installations import router as installations_router
 from App.api_routes.plants import router as plants_router
+from App.api_routes.plant_thresholds import router as plant_thresholds_router
 from App.api_routes.reading_types import router as reading_types_router
 from App.api_routes.readings import router as readings_router
 from App.api_routes.roles import router as roles_router
 from App.api_routes.users import router as users_router
 from App.core.config import settings
 from App.services.alert_jobs_service import process_pending_alert_jobs
-from database.session import SessionLocal
+from database.base import Base
+import database.models  # noqa: F401
+from database.models.plant_threshold import PlantThreshold
+from database.session import SessionLocal, engine
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -52,6 +56,7 @@ app.include_router(device_types_router)
 app.include_router(devices_router)
 app.include_router(installation_devices_router)
 app.include_router(plants_router)
+app.include_router(plant_thresholds_router)
 app.include_router(reading_types_router)
 app.include_router(device_readings_router)
 app.include_router(readings_router)
@@ -87,4 +92,5 @@ async def alert_worker():
 
 @app.on_event("startup")
 async def startup_alert_worker():
+    Base.metadata.create_all(bind=engine, tables=[PlantThreshold.__table__])
     asyncio.create_task(alert_worker())

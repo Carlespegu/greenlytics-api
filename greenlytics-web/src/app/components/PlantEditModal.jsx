@@ -274,6 +274,69 @@ function toInputValue(value) {
   return value == null ? '' : String(value)
 }
 
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file)
+    const image = new Image()
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      resolve(image)
+    }
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('No sha pogut carregar la imatge seleccionada.'))
+    }
+
+    image.src = objectUrl
+  })
+}
+
+function canvasToBlob(canvas, mimeType, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error('No sha pogut preparar la imatge per analitzar-la.'))
+        return
+      }
+      resolve(blob)
+    }, mimeType, quality)
+  })
+}
+
+async function optimizeImageForPlantIdentification(file) {
+  const image = await loadImage(file)
+  const maxSide = 1280
+  const scale = Math.min(1, maxSide / Math.max(image.width, image.height))
+  const targetWidth = Math.max(1, Math.round(image.width * scale))
+  const targetHeight = Math.max(1, Math.round(image.height * scale))
+
+  const canvas = document.createElement('canvas')
+  canvas.width = targetWidth
+  canvas.height = targetHeight
+
+  const context = canvas.getContext('2d')
+  if (!context) return file
+
+  context.drawImage(image, 0, 0, targetWidth, targetHeight)
+
+  const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg'
+  const blob = await canvasToBlob(canvas, mimeType, mimeType === 'image/png' ? undefined : 0.82)
+
+  if (blob.size >= file.size && scale === 1) {
+    return file
+  }
+
+  const extension = mimeType === 'image/png' ? 'png' : 'jpg'
+  const fileName = file.name && file.name.includes('.') ? file.name : `plant-photo.${extension}`
+
+  return new File([blob], fileName, {
+    type: mimeType,
+    lastModified: Date.now(),
+  })
+}
+
 function normalizeInstallation(item) {
   return {
     id: item.id,
@@ -304,6 +367,7 @@ export default function PlantEditModal({
   const [isLoadingInstallations, setIsLoadingInstallations] = useState(false)
   const [validationError, setValidationError] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isOptimizingPhoto, setIsOptimizingPhoto] = useState(false)
   const [isIdentifying, setIsIdentifying] = useState(false)
   const [identificationInfo, setIdentificationInfo] = useState(null)
   const uploadInputRef = useRef(null)
@@ -395,9 +459,13 @@ export default function PlantEditModal({
     let installationId = form.installation_id || plant?.installation_id || ''
 
     setValidationError('')
-    setIsIdentifying(true)
+    setIsOptimizingPhoto(true)
 
     try {
+      const optimizedFile = await optimizeImageForPlantIdentification(file)
+      setIsOptimizingPhoto(false)
+      setIsIdentifying(true)
+
       if (installationId && !clientId) {
         const fullInstallation = await installationsService.getInstallation(installationId)
         clientId = fullInstallation?.client_id || ''
@@ -406,7 +474,7 @@ export default function PlantEditModal({
       const identified = await plantsService.identifyPlantFromImage({
         clientId,
         installationId,
-        file,
+        file: optimizedFile,
         language,
       })
 
@@ -432,6 +500,7 @@ export default function PlantEditModal({
     } catch (err) {
       setValidationError(err.message || text.identifyError)
     } finally {
+      setIsOptimizingPhoto(false)
       setIsIdentifying(false)
       if (uploadInputRef.current) uploadInputRef.current.value = ''
       if (cameraInputRef.current) cameraInputRef.current.value = ''
@@ -541,7 +610,7 @@ export default function PlantEditModal({
                 />
                 <button
                   type="button"
-                  disabled={!canEdit || isSaving || isIdentifying}
+                  disabled={!canEdit || isSaving || isIdentifying || isOptimizingPhoto}
                   onClick={() => uploadInputRef.current?.click()}
                   className="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -549,7 +618,7 @@ export default function PlantEditModal({
                 </button>
                 <button
                   type="button"
-                  disabled={!canEdit || isSaving || isIdentifying}
+                  disabled={!canEdit || isSaving || isIdentifying || isOptimizingPhoto}
                   onClick={() => cameraInputRef.current?.click()}
                   className="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -849,8 +918,16 @@ export default function PlantEditModal({
       </div>
 
       <LoadingOverlay
-        visible={isSaving || isLoadingInstallations || isIdentifying}
-        label={isIdentifying ? text.identifying : isSaving ? text.saving : text.loadingInstallations}
+        visible={isSaving || isLoadingInstallations || isIdentifying || isOptimizingPhoto}
+        label={
+          isOptimizingPhoto
+            ? 'Preparing photo...'
+            : isIdentifying
+              ? text.identifying
+              : isSaving
+                ? text.saving
+                : text.loadingInstallations
+        }
         transparent
       />
     </div>
