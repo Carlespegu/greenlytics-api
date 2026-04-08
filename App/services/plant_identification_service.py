@@ -47,20 +47,60 @@ def _extract_output_text(payload: dict[str, Any]) -> str:
     )
 
 
-def _extract_json_object(text: str) -> dict[str, Any]:
+def _extract_structured_json(payload: dict[str, Any]) -> dict[str, Any] | None:
+    for item in payload.get("output", []):
+        for content in item.get("content", []):
+            parsed = content.get("parsed")
+            if isinstance(parsed, dict):
+                return parsed
+            if isinstance(parsed, str):
+                try:
+                    normalized = json.loads(parsed)
+                except json.JSONDecodeError:
+                    normalized = None
+                if isinstance(normalized, dict):
+                    return normalized
+            if isinstance(content.get("json"), dict):
+                return content["json"]
+    return None
+
+
+def _cleanup_json_candidate(text: str) -> str:
     cleaned = (text or "").strip()
     if cleaned.startswith("```"):
         cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
         cleaned = re.sub(r"\s*```$", "", cleaned)
+    return cleaned.strip()
 
-    try:
-        return json.loads(cleaned)
-    except json.JSONDecodeError:
-        start = cleaned.find("{")
-        end = cleaned.rfind("}")
-        if start == -1 or end == -1 or end <= start:
-            raise
-        return json.loads(cleaned[start : end + 1])
+
+def _load_json_candidate(candidate: str) -> dict[str, Any]:
+    parsed = json.loads(candidate)
+    if isinstance(parsed, dict):
+        return parsed
+    if isinstance(parsed, str):
+        nested = json.loads(parsed)
+        if isinstance(nested, dict):
+            return nested
+    raise json.JSONDecodeError("Expected a JSON object", candidate, 0)
+
+
+def _extract_json_object(text: str) -> dict[str, Any]:
+    cleaned = _cleanup_json_candidate(text)
+
+    candidates: list[str] = [cleaned]
+
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        candidates.append(cleaned[start : end + 1])
+
+    for candidate in candidates:
+        try:
+            return _load_json_candidate(candidate)
+        except json.JSONDecodeError:
+            continue
+
+    raise json.JSONDecodeError("Unable to extract JSON object", cleaned, 0)
 
 
 def _normalize_enum(value: Any, allowed: set[str]) -> str | None:
@@ -185,15 +225,21 @@ def identify_plant_from_image(
             detail=f"OpenAI request failed: {exc}",
         ) from exc
 
-    output_text = _extract_output_text(raw_payload)
+    structured_payload = _extract_structured_json(raw_payload)
+    if structured_payload is not None:
+        identified = structured_payload
+    else:
+        output_text = _extract_output_text(raw_payload)
 
-    try:
-        identified = _extract_json_object(output_text)
-    except json.JSONDecodeError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="OpenAI returned invalid JSON for plant identification",
-        ) from exc
+        try:
+            identified = _extract_json_object(output_text)
+        except json.JSONDecodeError as exc:
+            excerpt = output_text.strip().replace("\n", " ")[:400]
+            print(f"plant_identification.invalid_json excerpt={excerpt}")
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"OpenAI returned invalid JSON for plant identification: {excerpt}",
+            ) from exc
 
     name = (identified.get("name") or identified.get("common_name") or identified.get("scientific_name") or "Plant").strip()
     common_name = (identified.get("common_name") or None)
