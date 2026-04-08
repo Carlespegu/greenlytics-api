@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import SunLoader from '../components/SunLoader'
+import LoadingOverlay from '../components/LoadingOverlay'
 import defaultLogo from '../../assets/logo.png'
 
 function EyeIcon({ open }) {
@@ -175,17 +175,11 @@ export default function LoginPage() {
             className="inline-flex w-full items-center justify-center gap-3 rounded-xl px-4 py-3 font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-70"
             style={{ backgroundColor: brandPrimary }}
           >
-            {isLoading ? (
-              <>
-                <SunLoader size={18} />
-                <span>Entrant...</span>
-              </>
-            ) : (
-              'Entrar'
-            )}
+            {isLoading ? 'Entrant...' : 'Entrar'}
           </button>
         </form>
       </div>
+      <LoadingOverlay visible={isLoading} label="Entrant..." transparent />
     </div>
   )
 }

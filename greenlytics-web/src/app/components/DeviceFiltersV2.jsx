@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { clientsService } from '../services/clientsService'
 import { deviceTypesService } from '../services/deviceTypesService'
+import { useLanguage } from '../context/LanguageContext'
 
 function FilterInput({ name, value, onChange, placeholder, disabled = false }) {
   return (
@@ -38,7 +39,9 @@ function TriStateSwitch({ value, onChange, disabled = false }) {
         ? 'translate-x-1'
         : 'translate-x-4'
 
-  const label = value === true ? 'Si' : value === false ? 'No' : 'Tots'
+  const { language } = useLanguage()
+  const text = useMemo(() => getDeviceFilterText(language), [language])
+  const label = value === true ? text.yes : value === false ? text.no : text.all
 
   return (
     <div className="flex items-center gap-3">
@@ -46,7 +49,7 @@ function TriStateSwitch({ value, onChange, disabled = false }) {
         type="button"
         role="switch"
         aria-checked={value === true}
-        aria-label={`Actiu: ${label}`}
+        aria-label={`${text.active}: ${label}`}
         onClick={handleClick}
         disabled={disabled}
         className={`relative inline-flex h-7 w-14 items-center rounded-full transition ${bgClass} disabled:cursor-not-allowed disabled:opacity-50`}
@@ -58,6 +61,91 @@ function TriStateSwitch({ value, onChange, disabled = false }) {
       <span className="text-sm text-slate-700">{label}</span>
     </div>
   )
+}
+
+function getDeviceFilterText(language) {
+  const texts = {
+    ca: {
+      yes: 'Sí',
+      no: 'No',
+      all: 'Tots',
+      active: 'Actiu',
+      clients: 'Clients',
+      searchClient: 'Buscar client...',
+      noClients: 'No s\'han trobat clients.',
+      clientsSelected: (count) => `${count} client${count === 1 ? '' : 's'} seleccionats`,
+      clientsAll: 'Clients: tots',
+      deviceType: 'Tipus de dispositiu',
+      searchDeviceType: 'Buscar tipus de dispositiu...',
+      noDeviceTypes: 'No s\'han trobat tipus de dispositiu.',
+      deviceTypesSelected: (count) => `${count} tipus de dispositiu seleccionats`,
+      deviceTypesAll: 'Tipus de dispositiu: tots',
+      clearSelection: 'Netejar selecció',
+      loading: 'Carregant...',
+      loadMore: 'Carregar més',
+      code: 'Codi',
+      name: 'Nom',
+      description: 'Descripció',
+      serial: 'Serial',
+      statusAll: 'Status: tots',
+      search: 'Cercar',
+      reset: 'Netejar filtres',
+    },
+    es: {
+      yes: 'Sí',
+      no: 'No',
+      all: 'Todos',
+      active: 'Activo',
+      clients: 'Clientes',
+      searchClient: 'Buscar cliente...',
+      noClients: 'No se han encontrado clientes.',
+      clientsSelected: (count) => `${count} cliente${count === 1 ? '' : 's'} seleccionados`,
+      clientsAll: 'Clientes: todos',
+      deviceType: 'Tipo de dispositivo',
+      searchDeviceType: 'Buscar tipo de dispositivo...',
+      noDeviceTypes: 'No se han encontrado tipos de dispositivo.',
+      deviceTypesSelected: (count) => `${count} tipos de dispositivo seleccionados`,
+      deviceTypesAll: 'Tipo de dispositivo: todos',
+      clearSelection: 'Limpiar selección',
+      loading: 'Cargando...',
+      loadMore: 'Cargar más',
+      code: 'Código',
+      name: 'Nombre',
+      description: 'Descripción',
+      serial: 'Serie',
+      statusAll: 'Estado: todos',
+      search: 'Buscar',
+      reset: 'Limpiar filtros',
+    },
+    en: {
+      yes: 'Yes',
+      no: 'No',
+      all: 'All',
+      active: 'Active',
+      clients: 'Clients',
+      searchClient: 'Search client...',
+      noClients: 'No clients found.',
+      clientsSelected: (count) => `${count} client${count === 1 ? '' : 's'} selected`,
+      clientsAll: 'Clients: all',
+      deviceType: 'Device type',
+      searchDeviceType: 'Search device type...',
+      noDeviceTypes: 'No device types found.',
+      deviceTypesSelected: (count) => `${count} device types selected`,
+      deviceTypesAll: 'Device type: all',
+      clearSelection: 'Clear selection',
+      loading: 'Loading...',
+      loadMore: 'Load more',
+      code: 'Code',
+      name: 'Name',
+      description: 'Description',
+      serial: 'Serial',
+      statusAll: 'Status: all',
+      search: 'Search',
+      reset: 'Clear filters',
+    },
+  }
+
+  return texts[language] || texts.ca
 }
 
 const EMPTY_FILTERS = {
@@ -247,7 +335,7 @@ function LazyMultiSelectFilter({
                 }}
                 className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
               >
-                Netejar seleccio
+                {text.clearSelection}
               </button>
 
               {options.length < total ? (
@@ -258,7 +346,7 @@ function LazyMultiSelectFilter({
                   className="rounded-xl px-3 py-2 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
                   style={{ backgroundColor: 'var(--brand-primary)' }}
                 >
-                  {isLoading ? 'Carregant...' : 'Carregar mes'}
+                  {isLoading ? text.loading : text.loadMore}
                 </button>
               ) : null}
             </div>
@@ -270,16 +358,19 @@ function LazyMultiSelectFilter({
 }
 
 function ClientMultiSelectFilter(props) {
+  const { language } = useLanguage()
+  const text = useMemo(() => getDeviceFilterText(language), [language])
+
   return (
     <LazyMultiSelectFilter
       {...props}
-      label="Clients"
-      placeholder="Buscar client..."
-      emptyMessage="No s'han trobat clients."
+      label={text.clients}
+      placeholder={text.searchClient}
+      emptyMessage={text.noClients}
       getSummaryLabel={(items) =>
         items.length
-          ? `${items.length} client${items.length === 1 ? '' : 's'} seleccionats`
-          : 'Clients: tots'
+          ? text.clientsSelected(items.length)
+          : text.clientsAll
       }
       loadOptions={clientsService.searchClientOptions}
     />
@@ -287,16 +378,19 @@ function ClientMultiSelectFilter(props) {
 }
 
 function DeviceTypeMultiSelectFilter(props) {
+  const { language } = useLanguage()
+  const text = useMemo(() => getDeviceFilterText(language), [language])
+
   return (
     <LazyMultiSelectFilter
       {...props}
-      label="Tipus de dispositiu"
-      placeholder="Buscar tipus de dispositiu..."
-      emptyMessage="No s'han trobat tipus de dispositiu."
+      label={text.deviceType}
+      placeholder={text.searchDeviceType}
+      emptyMessage={text.noDeviceTypes}
       getSummaryLabel={(items) =>
         items.length
-          ? `${items.length} tipus de dispositiu seleccionats`
-          : 'Tipus de dispositiu: tots'
+          ? text.deviceTypesSelected(items.length)
+          : text.deviceTypesAll
       }
       loadOptions={deviceTypesService.searchDeviceTypeOptions}
     />
@@ -310,6 +404,8 @@ export default function DeviceFiltersV2({
   showClientFilter = false,
   disabled = false,
 }) {
+  const { language } = useLanguage()
+  const text = useMemo(() => getDeviceFilterText(language), [language])
   const [filters, setFilters] = useState(initialFilters ?? EMPTY_FILTERS)
 
   useEffect(() => {
@@ -341,28 +437,28 @@ export default function DeviceFiltersV2({
           name="code"
           value={filters.code ?? ''}
           onChange={handleChange}
-          placeholder="Codi"
+          placeholder={text.code}
           disabled={disabled}
         />
         <FilterInput
           name="name"
           value={filters.name ?? ''}
           onChange={handleChange}
-          placeholder="Nom"
+          placeholder={text.name}
           disabled={disabled}
         />
         <FilterInput
           name="description"
           value={filters.description ?? ''}
           onChange={handleChange}
-          placeholder="Descripcio"
+          placeholder={text.description}
           disabled={disabled}
         />
         <FilterInput
           name="serial_number"
           value={filters.serial_number ?? ''}
           onChange={handleChange}
-          placeholder="Serial"
+          placeholder={text.serial}
           disabled={disabled}
         />
         <DeviceTypeMultiSelectFilter
@@ -399,7 +495,7 @@ export default function DeviceFiltersV2({
           disabled={disabled}
           className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50"
         >
-          <option value="">Status: tots</option>
+          <option value="">{text.statusAll}</option>
           <option value="online">online</option>
           <option value="offline">offline</option>
           <option value="warning">warning</option>
@@ -407,7 +503,7 @@ export default function DeviceFiltersV2({
         </select>
 
         <div className="space-y-2 text-sm text-slate-700">
-          <span className="block">Actiu</span>
+          <span className="block">{text.active}</span>
           <TriStateSwitch
             value={filters.is_active ?? null}
             onChange={(value) => setFilters((prev) => ({ ...prev, is_active: value }))}
@@ -423,7 +519,7 @@ export default function DeviceFiltersV2({
           className="rounded-xl px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
           style={{ backgroundColor: 'var(--brand-primary)' }}
         >
-          Cercar
+          {text.search}
         </button>
 
         <button
@@ -432,7 +528,7 @@ export default function DeviceFiltersV2({
           onClick={handleResetClick}
           className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Netejar filtres
+          {text.reset}
         </button>
       </div>
     </form>

@@ -125,37 +125,39 @@ def update_plant_service(db: Session, plant_id: UUID, payload: PlantUpdate):
     plant.client_id = new_client_id
     plant.installation_id = new_installation_id
 
-    if payload.code is not None:
+    fields_set = payload.model_fields_set
+
+    if "code" in fields_set:
         plant.code = payload.code
-    if payload.name is not None:
+    if "name" in fields_set:
         plant.name = payload.name
-    if payload.common_name is not None:
+    if "common_name" in fields_set:
         plant.common_name = payload.common_name
-    if payload.scientific_name is not None:
+    if "scientific_name" in fields_set:
         plant.scientific_name = payload.scientific_name
-    if payload.plant_type is not None:
+    if "plant_type" in fields_set:
         plant.plant_type = payload.plant_type
-    if payload.planting_type is not None:
+    if "planting_type" in fields_set:
         plant.planting_type = payload.planting_type
-    if payload.location_type is not None:
+    if "location_type" in fields_set:
         plant.location_type = payload.location_type
-    if payload.sun_exposure is not None:
+    if "sun_exposure" in fields_set:
         plant.sun_exposure = payload.sun_exposure
-    if payload.pot_size_cm is not None:
+    if "pot_size_cm" in fields_set:
         plant.pot_size_cm = payload.pot_size_cm
-    if payload.height_cm is not None:
+    if "height_cm" in fields_set:
         plant.height_cm = payload.height_cm
-    if payload.width_cm is not None:
+    if "width_cm" in fields_set:
         plant.width_cm = payload.width_cm
-    if payload.planting_date is not None:
+    if "planting_date" in fields_set:
         plant.planting_date = payload.planting_date
-    if payload.last_repotting_date is not None:
+    if "last_repotting_date" in fields_set:
         plant.last_repotting_date = payload.last_repotting_date
-    if payload.status is not None:
+    if "status" in fields_set:
         plant.status = payload.status
-    if payload.notes is not None:
+    if "notes" in fields_set:
         plant.notes = payload.notes
-    if payload.is_active is not None:
+    if "is_active" in fields_set:
         plant.is_active = payload.is_active
     if payload.modified_by is not None:
         plant.modified_by = payload.modified_by
@@ -165,7 +167,7 @@ def update_plant_service(db: Session, plant_id: UUID, payload: PlantUpdate):
     return update_plant(db, plant)
 
 
-def delete_plant_service(db: Session, plant_id: UUID):
+def delete_plant_service(db: Session, plant_id: UUID, deleted_by: str | None = None):
     plant = get_plant_by_id(db, plant_id)
     if not plant:
         raise HTTPException(
@@ -176,6 +178,7 @@ def delete_plant_service(db: Session, plant_id: UUID):
     plant.is_deleted = True
     plant.deleted_on = datetime.utcnow()
     plant.modified_on = datetime.utcnow()
+    plant.modified_by = deleted_by
     plant.is_active = False
 
     return update_plant(db, plant)

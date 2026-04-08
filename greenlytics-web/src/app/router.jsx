@@ -4,9 +4,10 @@ import RoleProtectedRoute from './components/RoleProtectedRoute'
 import AppLayout from './layouts/AppLayout'
 import Dashboard from './pages/Dashboard'
 import DevicesPage from './pages/DevicesPage'
-import InstallationsPage from './pages/InstallationsPage'
+import InstallationsPage from './pages/InstallationsPageV2'
+import InstallationDevicesPage from './pages/InstallationDevicesPage'
 import LoginPage from './pages/LoginPage'
-import PlantsPage from './pages/PlantsPage'
+import PlantsPage from './pages/PlantsPageV2'
 import ReadingsPage from './pages/ReadingsPage'
 import UsersPage from './pages/UsersPage'
 import AlertsPage from './pages/AlertsPage'
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
           { index: true, element: <Dashboard /> },
           { path: 'devices', element: <DevicesPage /> },
           { path: 'installations', element: <InstallationsPage /> },
+          { path: 'installations/:installationId/devices', element: <InstallationDevicesPage /> },
           { path: 'plants', element: <PlantsPage /> },
           { path: 'readings', element: <ReadingsPage /> },
           { path: 'alerts', element: <AlertsPage /> },

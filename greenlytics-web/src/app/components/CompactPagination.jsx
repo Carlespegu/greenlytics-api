@@ -1,3 +1,6 @@
+import { useMemo } from 'react'
+import { useLanguage } from '../context/LanguageContext'
+
 function buildVisiblePages(currentPage, totalPages) {
   if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1)
   if (currentPage <= 4) return [1, 2, 3, 4, 5, 'ellipsis', totalPages]
@@ -13,13 +16,23 @@ export default function CompactPagination({
   onPageChange,
   onPageSizeChange,
 }) {
+  const { language } = useLanguage()
   const totalPages = Math.max(1, Math.ceil((total || 0) / pageSize))
   const visiblePages = buildVisiblePages(page, totalPages)
+  const text = useMemo(() => {
+    const texts = {
+      ca: { rows: 'Files', previous: 'Pàgina anterior', next: 'Pàgina següent' },
+      es: { rows: 'Filas', previous: 'Página anterior', next: 'Página siguiente' },
+      en: { rows: 'Rows', previous: 'Previous page', next: 'Next page' },
+    }
+
+    return texts[language] || texts.ca
+  }, [language])
 
   return (
     <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex items-center gap-3">
-        <label className="text-sm text-slate-600">Files</label>
+        <label className="text-sm text-slate-600">{text.rows}</label>
         <select
           value={pageSize}
           onChange={(event) => onPageSizeChange(Number(event.target.value))}

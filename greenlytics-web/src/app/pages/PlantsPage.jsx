@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
+import LoadingOverlay from '../components/LoadingOverlay'
+import { useLanguage } from '../context/LanguageContext'
 import { resourceService } from '../services/resourceService'
 
 function FilterInput({ name, value, onChange, placeholder }) {
@@ -21,6 +23,7 @@ const EMPTY_FILTERS = { name: '', species: '', deviceId: '' }
 
 export default function PlantsPage() {
   const navigate = useNavigate()
+  const { language } = useLanguage()
   const [allItems, setAllItems] = useState([])
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
@@ -30,6 +33,48 @@ export default function PlantsPage() {
   const [error, setError] = useState('')
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS)
+  const text = useMemo(() => {
+    const texts = {
+      ca: {
+        filters: 'Filtres',
+        filtersDescription: 'Llistat de plantes',
+        name: 'Nom',
+        species: 'Espècie',
+        device: 'Dispositiu',
+        search: 'Cercar',
+        clear: 'Netejar filtres',
+        listTitle: 'Llistat de plantes',
+        noResults: 'No s’han trobat plantes.',
+        loading: 'Carregant plantes...',
+      },
+      es: {
+        filters: 'Filtros',
+        filtersDescription: 'Listado de plantas',
+        name: 'Nombre',
+        species: 'Especie',
+        device: 'Dispositivo',
+        search: 'Buscar',
+        clear: 'Limpiar filtros',
+        listTitle: 'Listado de plantas',
+        noResults: 'No se han encontrado plantas.',
+        loading: 'Cargando plantas...',
+      },
+      en: {
+        filters: 'Filters',
+        filtersDescription: 'Plants list',
+        name: 'Name',
+        species: 'Species',
+        device: 'Device',
+        search: 'Search',
+        clear: 'Clear filters',
+        listTitle: 'Plants list',
+        noResults: 'No plants found.',
+        loading: 'Loading plants...',
+      },
+    }
+
+    return texts[language] || texts.ca
+  }, [language])
 
   const activeFilterCount = useMemo(() => Object.values(filters).filter((value) => value !== '').length, [filters])
 
@@ -77,42 +122,41 @@ export default function PlantsPage() {
   return (
     <div className="space-y-6">
       <CollapsibleFiltersCard
-        title="Filtres"
-        description="Llistat de plantes"
+        title={text.filters}
+        description={text.filtersDescription}
         activeCount={activeFilterCount}
         defaultExpanded={false}
       >
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <FilterInput name="name" value={filters.name} onChange={handleFilterChange} placeholder="Nom" />
-            <FilterInput name="species" value={filters.species} onChange={handleFilterChange} placeholder="Espècie" />
-            <FilterInput name="deviceId" value={filters.deviceId} onChange={handleFilterChange} placeholder="Device" />
+            <FilterInput name="name" value={filters.name} onChange={handleFilterChange} placeholder={text.name} />
+            <FilterInput name="species" value={filters.species} onChange={handleFilterChange} placeholder={text.species} />
+            <FilterInput name="deviceId" value={filters.deviceId} onChange={handleFilterChange} placeholder={text.device} />
           </div>
 
           <div className="flex justify-end gap-3">
             <button type="submit" className="rounded-xl px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: 'var(--brand-primary)' }}>
-              Cercar
+              {text.search}
             </button>
             <button type="button" onClick={handleClear} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-              Netejar filtres
+              {text.clear}
             </button>
           </div>
         </form>
       </CollapsibleFiltersCard>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <BackofficeListHeader title="Llistat de plantes" total={total} showNewButton onNew={() => navigate('/plants/new')} />
+        <BackofficeListHeader title={text.listTitle} total={total} showNewButton onNew={() => navigate('/plants/new')} />
 
-        {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
-                <th className="px-3 py-3">Nom</th>
-                <th className="px-3 py-3">Espècie</th>
-                <th className="px-3 py-3">Device</th>
+                <th className="px-3 py-3">{text.name}</th>
+                <th className="px-3 py-3">{text.species}</th>
+                <th className="px-3 py-3">{text.device}</th>
               </tr>
             </thead>
             <tbody>
@@ -124,7 +168,7 @@ export default function PlantsPage() {
                 </tr>
               ))}
               {!isLoading && items.length === 0 ? (
-                <tr><td colSpan={4} className="px-3 py-6 text-center text-slate-500">No s’han trobat plantes.</td></tr>
+                <tr><td colSpan={4} className="px-3 py-6 text-center text-slate-500">{text.noResults}</td></tr>
               ) : null}
             </tbody>
           </table>
@@ -142,6 +186,7 @@ export default function PlantsPage() {
           }}
         />
       </section>
+      <LoadingOverlay visible={isLoading} label={text.loading} transparent />
     </div>
   )
 }

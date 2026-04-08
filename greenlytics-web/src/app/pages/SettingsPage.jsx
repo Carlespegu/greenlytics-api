@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
+import LoadingOverlay from '../components/LoadingOverlay'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { clientBrandingService } from '../services/clientBrandingService'
 import defaultLogo from '../../assets/logo.png'
 
@@ -15,6 +17,7 @@ const INITIAL_FORM = {
   PrimaryColor: '#059669',
   SecondaryColor: '#0f172a',
   Notes: '',
+  Language: 'ca',
 }
 
 function Field({ label, children, hint }) {
@@ -47,6 +50,7 @@ function TextArea(props) {
 
 export default function SettingsPage() {
   const { user, token, refreshCurrentUser, branding } = useAuth()
+  const { t, language, setLanguage } = useLanguage()
 
   const [form, setForm] = useState(INITIAL_FORM)
   const [isLoading, setIsLoading] = useState(true)
@@ -55,6 +59,16 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState('')
 
   const clientId = user?.client_id
+  const roleCode = (user?.role_code || '').toUpperCase()
+  const canEditLanguage = roleCode === 'ADMIN' || roleCode === 'MANAGER'
+  const languageOptions = useMemo(
+    () => [
+      { value: 'ca', label: t('languageCatalan') },
+      { value: 'es', label: t('languageSpanish') },
+      { value: 'en', label: t('languageEnglish') },
+    ],
+    [t]
+  )
 
   useEffect(() => {
     async function loadSettings() {
@@ -79,16 +93,17 @@ export default function SettingsPage() {
           PrimaryColor: client?.primary_color || '#059669',
           SecondaryColor: client?.secondary_color || '#0f172a',
           Notes: client?.notes || '',
+          Language: language || 'ca',
         })
       } catch (err) {
-        setError(err.message || 'No s’ha pogut carregar la configuració.')
+        setError(err.message || t('settingsLoadError'))
       } finally {
         setIsLoading(false)
       }
     }
 
     loadSettings()
-  }, [clientId, token])
+  }, [clientId, token, language, t])
 
   function handleChange(event) {
     const { name, value } = event.target
@@ -126,11 +141,15 @@ export default function SettingsPage() {
         token
       )
 
+      if (canEditLanguage && form.Language && form.Language !== language) {
+        setLanguage(form.Language)
+      }
+
       await refreshCurrentUser()
 
-      setSuccess('Configuració desada correctament.')
+      setSuccess(t('settingsSavedSuccess'))
     } catch (err) {
-      setError(err.message || 'No s’ha pogut desar la configuració.')
+      setError(err.message || t('settingsSaveError'))
     } finally {
       setIsSaving(false)
     }
@@ -161,9 +180,12 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-slate-500">Carregant configuració...</p>
-      </div>
+      <>
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-sm text-slate-500">{t('settingsLoading')}</p>
+        </div>
+        <LoadingOverlay visible label={t('settingsLoading')} transparent />
+      </>
     )
   }
 
@@ -172,11 +194,10 @@ export default function SettingsPage() {
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-sm font-medium text-emerald-600">Administració</p>
         <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">
-          Configuració del client
+          {t('settingsTitle')}
         </h1>
         <p className="mt-2 text-sm text-slate-500">
-          Personalitza el branding bàsic de l’aplicació perquè el client la senti
-          com a pròpia.
+          {t('settingsSubtitle')}
         </p>
       </div>
 
@@ -256,6 +277,36 @@ export default function SettingsPage() {
                   rows={4}
                   placeholder="Notes internes del client"
                 />
+              </Field>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">
+              {t('languageSettings')}
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {t('languageSettingsDescription')}
+            </p>
+
+            <div className="mt-6 max-w-md">
+              <Field
+                label={t('selectLanguage')}
+                hint={canEditLanguage ? t('languageSavedHint') : t('languageReadOnlyHint')}
+              >
+                <select
+                  name="Language"
+                  value={form.Language}
+                  onChange={handleChange}
+                  disabled={!canEditLanguage || isSaving}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+                >
+                  {languageOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </Field>
             </div>
           </section>
@@ -347,7 +398,7 @@ export default function SettingsPage() {
                 className="rounded-xl px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
                 style={{ backgroundColor: 'var(--brand-primary)' }}
               >
-                {isSaving ? 'Desant...' : 'Desar configuració'}
+                {isSaving ? t('settingsSaving') : t('saveChanges')}
               </button>
             </div>
 
@@ -465,6 +516,11 @@ export default function SettingsPage() {
           </section>
         </div>
       </form>
+      <LoadingOverlay
+        visible={isSaving}
+        label={t('settingsSaving')}
+        transparent
+      />
     </div>
   )
 }

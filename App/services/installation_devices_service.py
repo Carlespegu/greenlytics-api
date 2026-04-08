@@ -4,9 +4,12 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from App.dependencies.auth import CurrentUserContext
+from App.repositories.clients_repository import get_client_by_id
 from App.repositories.devices_repository import get_device_by_id
 from App.repositories.installation_devices_repository import (
     create_installation_device,
+    get_active_assignments_by_installation_id,
     get_active_assignment_by_device_id,
     get_all_installation_devices,
     get_installation_device_by_id,
@@ -14,6 +17,9 @@ from App.repositories.installation_devices_repository import (
     update_installation_device,
 )
 from App.repositories.installations_repository import get_installation_by_id
+from App.schemas.installation_device_assignments import InstallationDeviceAssignmentsSyncRequest
+from App.schemas.installations import InstallationUpdate
+from App.services.installations_service import update_installation_service
 from App.schemas.installation_devices import InstallationDeviceCreate, InstallationDeviceUpdate
 from database.models.installation_device import InstallationDevice
 
@@ -146,3 +152,159 @@ def delete_installation_device_service(db: Session, installation_device_id: UUID
     installation_device.modified_on = datetime.utcnow()
 
     return update_installation_device(db, installation_device)
+
+
+def get_installation_device_assignments_summary_service(db: Session, installation_id: UUID):
+    installation = get_installation_by_id(db, installation_id)
+    if not installation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Installation not found",
+        )
+
+    client = get_client_by_id(db, installation.client_id)
+    active_assignments = get_active_assignments_by_installation_id(db, installation_id)
+    notes_values = {
+        (assignment.notes or "").strip()
+        for assignment in active_assignments
+        if (assignment.notes or "").strip()
+    }
+
+    return {
+        "installation_id": installation.id,
+        "installation_name": installation.name,
+        "client_id": installation.client_id,
+        "client_name": client.name if client else None,
+        "notes": next(iter(notes_values)) if len(notes_values) == 1 else None,
+        "selected_device_ids": [assignment.device_id for assignment in active_assignments],
+    }
+
+
+def sync_installation_device_assignments_service(
+    db: Session,
+    installation_id: UUID,
+    payload: InstallationDeviceAssignmentsSyncRequest,
+    current_user: CurrentUserContext,
+):
+    installation = get_installation_by_id(db, installation_id)
+    if not installation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Installation not found",
+        )
+
+    target_client_id = payload.client_id or installation.client_id
+    client = get_client_by_id(db, target_client_id)
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client not found",
+        )
+
+    if (
+        current_user.role_code.upper() != "ADMIN"
+        and target_client_id != installation.client_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to change installation client",
+        )
+
+    if target_client_id != installation.client_id:
+        update_installation_service(
+            db,
+            installation_id,
+            InstallationUpdate(client_id=target_client_id),
+            modified_by=current_user.username,
+        )
+        installation = get_installation_by_id(db, installation_id)
+
+    now = datetime.utcnow()
+    requested_ids = []
+    seen_ids = set()
+    for device_id in payload.device_ids:
+        key = str(device_id)
+        if key in seen_ids:
+            continue
+        seen_ids.add(key)
+        requested_ids.append(device_id)
+
+    current_assignments = get_active_assignments_by_installation_id(db, installation_id)
+    current_by_device_id = {
+        str(assignment.device_id): assignment
+        for assignment in current_assignments
+    }
+
+    for assignment in current_assignments:
+        if str(assignment.device_id) in seen_ids:
+            continue
+
+        assignment.is_active = False
+        assignment.unassigned_on = now
+        assignment.modified_on = now
+        assignment.modified_by = current_user.username
+        update_installation_device(db, assignment)
+
+    normalized_notes = (payload.notes or "").strip() or None
+
+    for device_id in requested_ids:
+        device = get_device_by_id(db, device_id)
+        if not device:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Device not found: {device_id}",
+            )
+
+        existing_current_assignment = current_by_device_id.get(str(device_id))
+        if existing_current_assignment:
+            existing_current_assignment.notes = normalized_notes
+            existing_current_assignment.modified_on = now
+            existing_current_assignment.modified_by = current_user.username
+            update_installation_device(db, existing_current_assignment)
+            continue
+
+        active_assignment = get_active_assignment_by_device_id(db, device_id)
+        if active_assignment and active_assignment.installation_id != installation_id:
+            source_installation = get_installation_by_id(db, active_assignment.installation_id)
+            if not source_installation or source_installation.client_id != target_client_id:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Device is not assigned to the selected client",
+                )
+
+            active_assignment.is_active = False
+            active_assignment.unassigned_on = now
+            active_assignment.modified_on = now
+            active_assignment.modified_by = current_user.username
+            update_installation_device(db, active_assignment)
+
+        elif active_assignment and active_assignment.installation_id == installation_id:
+            active_assignment.notes = normalized_notes
+            active_assignment.modified_on = now
+            active_assignment.modified_by = current_user.username
+            update_installation_device(db, active_assignment)
+            continue
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Device is not currently assigned to the selected client",
+            )
+
+        create_installation_device(
+            db,
+            InstallationDevice(
+                installation_id=installation_id,
+                device_id=device_id,
+                assigned_on=now,
+                notes=normalized_notes,
+                is_active=True,
+                created_by=current_user.username,
+            ),
+        )
+
+    return {
+        "installation_id": installation_id,
+        "client_id": target_client_id,
+        "assigned_count": len(requested_ids),
+        "selected_device_ids": requested_ids,
+    }

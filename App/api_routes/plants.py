@@ -60,6 +60,7 @@ def create_plant(
     current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
     ensure_client_scope(current_user, payload.client_id)
+    payload.created_by = current_user.username or current_user.email
     return create_plant_service(db, payload)
 
 
@@ -76,6 +77,7 @@ def update_plant(
     if payload.client_id is not None:
         ensure_client_scope(current_user, payload.client_id)
 
+    payload.modified_by = current_user.username or current_user.email
     return update_plant_service(db, plant_id, payload)
 
 
@@ -87,5 +89,5 @@ def delete_plant(
 ):
     plant = get_plant_service(db, plant_id)
     ensure_client_scope(current_user, plant.client_id)
-    delete_plant_service(db, plant_id)
+    delete_plant_service(db, plant_id, current_user.username or current_user.email)
     return None

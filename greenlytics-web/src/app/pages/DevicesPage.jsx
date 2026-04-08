@@ -5,8 +5,10 @@ import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
 import DeviceFilters from '../components/DeviceFiltersV2'
 import DeviceEditModal from '../components/DeviceEditModalV2'
+import LoadingOverlay from '../components/LoadingOverlay'
 import RowActionsDropdown from '../components/RowActionsDropdown'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { devicesService } from '../services/devicesService'
 
 function formatDate(value) {
@@ -76,6 +78,10 @@ const EMPTY_FILTERS = {
 export default function DevicesPage() {
   const navigate = useNavigate()
   const { roleCode, user } = useAuth()
+  const { language } = useLanguage()
+  const normalizedRoleCode = (roleCode || '').toUpperCase()
+  const canCreateDevices = ['ADMIN', 'MANAGER'].includes(normalizedRoleCode)
+  const canEditDevices = normalizedRoleCode === 'ADMIN'
   const [items, setItems] = useState([])
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -88,6 +94,75 @@ export default function DevicesPage() {
   const [pageSize, setPageSize] = useState(10)
   const [total, setTotal] = useState(0)
   const [activeFilters, setActiveFilters] = useState(EMPTY_FILTERS)
+  const text = useMemo(() => {
+    const texts = {
+      ca: {
+        filters: 'Filtres',
+        filtersDescription: 'Ajusta criteris per localitzar dispositius més ràpidament.',
+        listTitle: 'Llistat de dispositius',
+        name: 'Nom',
+        code: 'Codi',
+        serial: 'Serial',
+        status: 'Status',
+        active: 'Actiu',
+        lastSeen: 'Last seen',
+        actions: 'Accions',
+        yes: 'Sí',
+        no: 'No',
+        edit: 'Editar',
+        activate: 'Activar',
+        deactivate: 'Desactivar',
+        readings: 'Lectures',
+        noResults: 'No s’han trobat dispositius.',
+        loading: 'Carregant dispositius...',
+        saving: 'Desant dispositiu...',
+      },
+      es: {
+        filters: 'Filtros',
+        filtersDescription: 'Ajusta criterios para localizar dispositivos más rápido.',
+        listTitle: 'Listado de dispositivos',
+        name: 'Nombre',
+        code: 'Código',
+        serial: 'Serie',
+        status: 'Estado',
+        active: 'Activo',
+        lastSeen: 'Última conexión',
+        actions: 'Acciones',
+        yes: 'Sí',
+        no: 'No',
+        edit: 'Editar',
+        activate: 'Activar',
+        deactivate: 'Desactivar',
+        readings: 'Lecturas',
+        noResults: 'No se han encontrado dispositivos.',
+        loading: 'Cargando dispositivos...',
+        saving: 'Guardando dispositivo...',
+      },
+      en: {
+        filters: 'Filters',
+        filtersDescription: 'Adjust criteria to find devices faster.',
+        listTitle: 'Devices list',
+        name: 'Name',
+        code: 'Code',
+        serial: 'Serial',
+        status: 'Status',
+        active: 'Active',
+        lastSeen: 'Last seen',
+        actions: 'Actions',
+        yes: 'Yes',
+        no: 'No',
+        edit: 'Edit',
+        activate: 'Activate',
+        deactivate: 'Deactivate',
+        readings: 'Readings',
+        noResults: 'No devices found.',
+        loading: 'Loading devices...',
+        saving: 'Saving device...',
+      },
+    }
+
+    return texts[language] || texts.ca
+  }, [language])
 
   const activeFilterCount = useMemo(() => {
     return [
@@ -144,6 +219,8 @@ export default function DevicesPage() {
   }
 
   async function handleEdit(device) {
+    if (!canEditDevices) return
+
     setModalMode('edit')
     setIsSaving(true)
     setError('')
@@ -192,6 +269,7 @@ export default function DevicesPage() {
   }
 
   async function handleDeleteDevice() {
+    if (!canEditDevices) return
     if (!selectedDevice?.id) return
 
     setIsSaving(true)
@@ -212,6 +290,8 @@ export default function DevicesPage() {
   }
 
   function handleNewDevice() {
+    if (!canCreateDevices) return
+
     setModalMode('create')
     setError('')
     setSelectedDevice(createEmptyDevice())
@@ -219,6 +299,8 @@ export default function DevicesPage() {
   }
 
   async function handleToggleActive(device) {
+    if (!canEditDevices) return
+
     const nextValue = !device.is_active
     const confirmed = window.confirm(
       nextValue
@@ -259,8 +341,8 @@ export default function DevicesPage() {
   return (
     <div className="space-y-6">
       <CollapsibleFiltersCard
-        title="Filtres"
-        description="Ajusta criteris per localitzar dispositius més ràpidament."
+        title={text.filters}
+        description={text.filtersDescription}
         activeCount={activeFilterCount}
         defaultExpanded={false}
       >
@@ -268,21 +350,20 @@ export default function DevicesPage() {
           initialFilters={activeFilters}
           onSearch={handleSearch}
           onReset={handleReset}
-          showClientFilter={roleCode?.toUpperCase() === 'ADMIN'}
+          showClientFilter={normalizedRoleCode === 'ADMIN'}
           disabled={isLoading || isSaving}
         />
       </CollapsibleFiltersCard>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-visible">
         <BackofficeListHeader
-          title="Llistat de dispositius"
+          title={text.listTitle}
           total={total}
           showNewButton
           onNew={handleNewDevice}
-          newDisabled={!['ADMIN', 'MANAGER'].includes((roleCode || '').toUpperCase()) || isLoading || isSaving}
+          newDisabled={!canCreateDevices || isLoading || isSaving}
         />
 
-        {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
         {success ? <p className="mt-4 text-sm text-emerald-600">{success}</p> : null}
 
@@ -290,14 +371,14 @@ export default function DevicesPage() {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
-                <th className="px-3 py-3">Nom</th>
-                <th className="px-3 py-3">Codi</th>
-                <th className="px-3 py-3">Serial</th>
+                <th className="px-3 py-3">{text.name}</th>
+                <th className="px-3 py-3">{text.code}</th>
+                <th className="px-3 py-3">{text.serial}</th>
                 <th className="px-3 py-3">MAC</th>
-                <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3">Actiu</th>
-                <th className="px-3 py-3">Last seen</th>
-                <th className="px-3 py-3 text-right">Accions</th>
+                <th className="px-3 py-3">{text.status}</th>
+                <th className="px-3 py-3">{text.active}</th>
+                <th className="px-3 py-3">{text.lastSeen}</th>
+                <th className="px-3 py-3 text-right">{text.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -308,25 +389,29 @@ export default function DevicesPage() {
                   <td className="px-3 py-3">{item.serial_number || '-'}</td>
                   <td className="px-3 py-3">{item.mac_address || '-'}</td>
                   <td className="px-3 py-3">{item.status || '-'}</td>
-                  <td className="px-3 py-3">{item.is_active ? 'Sí' : 'No'}</td>
+                  <td className="px-3 py-3">{item.is_active ? text.yes : text.no}</td>
                   <td className="px-3 py-3">{formatDate(item.last_seen_on)}</td>
                   <td className="px-3 py-3 text-right">
                     <RowActionsDropdown
                       disabled={isSaving}
                       actions={[
-                        {
-                          key: 'edit',
-                          label: 'Editar',
-                          onClick: () => handleEdit(item),
-                        },
-                        {
-                          key: 'toggle-active',
-                          label: item.is_active ? 'Desactivar' : 'Activar',
-                          onClick: () => handleToggleActive(item),
-                        },
+                        ...(canEditDevices
+                          ? [
+                              {
+                                key: 'edit',
+                                label: text.edit,
+                                onClick: () => handleEdit(item),
+                              },
+                              {
+                                key: 'toggle-active',
+                                label: item.is_active ? text.deactivate : text.activate,
+                                onClick: () => handleToggleActive(item),
+                              },
+                            ]
+                          : []),
                         {
                           key: 'readings',
-                          label: 'Lectures',
+                          label: text.readings,
                           onClick: () => handleGoToReadings(item),
                         },
                       ]}
@@ -338,7 +423,7 @@ export default function DevicesPage() {
               {!isLoading && items.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-3 py-6 text-center text-slate-500">
-                    No s’han trobat dispositius.
+                    {text.noResults}
                   </td>
                 </tr>
               ) : null}
@@ -369,6 +454,11 @@ export default function DevicesPage() {
         onSave={handleSaveDevice}
         onDelete={handleDeleteDevice}
         isSaving={isSaving}
+      />
+      <LoadingOverlay
+        visible={isLoading || isSaving}
+        label={isSaving ? text.saving : text.loading}
+        transparent
       />
     </div>
   )

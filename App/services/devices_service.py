@@ -37,13 +37,27 @@ def _normalize_device_status(value: str | None) -> str | None:
     return normalized
 
 
-def list_devices_service(db: Session):
-    return get_all_devices(db)
+def _resolve_device_client_scope(current_user):
+    if current_user is None:
+        return None
+
+    if (current_user.role_code or "").upper() == "ADMIN":
+        return None
+
+    return current_user.client_id
 
 
-def search_devices_service(db: Session, payload):
+def list_devices_service(db: Session, current_user=None):
+    return get_all_devices(db, client_id=_resolve_device_client_scope(current_user))
+
+
+def search_devices_service(db: Session, payload, current_user=None):
     try:
-        return search_devices(db, payload)
+        return search_devices(
+            db,
+            payload,
+            client_id=_resolve_device_client_scope(current_user),
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -51,8 +65,12 @@ def search_devices_service(db: Session, payload):
         ) from exc
 
 
-def get_device_service(db: Session, device_id):
-    device = get_device_by_id(db, device_id)
+def get_device_service(db: Session, device_id, current_user=None):
+    device = get_device_by_id(
+        db,
+        device_id,
+        client_id=_resolve_device_client_scope(current_user),
+    )
     if not device:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

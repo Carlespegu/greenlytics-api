@@ -41,7 +41,7 @@ def get_installation_service(db: Session, installation_id: UUID):
     return installation
 
 
-def create_installation_service(db: Session, payload: InstallationCreate):
+def create_installation_service(db: Session, payload: InstallationCreate, created_by: str | None = None):
     client = get_client_by_id(db, payload.client_id)
     if not client:
         raise HTTPException(
@@ -49,17 +49,32 @@ def create_installation_service(db: Session, payload: InstallationCreate):
             detail="Client not found",
         )
 
-    existing = get_installation_by_client_and_code(db, payload.client_id, payload.code)
+    safe_code = payload.code.strip()
+    safe_name = payload.name.strip()
+
+    if not safe_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Field 'code' is required",
+        )
+
+    if not safe_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Field 'name' is required",
+        )
+
+    existing = get_installation_by_client_and_code(db, payload.client_id, safe_code)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Installation with code '{payload.code}' already exists for this client",
+            detail=f"Installation with code '{safe_code}' already exists for this client",
         )
 
     installation = Installation(
         client_id=payload.client_id,
-        code=payload.code,
-        name=payload.name,
+        code=safe_code,
+        name=safe_name,
         description=payload.description,
         address=payload.address,
         city=payload.city,
@@ -69,13 +84,18 @@ def create_installation_service(db: Session, payload: InstallationCreate):
         latitude=payload.latitude,
         longitude=payload.longitude,
         is_active=payload.is_active,
-        created_by=payload.created_by,
+        created_by=created_by or payload.created_by,
     )
 
     return create_installation(db, installation)
 
 
-def update_installation_service(db: Session, installation_id: UUID, payload: InstallationUpdate):
+def update_installation_service(
+    db: Session,
+    installation_id: UUID,
+    payload: InstallationUpdate,
+    modified_by: str | None = None,
+):
     installation = get_installation_by_id(db, installation_id)
     if not installation:
         raise HTTPException(
@@ -84,7 +104,20 @@ def update_installation_service(db: Session, installation_id: UUID, payload: Ins
         )
 
     new_client_id = installation.client_id if payload.client_id is None else payload.client_id
-    new_code = installation.code if payload.code is None else payload.code
+    new_code = installation.code if payload.code is None else payload.code.strip()
+    new_name = installation.name if payload.name is None else payload.name.strip()
+
+    if not new_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Field 'code' is required",
+        )
+
+    if not new_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Field 'name' is required",
+        )
 
     if payload.client_id is not None and payload.client_id != installation.client_id:
         client = get_client_by_id(db, payload.client_id)
@@ -105,9 +138,9 @@ def update_installation_service(db: Session, installation_id: UUID, payload: Ins
     if payload.client_id is not None:
         installation.client_id = payload.client_id
     if payload.code is not None:
-        installation.code = payload.code
+        installation.code = new_code
     if payload.name is not None:
-        installation.name = payload.name
+        installation.name = new_name
     if payload.description is not None:
         installation.description = payload.description
     if payload.address is not None:
@@ -126,7 +159,9 @@ def update_installation_service(db: Session, installation_id: UUID, payload: Ins
         installation.longitude = payload.longitude
     if payload.is_active is not None:
         installation.is_active = payload.is_active
-    if payload.modified_by is not None:
+    if modified_by is not None:
+        installation.modified_by = modified_by
+    elif payload.modified_by is not None:
         installation.modified_by = payload.modified_by
 
     installation.modified_on = datetime.utcnow()

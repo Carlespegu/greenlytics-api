@@ -4,6 +4,7 @@ import { clientsService } from '../services/clientsService'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
+import LoadingOverlay from '../components/LoadingOverlay'
 import RowActionsDropdown from '../components/RowActionsDropdown'
 
 function FilterInput({ value, onChange, placeholder, name }) {
@@ -167,7 +168,6 @@ export default function ClientsPage() {
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-visible">
         <BackofficeListHeader title="Llistat de clients" total={total} showNewButton onNew={() => navigate('/clients/new')} />
 
-        {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
         <div className="mt-4 overflow-visible">
@@ -223,6 +223,7 @@ export default function ClientsPage() {
           onPageSizeChange={(nextSize) => loadClients({ targetPage: 1, targetPageSize: nextSize })}
         />
       </section>
+      <LoadingOverlay visible={isLoading} label="Carregant clients..." transparent />
     </div>
   )
 }

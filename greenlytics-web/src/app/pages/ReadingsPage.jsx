@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import BackofficeListHeader from '../components/BackofficeListHeader'
+import LoadingOverlay from '../components/LoadingOverlay'
 import { resourceService } from '../services/resourceService'
 
 function FilterInput({ name, value, onChange, placeholder }) {
@@ -188,7 +189,6 @@ export default function ReadingsPage() {
           onNew={() => navigate('/readings/new')}
         />
 
-        {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
         <div className="mt-4 overflow-x-auto">
@@ -255,6 +255,7 @@ export default function ReadingsPage() {
           </div>
         </div>
       </section>
+      <LoadingOverlay visible={isLoading} label="Carregant lectures..." transparent />
     </div>
   )
 }

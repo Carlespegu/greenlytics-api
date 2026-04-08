@@ -7,21 +7,33 @@ from database.models.installation import Installation
 from database.models.installation_device import InstallationDevice
 
 
-def get_all_devices(db: Session):
-    return (
-        db.query(Device)
-        .filter(Device.is_deleted == False)  # noqa: E712
-        .order_by(Device.name.asc())
-        .all()
+def _apply_client_scope(query, client_id):
+    if client_id is None:
+        return query
+
+    return query.filter(
+        exists().where(
+            and_(
+                InstallationDevice.device_id == Device.id,
+                InstallationDevice.is_active == True,  # noqa: E712
+                InstallationDevice.installation_id == Installation.id,
+                Installation.client_id == client_id,
+                Installation.is_deleted == False,  # noqa: E712
+            )
+        )
     )
 
 
-def get_device_by_id(db: Session, device_id: UUID):
-    return (
-        db.query(Device)
-        .filter(Device.id == device_id, Device.is_deleted == False)  # noqa: E712
-        .first()
-    )
+def get_all_devices(db: Session, client_id=None):
+    query = db.query(Device).filter(Device.is_deleted == False)  # noqa: E712
+    query = _apply_client_scope(query, client_id)
+    return query.order_by(Device.name.asc()).all()
+
+
+def get_device_by_id(db: Session, device_id: UUID, client_id=None):
+    query = db.query(Device).filter(Device.id == device_id, Device.is_deleted == False)  # noqa: E712
+    query = _apply_client_scope(query, client_id)
+    return query.first()
 
 
 def get_device_by_code(db: Session, code: str):
@@ -82,8 +94,9 @@ def _apply_uuid_filter(query, column, filter_obj):
     return query.filter(column == filter_obj.filter_value)
 
 
-def search_devices(db: Session, payload):
+def search_devices(db: Session, payload, client_id=None):
     query = db.query(Device).filter(Device.is_deleted == False)  # noqa: E712
+    query = _apply_client_scope(query, client_id)
 
     if payload.client_ids:
         query = query.filter(

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import BackofficeListHeader from '../components/BackofficeListHeader'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
+import LoadingOverlay from '../components/LoadingOverlay'
 import RowActionsDropdown from '../components/RowActionsDropdown'
 import { alertsService } from '../services/alertsService'
 
@@ -163,8 +164,13 @@ export default function AlertsPage() {
       setTotal(payload.total || 0)
       setPage(payload.page || targetPage)
       setPageSize(payload.page_size || payload.pageSize || targetPageSize)
+      if (payload.degraded) {
+        setError('')
+      }
     } catch (err) {
-      setError(err.message || 'No s’han pogut carregar les alertes.')
+      setItems([])
+      setTotal(0)
+      setError('No s’han pogut carregar les alertes.')
     } finally {
       setIsLoading(false)
     }
@@ -356,7 +362,6 @@ export default function AlertsPage() {
           onNew={() => navigate('/alerts/new')}
         />
 
-        {isLoading ? <p className="mt-4 text-sm text-slate-500">Carregant...</p> : null}
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
         {success ? <p className="mt-4 text-sm text-emerald-600">{success}</p> : null}
 
@@ -437,6 +442,11 @@ export default function AlertsPage() {
           }}
         />
       </section>
+      <LoadingOverlay
+        visible={isLoading || isSaving}
+        label={isSaving ? 'Desant alerta...' : 'Carregant alertes...'}
+        transparent
+      />
     </div>
   )
 }

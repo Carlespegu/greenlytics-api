@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
+import LoadingOverlay from '../components/LoadingOverlay'
 import { usersService } from '../services/usersService'
 import { useLanguage } from '../context/LanguageContext'
 
@@ -208,7 +209,6 @@ export default function UsersPage() {
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <BackofficeListHeader title="Llistat d'usuaris" total={total} />
 
-        {isLoading ? <p className="mt-4 text-sm text-slate-500">{t('loadingUsers')}</p> : null}
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
         <div className="mt-4 overflow-x-auto">
@@ -257,6 +257,7 @@ export default function UsersPage() {
           onPageSizeChange={(nextSize) => loadUsers({ targetPage: 1, targetPageSize: nextSize })}
         />
       </section>
+      <LoadingOverlay visible={isLoading} label={t('loadingUsers')} transparent />
     </div>
   )
 }

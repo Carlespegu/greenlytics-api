@@ -13,6 +13,18 @@ def get_all_installation_devices(db: Session):
     )
 
 
+def get_active_assignments_by_installation_id(db: Session, installation_id: UUID):
+    return (
+        db.query(InstallationDevice)
+        .filter(
+            InstallationDevice.installation_id == installation_id,
+            InstallationDevice.is_active == True,  # noqa: E712
+        )
+        .order_by(InstallationDevice.created_on.desc())
+        .all()
+    )
+
+
 def get_installation_device_by_id(db: Session, installation_device_id: UUID):
     return (
         db.query(InstallationDevice)

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { deviceTypesService } from '../services/deviceTypesService'
 import { useLanguage } from '../context/LanguageContext'
+import LoadingOverlay from './LoadingOverlay'
 
 const EMPTY_FORM = {
   device_type_id: '',
@@ -172,6 +173,11 @@ function ReadOnlyField({ label, value }) {
       <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-600">
         {value || '-'}
       </div>
+      <LoadingOverlay
+        visible={isSaving || isLoadingTypes}
+        label={isSaving ? text.saving : 'Carregant...'}
+        transparent
+      />
     </div>
   )
 }

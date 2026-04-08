@@ -5,8 +5,17 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from App.dependencies.auth import ensure_client_scope, get_current_active_user, require_roles
+from App.schemas.installation_device_assignments import (
+    InstallationDeviceAssignmentsSummaryResponse,
+    InstallationDeviceAssignmentsSyncRequest,
+    InstallationDeviceAssignmentsSyncResponse,
+)
 from App.schemas.installations import InstallationCreate, InstallationResponse, InstallationUpdate
 from App.schemas.installations_search import InstallationSearchRequest, InstallationSearchResponse
+from App.services.installation_devices_service import (
+    get_installation_device_assignments_summary_service,
+    sync_installation_device_assignments_service,
+)
 from App.services.installations_service import (
     create_installation_service,
     delete_installation_service,
@@ -53,6 +62,44 @@ def get_installation(
     return installation
 
 
+@router.get(
+    "/{installation_id}/device-assignments/summary",
+    response_model=InstallationDeviceAssignmentsSummaryResponse,
+)
+def get_installation_device_assignments_summary(
+    installation_id: UUID,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    summary = get_installation_device_assignments_summary_service(db, installation_id)
+    ensure_client_scope(current_user, summary["client_id"])
+    return summary
+
+
+@router.post(
+    "/{installation_id}/device-assignments/sync",
+    response_model=InstallationDeviceAssignmentsSyncResponse,
+)
+def sync_installation_device_assignments(
+    installation_id: UUID,
+    payload: InstallationDeviceAssignmentsSyncRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles("ADMIN", "MANAGER")),
+):
+    installation = get_installation_service(db, installation_id)
+    ensure_client_scope(current_user, installation.client_id)
+
+    if payload.client_id is not None:
+        ensure_client_scope(current_user, payload.client_id)
+
+    return sync_installation_device_assignments_service(
+        db,
+        installation_id,
+        payload,
+        current_user=current_user,
+    )
+
+
 @router.post("", response_model=InstallationResponse, status_code=status.HTTP_201_CREATED)
 def create_installation(
     payload: InstallationCreate,
@@ -60,7 +107,7 @@ def create_installation(
     current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
     ensure_client_scope(current_user, payload.client_id)
-    return create_installation_service(db, payload)
+    return create_installation_service(db, payload, created_by=current_user.username)
 
 
 @router.put("/{installation_id}", response_model=InstallationResponse)
@@ -76,7 +123,12 @@ def update_installation(
     if payload.client_id is not None:
         ensure_client_scope(current_user, payload.client_id)
 
-    return update_installation_service(db, installation_id, payload)
+    return update_installation_service(
+        db,
+        installation_id,
+        payload,
+        modified_by=current_user.username,
+    )
 
 
 @router.delete("/{installation_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -21,6 +21,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import LoadingOverlay from '../components/LoadingOverlay'
 import { dashboardService } from '../services/dashboardService'
 import { useLanguage } from '../context/LanguageContext'
 
@@ -101,12 +102,12 @@ function normalizeKpis(kpis, t) {
     .filter((key) => map.has(key))
     .map((key) => {
       const item = map.get(key)
-      return {
-        ...item,
-        key,
-        title: t(`dashboardKpi.${key}.title`),
-        subtitle: item.subtitle || t(`dashboardKpi.${key}.subtitle`),
-      }
+        return {
+          ...item,
+          key,
+          title: t(`dashboardKpi.${key}.title`),
+          subtitle: t(`dashboardKpi.${key}.subtitle`),
+        }
     })
 }
 
@@ -400,6 +401,7 @@ export default function Dashboard() {
           </section>
         </>
       )}
+      <LoadingOverlay visible={isLoading} label={t('dashboardLoading')} transparent />
     </div>
   )
 }

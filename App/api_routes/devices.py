@@ -23,27 +23,27 @@ router = APIRouter(prefix="/devices", tags=["Devices"])
 @router.get("", response_model=List[DeviceResponse])
 def list_devices(
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("ADMIN")),
+    current_user: CurrentUserContext = Depends(require_roles("ADMIN", "MANAGER", "VIEWER")),
 ):
-    return list_devices_service(db)
+    return list_devices_service(db, current_user=current_user)
 
 
 @router.post("/search", response_model=DeviceSearchResponse)
 def search_devices(
     payload: DeviceSearchRequest,
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("ADMIN")),
+    current_user: CurrentUserContext = Depends(require_roles("ADMIN", "MANAGER", "VIEWER")),
 ):
-    return search_devices_service(db, payload)
+    return search_devices_service(db, payload, current_user=current_user)
 
 
 @router.get("/{device_id}", response_model=DeviceResponse)
 def get_device(
     device_id: UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(require_roles("ADMIN")),
+    current_user: CurrentUserContext = Depends(require_roles("ADMIN", "MANAGER", "VIEWER")),
 ):
-    return get_device_service(db, device_id)
+    return get_device_service(db, device_id, current_user=current_user)
 
 
 @router.post("", response_model=DeviceResponse, status_code=status.HTTP_201_CREATED)

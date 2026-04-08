@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useLanguage } from '../context/LanguageContext'
 
 export default function CollapsibleFiltersCard({
   title = 'Filtres',
@@ -7,11 +8,37 @@ export default function CollapsibleFiltersCard({
   defaultExpanded = false,
   children,
 }) {
+  const { language } = useLanguage()
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
 
+  const text = useMemo(() => {
+    const texts = {
+      ca: {
+        oneActive: '1 filtre actiu',
+        manyActive: (count) => `${count} filtres actius`,
+        show: 'Mostrar filtres',
+        hide: 'Amagar filtres',
+      },
+      es: {
+        oneActive: '1 filtro activo',
+        manyActive: (count) => `${count} filtros activos`,
+        show: 'Mostrar filtros',
+        hide: 'Ocultar filtros',
+      },
+      en: {
+        oneActive: '1 active filter',
+        manyActive: (count) => `${count} active filters`,
+        show: 'Show filters',
+        hide: 'Hide filters',
+      },
+    }
+
+    return texts[language] || texts.ca
+  }, [language])
+
   const badgeLabel = useMemo(() => {
-    return activeCount === 1 ? '1 filtre actiu' : `${activeCount} filtres actius`
-  }, [activeCount])
+    return activeCount === 1 ? text.oneActive : text.manyActive(activeCount)
+  }, [activeCount, text])
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -31,7 +58,7 @@ export default function CollapsibleFiltersCard({
             onClick={() => setIsExpanded((prev) => !prev)}
             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            {isExpanded ? 'Amagar filtres' : 'Mostrar filtres'}
+            {isExpanded ? text.hide : text.show}
           </button>
         </div>
       </div>
