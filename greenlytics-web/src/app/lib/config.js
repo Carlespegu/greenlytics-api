@@ -1,8 +1,7 @@
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+const DEFAULT_API_BASE_URL = 'https://api.greenlytics.app'
 
-if (!apiBaseUrl) {
-  throw new Error('Falta la variable VITE_API_BASE_URL al fitxer .env')
-}
+const apiBaseUrl =
+  (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '')
 
 export const config = {
   apiBaseUrl,
