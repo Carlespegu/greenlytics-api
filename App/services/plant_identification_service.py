@@ -47,6 +47,22 @@ def _extract_output_text(payload: dict[str, Any]) -> str:
     )
 
 
+def _extract_json_object(text: str) -> dict[str, Any]:
+    cleaned = (text or "").strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        start = cleaned.find("{")
+        end = cleaned.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            raise
+        return json.loads(cleaned[start : end + 1])
+
+
 def _normalize_enum(value: Any, allowed: set[str]) -> str | None:
     if not value:
         return None
@@ -126,11 +142,13 @@ def identify_plant_from_image(
         "8) current_state must summarize the apparent current condition in the requested language. "
         "9) confidence must be a number from 0 to 1. "
         "10) If uncertain, make the best estimate and lower confidence. "
+        "11) Do not wrap the JSON in markdown fences or extra commentary. "
         f"Requested response language: {response_language}."
     )
 
     payload = {
         "model": settings.OPENAI_MODEL,
+        "text": {"format": {"type": "json_object"}},
         "input": [
             {
                 "role": "user",
@@ -170,7 +188,7 @@ def identify_plant_from_image(
     output_text = _extract_output_text(raw_payload)
 
     try:
-        identified = json.loads(output_text)
+        identified = _extract_json_object(output_text)
     except json.JSONDecodeError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
