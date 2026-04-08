@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Bell,
   Leaf,
   Thermometer,
   Droplets,
   Wifi,
   TriangleAlert,
   Activity,
-  ArrowUpRight,
   SunMedium,
   CloudRain,
 } from 'lucide-react'
@@ -130,22 +128,6 @@ function KpiCard({ kpiKey, title, value, subtitle }) {
   )
 }
 
-function ActionButton({ children, primary = false }) {
-  return (
-    <button
-      className={[
-        'inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-medium transition',
-        primary
-          ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-          : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
-      ].join(' ')}
-      type="button"
-    >
-      {children}
-    </button>
-  )
-}
-
 function EmptyState({ message }) {
   return (
     <div className="flex h-full items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
@@ -203,18 +185,6 @@ export default function Dashboard() {
             <p className="mt-1 text-sm text-slate-500">
               {t('dashboardSubtitle')}
             </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <ActionButton>
-              <Bell className="mr-2 h-4 w-4" />
-              {t('viewAlerts')}
-            </ActionButton>
-
-            <ActionButton primary>
-              <ArrowUpRight className="mr-2 h-4 w-4" />
-              {t('addSensor')}
-            </ActionButton>
           </div>
         </div>
       </motion.section>

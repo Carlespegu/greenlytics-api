@@ -186,7 +186,7 @@ export default function ReadingsPage() {
           title="Llistat de lectures"
           total={total}
           showNewButton
-          onNew={() => navigate('/readings/new')}
+          onNew={() => navigate('/app/readings/new')}
         />
 
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}

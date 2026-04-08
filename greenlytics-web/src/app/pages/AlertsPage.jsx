@@ -359,7 +359,7 @@ export default function AlertsPage() {
           title="Llistat d'alertes"
           total={total}
           showNewButton
-          onNew={() => navigate('/alerts/new')}
+          onNew={() => navigate('/app/alerts/new')}
         />
 
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}

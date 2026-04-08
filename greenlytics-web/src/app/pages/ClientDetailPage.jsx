@@ -383,7 +383,7 @@ export default function ClientDetailPage() {
           SecondaryColor: form.SecondaryColor,
           CreatedBy: user?.username || user?.email || 'system',
         })
-        navigate('/clients')
+        navigate('/app/clients')
         return
       }
 
@@ -528,7 +528,7 @@ function openEditUserModal(item) {
           </div>
           <button
             type="button"
-            onClick={() => navigate('/clients')}
+            onClick={() => navigate('/app/clients')}
             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             {t('backToList')}
@@ -722,7 +722,7 @@ function openEditUserModal(item) {
               <button type="submit" disabled={isSaving} className="rounded-xl px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70" style={{ backgroundColor: 'var(--brand-primary)' }}>
                 {isSaving ? t('saving') : isNew ? t('createClient') : t('saveChanges')}
               </button>
-              <button type="button" onClick={() => navigate('/clients')} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+              <button type="button" onClick={() => navigate('/app/clients')} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
                 {t('cancel')}
               </button>
             </div>

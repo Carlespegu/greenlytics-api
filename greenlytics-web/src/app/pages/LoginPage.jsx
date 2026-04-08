@@ -53,7 +53,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/app" replace />
   }
 
   async function handleSubmit(event) {
@@ -62,7 +62,7 @@ export default function LoginPage() {
 
     try {
       await login(form)
-      const redirectTo = location.state?.from?.pathname || '/'
+      const redirectTo = location.state?.from?.pathname || '/app'
       navigate(redirectTo, { replace: true })
     } catch (err) {
       setError(err.message || 'No s’ha pogut iniciar sessió.')

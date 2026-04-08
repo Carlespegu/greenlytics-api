@@ -399,7 +399,7 @@ export default function AlertDetailPage() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => navigate('/alerts')}
+              onClick={() => navigate('/app/alerts')}
               className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               Tornar
@@ -654,7 +654,7 @@ export default function AlertDetailPage() {
 
               <button
                 type="button"
-                onClick={() => navigate('/alerts')}
+                onClick={() => navigate('/app/alerts')}
                 className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
                 Cancel·lar

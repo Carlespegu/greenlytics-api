@@ -182,7 +182,7 @@ def search_alerts(db: Session, payload):
         "channel": Alert.channel,
         "condition_type": Alert.condition_type,
         "is_active": Alert.is_active,
-        "created_on": Alert.created_on,
+        "created_on": Alert.created_at,
     }
 
     if payload.sorting_params:

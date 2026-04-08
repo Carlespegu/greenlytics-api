@@ -19,15 +19,15 @@ function SectionTitle({ children }) {
 }
 
 function resolvePageTitle(pathname, t) {
-  if (pathname === '/') return t('dashboard')
-  if (pathname.startsWith('/devices')) return t('sensors')
-  if (pathname.startsWith('/installations')) return t('installations')
-  if (pathname.startsWith('/plants')) return t('plants')
-  if (pathname.startsWith('/readings')) return t('readings')
-  if (pathname.startsWith('/alerts')) return t('alerts')
-  if (pathname.startsWith('/clients')) return t('clients')
-  if (pathname.startsWith('/users')) return t('users')
-  if (pathname.startsWith('/settings')) return t('settings')
+  if (pathname === '/app' || pathname === '/app/') return t('dashboard')
+  if (pathname.startsWith('/app/devices')) return t('sensors')
+  if (pathname.startsWith('/app/installations')) return t('installations')
+  if (pathname.startsWith('/app/plants')) return t('plants')
+  if (pathname.startsWith('/app/readings')) return t('readings')
+  if (pathname.startsWith('/app/alerts')) return t('alerts')
+  if (pathname.startsWith('/app/clients')) return t('clients')
+  if (pathname.startsWith('/app/users')) return t('users')
+  if (pathname.startsWith('/app/settings')) return t('settings')
   return 'Greenlytics'
 }
 
@@ -80,16 +80,16 @@ export default function AppLayout() {
                 <div>
                   <SectionTitle>{t('operations')}</SectionTitle>
                   <div className="space-y-2">
-                    <NavLink to="/" end className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                    <NavLink to="/app" end className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
                       {t('dashboard')}
                     </NavLink>
-                    <NavLink to="/devices" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                    <NavLink to="/app/devices" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
                       {t('sensors')}
                     </NavLink>
-                    <NavLink to="/installations" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                    <NavLink to="/app/installations" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
                       {t('installations')}
                     </NavLink>
-                    <NavLink to="/plants" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                    <NavLink to="/app/plants" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
                       {t('plants')}
                     </NavLink>
                   </div>
@@ -98,10 +98,10 @@ export default function AppLayout() {
                 <div className="border-t border-slate-200 pt-4">
                   <SectionTitle>{t('data')}</SectionTitle>
                   <div className="space-y-2">
-                    <NavLink to="/readings" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                    <NavLink to="/app/readings" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
                       {t('readings')}
                     </NavLink>
-                    <NavLink to="/alerts" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                    <NavLink to="/app/alerts" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
                       {t('alerts')}
                     </NavLink>
                   </div>
@@ -112,14 +112,14 @@ export default function AppLayout() {
                     <SectionTitle>{t('administration')}</SectionTitle>
                     <div className="space-y-2">
                       {isAdmin && (
-                        <NavLink to="/clients" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                        <NavLink to="/app/clients" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
                           {t('clients')}
                         </NavLink>
                       )}
-                      <NavLink to="/users" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                      <NavLink to="/app/users" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
                         {t('users')}
                       </NavLink>
-                      <NavLink to="/settings" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
+                      <NavLink to="/app/settings" className={menuClassName} style={({ isActive }) => itemStyle(isActive)}>
                         {t('settings')}
                       </NavLink>
                     </div>

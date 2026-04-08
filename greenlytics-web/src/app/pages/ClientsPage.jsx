@@ -166,7 +166,7 @@ export default function ClientsPage() {
       </CollapsibleFiltersCard>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-visible">
-        <BackofficeListHeader title="Llistat de clients" total={total} showNewButton onNew={() => navigate('/clients/new')} />
+        <BackofficeListHeader title="Llistat de clients" total={total} showNewButton onNew={() => navigate('/app/clients/new')} />
 
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
