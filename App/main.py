@@ -59,7 +59,7 @@ app.include_router(alerts_router)
 app.include_router(dashboard_router)
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
     return {
         "message": "Plant API V2 is running",
