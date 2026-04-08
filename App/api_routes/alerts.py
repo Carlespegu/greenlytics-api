@@ -38,9 +38,9 @@ def _serialize_alert(alert):
         "exact_text_value": alert.exact_text_value,
         "exact_boolean_value": alert.exact_boolean_value,
         "is_active": alert.is_active,
-        "created_on": getattr(alert, "created_on", None),
+        "created_on": getattr(alert, "created_at", None),
         "created_by": str(alert.created_by) if getattr(alert, "created_by", None) else None,
-        "modified_on": getattr(alert, "modified_on", None),
+        "modified_on": getattr(alert, "modified_at", None),
         "modified_by": str(alert.modified_by) if getattr(alert, "modified_by", None) else None,
         "deleted_on": getattr(alert, "deleted_on", None),
         "is_deleted": alert.is_deleted,
@@ -87,7 +87,7 @@ def create_alert(
     current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
     ensure_client_scope(current_user, payload.client_id)
-    payload.created_by = current_user.username or current_user.email
+    payload.created_by = current_user.id
     return _serialize_alert(create_alert_service(db, payload))
 
 
@@ -104,7 +104,7 @@ def update_alert(
     if payload.client_id is not None:
         ensure_client_scope(current_user, payload.client_id)
 
-    payload.modified_by = current_user.username or current_user.email
+    payload.modified_by = current_user.id
     return _serialize_alert(update_alert_service(db, alert_id, payload))
 
 

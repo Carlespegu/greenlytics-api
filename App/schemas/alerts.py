@@ -27,7 +27,7 @@ class AlertCreate(BaseModel):
     exact_boolean_value: Optional[bool] = None
 
     is_active: bool = True
-    created_by: Optional[str] = None
+    created_by: Optional[UUID] = None
 
 
 class AlertUpdate(BaseModel):
@@ -51,7 +51,7 @@ class AlertUpdate(BaseModel):
     exact_boolean_value: Optional[bool] = None
 
     is_active: Optional[bool] = None
-    modified_by: Optional[str] = None
+    modified_by: Optional[UUID] = None
 
 
 class AlertResponse(BaseModel):

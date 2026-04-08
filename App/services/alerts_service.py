@@ -276,7 +276,7 @@ def update_alert_service(db: Session, alert_id: UUID, payload: AlertUpdate):
     if payload.modified_by is not None:
         alert.modified_by = payload.modified_by
 
-    alert.modified_on = datetime.utcnow()
+    alert.modified_at = datetime.utcnow()
     return update_alert(db, alert)
 
 
@@ -290,7 +290,7 @@ def delete_alert_service(db: Session, alert_id: UUID):
         )
 
     alert.is_deleted = True
-    alert.modified_on = datetime.utcnow()
+    alert.modified_at = datetime.utcnow()
     alert.is_active = False
 
     return update_alert(db, alert)
