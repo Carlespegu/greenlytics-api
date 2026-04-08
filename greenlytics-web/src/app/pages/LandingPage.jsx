@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 import defaultLogo from '../../assets/logo.png'
 
 function CtaButton({ to, children, variant = 'primary' }) {
@@ -119,7 +119,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="border-t border-slate-200 px-6 py-8 text-center text-sm text-slate-500">
-        � {new Date().getFullYear()} GreenLytics. Monitoritzacio intel.ligent per a entorns verds i instal.lacions connectades.
+        © {new Date().getFullYear()} GreenLytics. Monitoritzacio intel.ligent per a entorns verds i instal.lacions connectades.
       </footer>
     </div>
   )
