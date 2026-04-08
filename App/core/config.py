@@ -31,4 +31,8 @@ class Settings:
     RESEND_API_KEY: str | None = os.getenv("RESEND_API_KEY")
     RESEND_API_URL: str = os.getenv("RESEND_API_URL", "https://api.resend.com/emails")
 
+    OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
+    OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+    OPENAI_API_URL: str = os.getenv("OPENAI_API_URL", "https://api.openai.com/v1/responses")
+
 settings = Settings()

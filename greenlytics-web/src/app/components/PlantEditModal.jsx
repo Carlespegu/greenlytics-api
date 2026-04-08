@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { installationsService } from '../services/installationsService'
+import { plantsService } from '../services/plantsService'
 import { useLanguage } from '../context/LanguageContext'
 import LoadingOverlay from './LoadingOverlay'
 
@@ -59,6 +60,17 @@ const UI_TEXT = {
     status: 'Estat',
     notes: 'Notes',
     active: 'Activa',
+    identifyFromPhoto: 'Omplir des de foto',
+    uploadPhoto: 'Pujar foto',
+    takePhoto: 'Fer foto',
+    identifying: 'Analitzant foto...',
+    photoHint: 'Selecciona una instal·lació i puja una foto per identificar la planta i omplir el formulari.',
+    photoLoaded: 'Dades de la planta carregades des de la foto.',
+    identifyError: 'No s’ha pogut identificar la planta a partir de la foto.',
+    identifyNeedsImageContext: 'Pots analitzar la foto abans de desar. Hauràs d’informar instal·lació, codi i nom abans de guardar.',
+    confidence: 'Confiança',
+    careSummary: 'Cura recomanada',
+    currentState: 'Estat detectat',
     save: 'Desar',
     saving: 'Desant...',
     cancel: 'Cancel·lar',
@@ -111,6 +123,17 @@ const UI_TEXT = {
     status: 'Estado',
     notes: 'Notas',
     active: 'Activa',
+    identifyFromPhoto: 'Rellenar desde foto',
+    uploadPhoto: 'Subir foto',
+    takePhoto: 'Hacer foto',
+    identifying: 'Analizando foto...',
+    photoHint: 'Selecciona una instalación y sube una foto para identificar la planta y rellenar el formulario.',
+    photoLoaded: 'Datos de la planta cargados desde la foto.',
+    identifyError: 'No se ha podido identificar la planta a partir de la foto.',
+    identifyNeedsImageContext: 'Puedes analizar la foto antes de guardar. Tendrás que informar instalación, código y nombre antes de guardar.',
+    confidence: 'Confianza',
+    careSummary: 'Cuidados recomendados',
+    currentState: 'Estado detectado',
     save: 'Guardar',
     saving: 'Guardando...',
     cancel: 'Cancelar',
@@ -163,6 +186,17 @@ const UI_TEXT = {
     status: 'Status',
     notes: 'Notes',
     active: 'Active',
+    identifyFromPhoto: 'Fill from photo',
+    uploadPhoto: 'Upload photo',
+    takePhoto: 'Take photo',
+    identifying: 'Analyzing photo...',
+    photoHint: 'Select an installation and upload a photo to identify the plant and prefill the form.',
+    photoLoaded: 'Plant data loaded from the photo.',
+    identifyError: 'The plant could not be identified from the photo.',
+    identifyNeedsImageContext: 'You can analyze the photo before saving. You will still need installation, code and name before saving.',
+    confidence: 'Confidence',
+    careSummary: 'Recommended care',
+    currentState: 'Detected status',
     save: 'Save',
     saving: 'Saving...',
     cancel: 'Cancel',
@@ -270,12 +304,17 @@ export default function PlantEditModal({
   const [isLoadingInstallations, setIsLoadingInstallations] = useState(false)
   const [validationError, setValidationError] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isIdentifying, setIsIdentifying] = useState(false)
+  const [identificationInfo, setIdentificationInfo] = useState(null)
+  const uploadInputRef = useRef(null)
+  const cameraInputRef = useRef(null)
 
   useEffect(() => {
     if (!isOpen) return
 
     setValidationError('')
     setShowDeleteConfirm(Boolean(initialDeleteConfirm))
+    setIdentificationInfo(null)
     setForm({
       ...EMPTY_FORM,
       ...plant,
@@ -346,6 +385,57 @@ export default function PlantEditModal({
   function handleChange(event) {
     const { name, value } = event.target
     setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  async function handleImageSelection(file) {
+    if (!file) return
+
+    const installation = installations.find((item) => item.id === form.installation_id)
+    let clientId = installation?.client_id || form.client_id || plant?.client_id
+    let installationId = form.installation_id || plant?.installation_id || ''
+
+    setValidationError('')
+    setIsIdentifying(true)
+
+    try {
+      if (installationId && !clientId) {
+        const fullInstallation = await installationsService.getInstallation(installationId)
+        clientId = fullInstallation?.client_id || ''
+      }
+
+      const identified = await plantsService.identifyPlantFromImage({
+        clientId,
+        installationId,
+        file,
+        language,
+      })
+
+      setForm((prev) => ({
+        ...prev,
+        client_id: clientId,
+        code: identified.suggested_code || prev.code,
+        name: identified.name || prev.name,
+        common_name: identified.common_name || '',
+        scientific_name: identified.scientific_name || '',
+        plant_type: identified.plant_type || '',
+        location_type: identified.location_type || '',
+        sun_exposure: identified.sun_exposure || '',
+        status: identified.status || '',
+        notes: identified.notes || prev.notes || '',
+      }))
+
+      setIdentificationInfo({
+        confidence: identified.confidence,
+        care_summary: identified.care_summary || '',
+        current_state: identified.current_state || '',
+      })
+    } catch (err) {
+      setValidationError(err.message || text.identifyError)
+    } finally {
+      setIsIdentifying(false)
+      if (uploadInputRef.current) uploadInputRef.current.value = ''
+      if (cameraInputRef.current) cameraInputRef.current.value = ''
+    }
   }
 
   function parseDecimal(value) {
@@ -427,6 +517,65 @@ export default function PlantEditModal({
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-medium text-emerald-900">{text.identifyFromPhoto}</p>
+                <p className="mt-1 text-sm text-emerald-800">{text.photoHint}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  ref={uploadInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(event) => handleImageSelection(event.target.files?.[0] || null)}
+                />
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(event) => handleImageSelection(event.target.files?.[0] || null)}
+                />
+                <button
+                  type="button"
+                  disabled={!canEdit || isSaving || isIdentifying}
+                  onClick={() => uploadInputRef.current?.click()}
+                  className="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {text.uploadPhoto}
+                </button>
+                <button
+                  type="button"
+                  disabled={!canEdit || isSaving || isIdentifying}
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {text.takePhoto}
+                </button>
+              </div>
+            </div>
+
+            {identificationInfo ? (
+              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                <div className="rounded-xl bg-white/80 p-3 text-sm text-slate-700">
+                  <p className="font-medium text-slate-900">{text.confidence}</p>
+                  <p className="mt-1">{identificationInfo.confidence != null ? `${Math.round(identificationInfo.confidence * 100)}%` : '-'}</p>
+                </div>
+                <div className="rounded-xl bg-white/80 p-3 text-sm text-slate-700">
+                  <p className="font-medium text-slate-900">{text.currentState}</p>
+                  <p className="mt-1">{identificationInfo.current_state || '-'}</p>
+                </div>
+                <div className="rounded-xl bg-white/80 p-3 text-sm text-slate-700">
+                  <p className="font-medium text-slate-900">{text.careSummary}</p>
+                  <p className="mt-1">{identificationInfo.care_summary || '-'}</p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             <Field label={text.installation} required>
               <select
@@ -700,8 +849,8 @@ export default function PlantEditModal({
       </div>
 
       <LoadingOverlay
-        visible={isSaving || isLoadingInstallations}
-        label={isSaving ? text.saving : text.loadingInstallations}
+        visible={isSaving || isLoadingInstallations || isIdentifying}
+        label={isIdentifying ? text.identifying : isSaving ? text.saving : text.loadingInstallations}
         transparent
       />
     </div>
