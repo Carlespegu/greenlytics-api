@@ -369,7 +369,7 @@ export default function AlertDetailPage() {
       if (isNew) {
         const created = await alertsService.createAlert(payload)
         setSuccess('Alerta creada correctament.')
-        navigate(`/alerts/${created.id}`, { replace: true })
+        navigate(`/app/alerts/${created.id}`, { replace: true })
         return
       }
 
