@@ -14,6 +14,7 @@ from App.repositories.plants_repository import (
     search_plants,
     update_plant,
 )
+from App.services.plant_thresholds_service import seed_default_thresholds_for_plant_service
 from App.schemas.plants import PlantCreate, PlantUpdate
 from database.models.plant import Plant
 
@@ -96,7 +97,9 @@ def create_plant_service(db: Session, payload: PlantCreate):
         created_by=payload.created_by,
     )
 
-    return create_plant(db, plant)
+    created_plant = create_plant(db, plant)
+    seed_default_thresholds_for_plant_service(db, created_plant, payload.created_by)
+    return created_plant
 
 
 def update_plant_service(db: Session, plant_id: UUID, payload: PlantUpdate):

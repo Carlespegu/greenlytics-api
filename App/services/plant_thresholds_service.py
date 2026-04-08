@@ -16,7 +16,7 @@ from App.repositories.plant_thresholds_repository import (
     update_plant_threshold,
 )
 from App.repositories.plants_repository import get_plant_by_id
-from App.repositories.reading_types_repository import get_reading_type_by_id
+from App.repositories.reading_types_repository import get_all_reading_types, get_reading_type_by_id
 from App.schemas.plant_thresholds import (
     PlantHealthMetricResponse,
     PlantHealthSummaryResponse,
@@ -24,6 +24,40 @@ from App.schemas.plant_thresholds import (
     PlantThresholdUpdate,
 )
 from database.models.plant_threshold import PlantThreshold
+
+
+DEFAULT_THRESHOLD_BLUEPRINTS = {
+    "SOIL_PERCENT": {
+        "min_value": Decimal("30"),
+        "max_value": Decimal("85"),
+        "optimal_min_value": Decimal("45"),
+        "optimal_max_value": Decimal("70"),
+        "unit": "%",
+        "severity_below": "critical",
+        "severity_above": "warning",
+        "notes": "Generic baseline for soil moisture. Review after observing the plant for a few days.",
+    },
+    "TEMP_C": {
+        "min_value": Decimal("16"),
+        "max_value": Decimal("32"),
+        "optimal_min_value": Decimal("18"),
+        "optimal_max_value": Decimal("28"),
+        "unit": "C",
+        "severity_below": "warning",
+        "severity_above": "warning",
+        "notes": "Generic baseline for ambient temperature around the plant.",
+    },
+    "HUM_AIR": {
+        "min_value": Decimal("30"),
+        "max_value": Decimal("85"),
+        "optimal_min_value": Decimal("45"),
+        "optimal_max_value": Decimal("65"),
+        "unit": "%",
+        "severity_below": "warning",
+        "severity_above": "warning",
+        "notes": "Generic baseline for ambient humidity. Adjust according to the species.",
+    },
+}
 
 
 def list_plant_thresholds_service(db: Session, plant_id: UUID):
@@ -82,6 +116,55 @@ def create_plant_threshold_service(db: Session, payload: PlantThresholdCreate):
         created_by=payload.created_by,
     )
     return create_plant_threshold(db, threshold)
+
+
+def seed_default_thresholds_for_plant_service(db: Session, plant, created_by: str | None = None):
+    seeded_items = []
+    reading_types = get_all_reading_types(db)
+
+    # Indoor plants and greenhouses can usually tolerate a narrower temperature band.
+    temp_blueprint = dict(DEFAULT_THRESHOLD_BLUEPRINTS["TEMP_C"])
+    if getattr(plant, "location_type", None) == "outdoor":
+        temp_blueprint.update(
+            {
+                "min_value": Decimal("8"),
+                "max_value": Decimal("35"),
+                "optimal_min_value": Decimal("15"),
+                "optimal_max_value": Decimal("30"),
+                "notes": "Generic baseline for outdoor temperature around the plant.",
+            }
+        )
+
+    blueprints = dict(DEFAULT_THRESHOLD_BLUEPRINTS)
+    blueprints["TEMP_C"] = temp_blueprint
+
+    for reading_type in reading_types:
+        blueprint = blueprints.get(reading_type.code)
+        if blueprint is None:
+            continue
+
+        existing = get_plant_threshold_by_plant_and_reading_type(db, plant.id, reading_type.id)
+        if existing:
+            continue
+
+        threshold = PlantThreshold(
+            plant_id=plant.id,
+            reading_type_id=reading_type.id,
+            min_value=blueprint.get("min_value"),
+            max_value=blueprint.get("max_value"),
+            optimal_min_value=blueprint.get("optimal_min_value"),
+            optimal_max_value=blueprint.get("optimal_max_value"),
+            unit=blueprint.get("unit") or reading_type.unit,
+            severity_below=blueprint.get("severity_below"),
+            severity_above=blueprint.get("severity_above"),
+            notes=blueprint.get("notes"),
+            source="system_default",
+            is_active=True,
+            created_by=created_by,
+        )
+        seeded_items.append(create_plant_threshold(db, threshold))
+
+    return seeded_items
 
 
 def update_plant_threshold_service(db: Session, threshold_id: UUID, payload: PlantThresholdUpdate):
