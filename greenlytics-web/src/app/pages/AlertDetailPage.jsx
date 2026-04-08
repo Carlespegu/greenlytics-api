@@ -71,7 +71,7 @@ function Toggle({ checked, onChange, label }) {
   )
 }
 
-function buildPayload(form, user) {
+function buildPayload(form) {
   const payload = {
     client_id: form.client_id,
     installation_id: form.installation_id || null,
@@ -83,14 +83,6 @@ function buildPayload(form, user) {
     recipient_email: form.recipient_email.trim() || null,
     condition_type: form.condition_type,
     is_active: Boolean(form.is_active),
-  }
-
-  if (user?.id) {
-    payload.created_by = user.id
-    payload.modified_by = user.id
-  } else if (user?.email) {
-    payload.created_by = user.email
-    payload.modified_by = user.email
   }
 
   if (form.condition_type === 'MIN') {
@@ -372,7 +364,7 @@ export default function AlertDetailPage() {
     setSuccess('')
 
     try {
-      const payload = buildPayload(form, user)
+      const payload = buildPayload(form)
 
       if (isNew) {
         const created = await alertsService.createAlert(payload)

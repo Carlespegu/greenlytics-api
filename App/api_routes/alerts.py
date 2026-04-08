@@ -20,6 +20,33 @@ from database.session import get_db
 router = APIRouter(prefix="/alerts", tags=["Alerts"])
 
 
+def _serialize_alert(alert):
+    return {
+        "id": alert.id,
+        "client_id": alert.client_id,
+        "installation_id": alert.installation_id,
+        "plant_id": alert.plant_id,
+        "reading_type_id": alert.reading_type_id,
+        "name": alert.name,
+        "description": alert.description,
+        "channel": alert.channel,
+        "recipient_email": alert.recipient_email,
+        "condition_type": alert.condition_type,
+        "min_value": alert.min_value,
+        "max_value": alert.max_value,
+        "exact_numeric_value": alert.exact_numeric_value,
+        "exact_text_value": alert.exact_text_value,
+        "exact_boolean_value": alert.exact_boolean_value,
+        "is_active": alert.is_active,
+        "created_on": getattr(alert, "created_on", None),
+        "created_by": str(alert.created_by) if getattr(alert, "created_by", None) else None,
+        "modified_on": getattr(alert, "modified_on", None),
+        "modified_by": str(alert.modified_by) if getattr(alert, "modified_by", None) else None,
+        "deleted_on": getattr(alert, "deleted_on", None),
+        "is_deleted": alert.is_deleted,
+    }
+
+
 @router.get("", response_model=List[AlertResponse])
 def list_alerts(
     db: Session = Depends(get_db),
@@ -27,8 +54,8 @@ def list_alerts(
 ):
     items = list_alerts_service(db)
     if current_user.role_code.upper() == "ADMIN":
-        return items
-    return [item for item in items if item.client_id == current_user.client_id]
+        return [_serialize_alert(item) for item in items]
+    return [_serialize_alert(item) for item in items if item.client_id == current_user.client_id]
 
 
 @router.post("/search", response_model=AlertSearchResponse)
@@ -50,7 +77,7 @@ def get_alert(
 ):
     alert = get_alert_service(db, alert_id)
     ensure_client_scope(current_user, alert.client_id)
-    return alert
+    return _serialize_alert(alert)
 
 
 @router.post("", response_model=AlertResponse, status_code=status.HTTP_201_CREATED)
@@ -60,7 +87,8 @@ def create_alert(
     current_user=Depends(require_roles("ADMIN", "MANAGER")),
 ):
     ensure_client_scope(current_user, payload.client_id)
-    return create_alert_service(db, payload)
+    payload.created_by = current_user.username or current_user.email
+    return _serialize_alert(create_alert_service(db, payload))
 
 
 @router.put("/{alert_id}", response_model=AlertResponse)
@@ -76,7 +104,8 @@ def update_alert(
     if payload.client_id is not None:
         ensure_client_scope(current_user, payload.client_id)
 
-    return update_alert_service(db, alert_id, payload)
+    payload.modified_by = current_user.username or current_user.email
+    return _serialize_alert(update_alert_service(db, alert_id, payload))
 
 
 @router.delete("/{alert_id}", status_code=status.HTTP_204_NO_CONTENT)

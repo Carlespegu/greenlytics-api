@@ -197,6 +197,7 @@ def create_alert_service(db: Session, payload: AlertCreate):
         channel=normalized_channel,
         recipient_email=str(payload.recipient_email).strip().lower() if payload.recipient_email is not None else None,
         condition_type=payload.condition_type.strip().upper(),
+        value_type=(reading_type.value_type or "").strip().upper(),
         min_value=payload.min_value,
         max_value=payload.max_value,
         exact_numeric_value=payload.exact_numeric_value,
@@ -252,6 +253,7 @@ def update_alert_service(db: Session, alert_id: UUID, payload: AlertUpdate):
     alert.installation_id = new_installation_id
     alert.plant_id = new_plant_id
     alert.reading_type_id = new_reading_type_id
+    alert.value_type = (reading_type.value_type or "").strip().upper()
 
     if payload.name is not None:
         alert.name = payload.name.strip()
@@ -288,7 +290,6 @@ def delete_alert_service(db: Session, alert_id: UUID):
         )
 
     alert.is_deleted = True
-    alert.deleted_on = datetime.utcnow()
     alert.modified_on = datetime.utcnow()
     alert.is_active = False
 

@@ -115,7 +115,7 @@ function KpiCard({ kpiKey, title, value, subtitle }) {
   const Icon = KPI_ICON_BY_KEY[kpiKey] || Activity
 
   return (
-    <div className="flex h-full min-h-[132px] flex-col justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="flex h-full min-h-[120px] flex-col justify-between rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm text-slate-500">{title}</p>
@@ -187,12 +187,12 @@ export default function Dashboard() {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
-        className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+        className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
       >
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
@@ -248,14 +248,14 @@ export default function Dashboard() {
             ))}
           </section>
 
-          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <section className="grid grid-cols-1 gap-5 xl:grid-cols-2">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.15 }}
-              className="flex min-h-[520px] flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+              className="flex min-h-[460px] flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
             >
-              <div className="mb-4">
+              <div className="mb-3">
                 <h2 className="text-xl font-semibold text-slate-900">
                   {t('readingTrends')}
                 </h2>
@@ -268,7 +268,7 @@ export default function Dashboard() {
                 {chartData.length === 0 ? (
                   <EmptyState message={t('readingTrendsEmpty')} />
                 ) : (
-                  <div className="h-full min-h-[380px]">
+                  <div className="h-full min-h-[330px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -288,9 +288,9 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.2 }}
-              className="flex min-h-[520px] flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+              className="flex min-h-[460px] flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
             >
-              <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h2 className="text-xl font-semibold text-slate-900">
                     {t('plantStatus')}
@@ -309,11 +309,11 @@ export default function Dashboard() {
                 {plants.length === 0 ? (
                   <EmptyState message={t('plantStatusEmpty')} />
                 ) : (
-                  <div className="space-y-4 overflow-auto pr-1">
+                  <div className="space-y-3 overflow-auto pr-1">
                     {plants.map((plant) => (
                       <div
                         key={`${plant.plant_id || plant.name}-${plant.installation}`}
-                        className="rounded-3xl border border-slate-100 bg-white p-5 transition-all hover:shadow-md"
+                        className="rounded-3xl border border-slate-100 bg-white p-4 transition-all hover:shadow-md"
                       >
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div>
@@ -340,8 +340,8 @@ export default function Dashboard() {
                           </div>
                         </div>
 
-                        <div className="mt-5 grid grid-cols-2 gap-4 xl:grid-cols-4">
-                          <div className="rounded-2xl bg-slate-50 p-4">
+                        <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+                          <div className="rounded-2xl bg-slate-50 p-3.5">
                             <div className="flex items-center gap-2 text-slate-500">
                               <Droplets className="h-4 w-4" />
                               <span className="text-sm">{t('soilHumidity')}</span>
@@ -357,7 +357,7 @@ export default function Dashboard() {
                             </div>
                           </div>
 
-                          <div className="rounded-2xl bg-slate-50 p-4">
+                          <div className="rounded-2xl bg-slate-50 p-3.5">
                             <div className="flex items-center gap-2 text-slate-500">
                               <Thermometer className="h-4 w-4" />
                               <span className="text-sm">{t('temperature')}</span>
@@ -368,7 +368,7 @@ export default function Dashboard() {
                             <p className="mt-3 text-xs text-slate-400">{t('mostRecentData')}</p>
                           </div>
 
-                          <div className="rounded-2xl bg-slate-50 p-4">
+                          <div className="rounded-2xl bg-slate-50 p-3.5">
                             <div className="flex items-center gap-2 text-slate-500">
                               <SunMedium className="h-4 w-4" />
                               <span className="text-sm">{t('light')}</span>
@@ -379,7 +379,7 @@ export default function Dashboard() {
                             <p className="mt-3 text-xs text-slate-400">{t('rawValue')}</p>
                           </div>
 
-                          <div className="rounded-2xl bg-slate-50 p-4">
+                          <div className="rounded-2xl bg-slate-50 p-3.5">
                             <div className="flex items-center gap-2 text-slate-500">
                               <CloudRain className="h-4 w-4" />
                               <span className="text-sm">{t('rainRssi')}</span>
