@@ -27,4 +27,8 @@ class Settings:
     SMTP_FROM_NAME: str = os.getenv("SMTP_FROM_NAME", "Greenlytics")
     SMTP_USE_TLS: bool = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
 
+    EMAIL_PROVIDER: str = os.getenv("EMAIL_PROVIDER", "smtp").lower()
+    RESEND_API_KEY: str | None = os.getenv("RESEND_API_KEY")
+    RESEND_API_URL: str = os.getenv("RESEND_API_URL", "https://api.resend.com/emails")
+
 settings = Settings()
