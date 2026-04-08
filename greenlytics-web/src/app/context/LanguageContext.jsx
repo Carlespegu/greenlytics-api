@@ -507,11 +507,20 @@ const translations = {
 
 const STORAGE_KEY = 'greenlytics_language'
 
+function getStoredLanguage() {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return 'ca'
+  }
+
+  return window.localStorage.getItem(STORAGE_KEY) || 'ca'
+}
+
 export function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState(localStorage.getItem(STORAGE_KEY) || 'ca')
+  const [language, setLanguage] = useState(getStoredLanguage)
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, language)
+    if (typeof window === 'undefined' || !window.localStorage) return
+    window.localStorage.setItem(STORAGE_KEY, language)
   }, [language])
 
   const value = useMemo(() => {
