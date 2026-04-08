@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
@@ -20,12 +19,18 @@ from database.models.reading_value import ReadingValue
 NUMERIC_VALUE_TYPES = {"decimal", "integer", "number", "numeric"}
 TEXT_VALUE_TYPES = {"string", "text"}
 BOOLEAN_VALUE_TYPES = {"boolean"}
-logger = logging.getLogger(__name__)
+
+
+def _debug_alerts(message: str, *args):
+    try:
+        print(message % args)
+    except Exception:
+        print(message, *args)
 
 
 def enqueue_alert_jobs_for_reading(db: Session, reading: Reading):
     if reading is None or reading.client_id is None or reading.installation_id is None:
-        logger.info(
+        _debug_alerts(
             "alerts_engine.skip reading_id=%s reason=missing_scope client_id=%s installation_id=%s",
             getattr(reading, "id", None),
             getattr(reading, "client_id", None),
@@ -40,7 +45,7 @@ def enqueue_alert_jobs_for_reading(db: Session, reading: Reading):
     )
 
     if not reading_values:
-        logger.info(
+        _debug_alerts(
             "alerts_engine.skip reading_id=%s reason=no_reading_values",
             reading.id,
         )
@@ -50,7 +55,7 @@ def enqueue_alert_jobs_for_reading(db: Session, reading: Reading):
     for reading_value in reading_values:
         alert_candidates = _get_applicable_alerts(db, reading, reading_value.reading_type_id)
         if not alert_candidates:
-            logger.info(
+            _debug_alerts(
                 "alerts_engine.no_candidates reading_id=%s reading_type_id=%s plant_id=%s installation_id=%s client_id=%s",
                 reading.id,
                 reading_value.reading_type_id,
@@ -67,7 +72,7 @@ def enqueue_alert_jobs_for_reading(db: Session, reading: Reading):
 
         for alert in alert_candidates:
             if not _is_alert_triggered(alert, reading_type, reading_value):
-                logger.info(
+                _debug_alerts(
                     "alerts_engine.not_triggered reading_id=%s alert_id=%s condition=%s actual_value=%s min_value=%s max_value=%s exact_numeric_value=%s exact_text_value=%s exact_boolean_value=%s reading_value_type=%s",
                     reading.id,
                     alert.id,
@@ -88,7 +93,7 @@ def enqueue_alert_jobs_for_reading(db: Session, reading: Reading):
                 plant_id=reading.plant_id,
                 cooldown_minutes=settings.ALERT_JOB_COOLDOWN_MINUTES,
             ):
-                logger.info(
+                _debug_alerts(
                     "alerts_engine.cooldown reading_id=%s alert_id=%s plant_id=%s cooldown_minutes=%s",
                     reading.id,
                     alert.id,
@@ -115,14 +120,14 @@ def enqueue_alert_jobs_for_reading(db: Session, reading: Reading):
                 payload=payload,
             )
             jobs.append(create_alert_job(db, job))
-            logger.info(
+            _debug_alerts(
                 "alerts_engine.job_created reading_id=%s alert_id=%s job_count=%s",
                 reading.id,
                 alert.id,
                 len(jobs),
             )
 
-    logger.info("alerts_engine.done reading_id=%s jobs_created=%s", reading.id, len(jobs))
+    _debug_alerts("alerts_engine.done reading_id=%s jobs_created=%s", reading.id, len(jobs))
     return jobs
 
 
