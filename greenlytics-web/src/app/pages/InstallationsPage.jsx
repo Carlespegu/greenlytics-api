@@ -261,6 +261,7 @@ export default function InstallationsPage() {
   async function handleCreateInstallation(payload) {
     setIsSaving(true)
     setSaveError('')
+    const wasCreating = modalMode !== 'edit'
 
     try {
       if (modalMode === 'edit' && selectedInstallation?.id) {
@@ -268,16 +269,45 @@ export default function InstallationsPage() {
       } else {
         await installationsService.createInstallation(payload)
       }
-      setIsCreateOpen(false)
-      setSelectedInstallation(null)
-      setModalMode('create')
-      const data = await installationsService.listInstallations()
-      setAllItems(Array.isArray(data) ? data : [])
     } catch (err) {
+      if (wasCreating) {
+        try {
+          const fallbackData = await installationsService.listInstallations()
+          const normalizedItems = Array.isArray(fallbackData) ? fallbackData : []
+          const recoveredItem = normalizedItems.find(
+            (item) =>
+              String(item.client_id || '') === String(payload.client_id || '') &&
+              String(item.code || '').trim().toLowerCase() === String(payload.code || '').trim().toLowerCase()
+          )
+
+          if (recoveredItem) {
+            setPage(1)
+            setAllItems(normalizedItems)
+            setIsCreateOpen(false)
+            setSelectedInstallation(null)
+            setModalMode('create')
+            return
+          }
+        } catch (fallbackError) {
+          // Ignore fallback errors and surface the original save error below.
+        }
+      }
+
       setSaveError(err.message || text.saveError)
+      return
     } finally {
       setIsSaving(false)
     }
+
+    if (wasCreating) {
+      setPage(1)
+    }
+
+    setIsCreateOpen(false)
+    setSelectedInstallation(null)
+    setModalMode('create')
+    const data = await installationsService.listInstallations()
+    setAllItems(Array.isArray(data) ? data : [])
   }
 
   const defaultClient = isAdmin
@@ -440,6 +470,7 @@ export default function InstallationsPage() {
                 <th className="px-3 py-3">{text.location}</th>
                 <th className="px-3 py-3">{text.latitude}</th>
                 <th className="px-3 py-3">{text.longitude}</th>
+                <th className="px-3 py-3">{text.active}</th>
                 <th className="px-3 py-3 text-right">{text.actions}</th>
               </tr>
             </thead>
@@ -451,6 +482,7 @@ export default function InstallationsPage() {
                   <td className="px-3 py-3">{item.state || '-'}</td>
                   <td className="px-3 py-3">{item.latitude || '-'}</td>
                   <td className="px-3 py-3">{item.longitude || '-'}</td>
+                  <td className="px-3 py-3">{item.is_active ? text.yes : text.no}</td>
                   <td className="px-3 py-3 text-right">
                     <RowActionsDropdown
                       disabled={isSaving}
@@ -486,7 +518,7 @@ export default function InstallationsPage() {
 
               {!isLoading && items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-slate-500">
+                  <td colSpan={7} className="px-3 py-6 text-center text-slate-500">
                     {text.noResults}
                   </td>
                 </tr>

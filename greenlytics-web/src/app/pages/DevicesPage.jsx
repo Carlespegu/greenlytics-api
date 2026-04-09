@@ -125,6 +125,7 @@ export default function DevicesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [selectedDevice, setSelectedDevice] = useState(null)
+  const [toggleTarget, setToggleTarget] = useState(null)
   const [modalMode, setModalMode] = useState('edit')
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [page, setPage] = useState(1)
@@ -155,6 +156,10 @@ export default function DevicesPage() {
         noResults: 'No s’han trobat dispositius.',
         loading: 'Carregant dispositius...',
         saving: 'Desant dispositiu...',
+        confirmActivate: 'Estàs segur que vols activar el registre?',
+        confirmDeactivate: 'Estàs segur que vols desactivar el registre?',
+        confirmYes: 'Sí',
+        cancel: 'Cancel·lar',
       },
       es: {
         pageTitle: 'Sensores',
@@ -178,6 +183,10 @@ export default function DevicesPage() {
         noResults: 'No se han encontrado dispositivos.',
         loading: 'Cargando dispositivos...',
         saving: 'Guardando dispositivo...',
+        confirmActivate: '¿Estás seguro de que quieres activar el registro?',
+        confirmDeactivate: '¿Estás seguro de que quieres desactivar el registro?',
+        confirmYes: 'Sí',
+        cancel: 'Cancelar',
       },
       en: {
         pageTitle: 'Sensors',
@@ -201,6 +210,10 @@ export default function DevicesPage() {
         noResults: 'No devices found.',
         loading: 'Loading devices...',
         saving: 'Saving device...',
+        confirmActivate: 'Are you sure you want to activate this record?',
+        confirmDeactivate: 'Are you sure you want to deactivate this record?',
+        confirmYes: 'Yes',
+        cancel: 'Cancel',
       },
     }
 
@@ -283,9 +296,10 @@ export default function DevicesPage() {
     setIsSaving(true)
     setError('')
     setSuccess('')
+    const wasCreating = modalMode === 'create'
 
     try {
-      if (modalMode === 'create') {
+      if (wasCreating) {
         await devicesService.createDevice(
           buildDevicePayload(formData, { mode: 'create', user })
         )
@@ -300,7 +314,7 @@ export default function DevicesPage() {
 
       setIsEditOpen(false)
       setSelectedDevice(null)
-      await loadDevices()
+      await loadDevices({ targetPage: wasCreating ? 1 : page })
     } catch (err) {
       setError(err.message || 'No s’ha pogut actualitzar el dispositiu.')
     } finally {
@@ -340,23 +354,21 @@ export default function DevicesPage() {
 
   async function handleToggleActive(device) {
     if (!canEditDevices) return
+    setToggleTarget(device)
+  }
 
-    const nextValue = !device.is_active
-    const confirmed = window.confirm(
-      nextValue
-        ? 'Vols activar aquest dispositiu?'
-        : 'Vols desactivar aquest dispositiu?'
-    )
+  async function handleConfirmToggleActive() {
+    if (!toggleTarget) return
 
-    if (!confirmed) return
+    const nextValue = !toggleTarget.is_active
 
     setIsSaving(true)
     setError('')
     setSuccess('')
 
     try {
-      await devicesService.updateDevice(device.id, {
-        ...normalizeDevice(device),
+      await devicesService.updateDevice(toggleTarget.id, {
+        ...normalizeDevice(toggleTarget),
         is_active: nextValue,
       })
 
@@ -370,6 +382,7 @@ export default function DevicesPage() {
     } catch (err) {
       setError(err.message || 'No s’ha pogut actualitzar l’estat del dispositiu.')
     } finally {
+      setToggleTarget(null)
       setIsSaving(false)
     }
   }
@@ -495,6 +508,34 @@ export default function DevicesPage() {
         onDelete={handleDeleteDevice}
         isSaving={isSaving}
       />
+      {toggleTarget ? (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/35 px-4">
+          <div className="w-full max-w-md rounded-[28px] bg-white p-8 shadow-2xl">
+            <p className="text-lg font-semibold text-slate-900">
+              {toggleTarget.is_active ? text.confirmDeactivate : text.confirmActivate}
+            </p>
+
+            <div className="mt-8 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setToggleTarget(null)}
+                disabled={isSaving}
+                className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {text.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmToggleActive}
+                disabled={isSaving}
+                className="inline-flex items-center justify-center rounded-2xl bg-rose-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {text.confirmYes}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <LoadingOverlay
         visible={isLoading || isSaving}
         label={isSaving ? text.saving : text.loading}

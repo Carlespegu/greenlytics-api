@@ -3,7 +3,17 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
+
+
+def _validate_coordinate_range(value: Optional[Decimal], *, field_name: str, minimum: Decimal, maximum: Decimal):
+    if value is None:
+        return value
+
+    if value < minimum or value > maximum:
+        raise ValueError(f"Field '{field_name}' must be between {minimum} and {maximum}")
+
+    return value
 
 
 class InstallationCreate(BaseModel):
@@ -24,6 +34,26 @@ class InstallationCreate(BaseModel):
     is_active: bool = True
     created_by: Optional[str] = None
 
+    @field_validator("latitude")
+    @classmethod
+    def validate_latitude(cls, value: Optional[Decimal]):
+        return _validate_coordinate_range(
+            value,
+            field_name="latitude",
+            minimum=Decimal("-90"),
+            maximum=Decimal("90"),
+        )
+
+    @field_validator("longitude")
+    @classmethod
+    def validate_longitude(cls, value: Optional[Decimal]):
+        return _validate_coordinate_range(
+            value,
+            field_name="longitude",
+            minimum=Decimal("-180"),
+            maximum=Decimal("180"),
+        )
+
 
 class InstallationUpdate(BaseModel):
     client_id: Optional[UUID] = None
@@ -42,6 +72,26 @@ class InstallationUpdate(BaseModel):
 
     is_active: Optional[bool] = None
     modified_by: Optional[str] = None
+
+    @field_validator("latitude")
+    @classmethod
+    def validate_latitude(cls, value: Optional[Decimal]):
+        return _validate_coordinate_range(
+            value,
+            field_name="latitude",
+            minimum=Decimal("-90"),
+            maximum=Decimal("90"),
+        )
+
+    @field_validator("longitude")
+    @classmethod
+    def validate_longitude(cls, value: Optional[Decimal]):
+        return _validate_coordinate_range(
+            value,
+            field_name="longitude",
+            minimum=Decimal("-180"),
+            maximum=Decimal("180"),
+        )
 
 
 class InstallationResponse(BaseModel):

@@ -49,6 +49,8 @@ const UI_TEXT = {
     requiredClient: 'Has de seleccionar un client.',
     requiredCode: 'El camp "Codi" és obligatori.',
     requiredName: 'El camp "Nom" és obligatori.',
+    invalidLatitude: 'La latitud ha d\'estar entre -90 i 90.',
+    invalidLongitude: 'La longitud ha d\'estar entre -180 i 180.',
   },
   es: {
     newInstallation: 'Nueva instalación',
@@ -79,6 +81,8 @@ const UI_TEXT = {
     requiredClient: 'Debes seleccionar un cliente.',
     requiredCode: 'El campo "Código" es obligatorio.',
     requiredName: 'El campo "Nombre" es obligatorio.',
+    invalidLatitude: 'La latitud debe estar entre -90 y 90.',
+    invalidLongitude: 'La longitud debe estar entre -180 y 180.',
   },
   en: {
     newInstallation: 'New installation',
@@ -109,6 +113,8 @@ const UI_TEXT = {
     requiredClient: 'You must select a client.',
     requiredCode: 'The "Code" field is required.',
     requiredName: 'The "Name" field is required.',
+    invalidLatitude: 'Latitude must be between -90 and 90.',
+    invalidLongitude: 'Longitude must be between -180 and 180.',
   },
 }
 
@@ -399,6 +405,19 @@ export default function InstallationCreateModal({
       return
     }
 
+    const latitude = form.latitude === '' ? null : Number(form.latitude)
+    const longitude = form.longitude === '' ? null : Number(form.longitude)
+
+    if (latitude !== null && (Number.isNaN(latitude) || latitude < -90 || latitude > 90)) {
+      setValidationError(text.invalidLatitude)
+      return
+    }
+
+    if (longitude !== null && (Number.isNaN(longitude) || longitude < -180 || longitude > 180)) {
+      setValidationError(text.invalidLongitude)
+      return
+    }
+
     onSave({
       client_id: clientId,
       code,
@@ -409,8 +428,8 @@ export default function InstallationCreateModal({
       state: form.state.trim() || null,
       postal_code: form.postal_code.trim() || null,
       country: form.country.trim() || null,
-      latitude: form.latitude === '' ? null : form.latitude,
-      longitude: form.longitude === '' ? null : form.longitude,
+      latitude,
+      longitude,
       is_active: Boolean(form.is_active),
     })
   }
