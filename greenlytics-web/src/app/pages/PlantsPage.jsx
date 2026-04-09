@@ -81,6 +81,8 @@ export default function PlantsPage() {
   const text = useMemo(() => {
     const texts = {
       ca: {
+        pageTitle: 'Plantes',
+        pageDescription: 'Consulta el catàleg de plantes, revisa’n l’estat i filtra el llistat ràpidament.',
         filters: 'Filtres',
         filtersDescription: 'Gestiona plantes actives vinculades a instal·lacions.',
         name: 'Nom',
@@ -106,6 +108,8 @@ export default function PlantsPage() {
         no: 'No',
       },
       es: {
+        pageTitle: 'Plantas',
+        pageDescription: 'Consulta el catálogo de plantas, revisa su estado y filtra el listado rápidamente.',
         filters: 'Filtros',
         filtersDescription: 'Gestiona plantas activas vinculadas a instalaciones.',
         name: 'Nombre',
@@ -131,6 +135,8 @@ export default function PlantsPage() {
         no: 'No',
       },
       en: {
+        pageTitle: 'Plants',
+        pageDescription: 'Review the plant catalog, inspect status and filter the list quickly.',
         filters: 'Filters',
         filtersDescription: 'Manage active plants linked to installations.',
         name: 'Name',
@@ -161,8 +167,8 @@ export default function PlantsPage() {
   }, [language])
 
   const activeFilterCount = useMemo(
-    () => Object.values(filters).filter((value) => value !== '').length,
-    [filters]
+    () => Object.values(appliedFilters).filter((value) => value !== '').length,
+    [appliedFilters]
   )
 
   async function loadPlants() {
@@ -342,8 +348,8 @@ export default function PlantsPage() {
   return (
     <div className="space-y-6">
       <CollapsibleFiltersCard
-        title={text.filters}
-        description={text.filtersDescription}
+        title={text.pageTitle}
+        description={text.pageDescription}
         activeCount={activeFilterCount}
         defaultExpanded={false}
       >

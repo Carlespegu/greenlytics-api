@@ -43,8 +43,8 @@ export default function CollapsibleFiltersCard({
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+        <div className="min-w-0">
+          <h2 className="truncate text-[1.85rem] font-semibold tracking-tight text-slate-900">{title}</h2>
           <p className="mt-1 text-sm text-slate-500">{description}</p>
         </div>
 
@@ -56,9 +56,24 @@ export default function CollapsibleFiltersCard({
           <button
             type="button"
             onClick={() => setIsExpanded((prev) => !prev)}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50"
+            aria-label={isExpanded ? text.hide : text.show}
+            title={isExpanded ? text.hide : text.show}
           >
-            {isExpanded ? text.hide : text.show}
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 5h18" />
+              <path d="M6 12h12" />
+              <path d="M10 19h4" />
+            </svg>
           </button>
         </div>
       </div>

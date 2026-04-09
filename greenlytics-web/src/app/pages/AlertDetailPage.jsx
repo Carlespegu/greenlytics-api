@@ -369,7 +369,10 @@ export default function AlertDetailPage() {
       if (isNew) {
         const created = await alertsService.createAlert(payload)
         setSuccess('Alerta creada correctament.')
-        navigate(`/app/alerts/${created.id}`, { replace: true })
+        navigate(`/app/alerts/${created.id}`, {
+          replace: true,
+          state: { refresh: Date.now() },
+        })
         return
       }
 
@@ -399,7 +402,7 @@ export default function AlertDetailPage() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => navigate('/app/alerts')}
+              onClick={() => navigate('/app/alerts', { state: { refresh: Date.now() } })}
               className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               Tornar
@@ -654,7 +657,7 @@ export default function AlertDetailPage() {
 
               <button
                 type="button"
-                onClick={() => navigate('/app/alerts')}
+                onClick={() => navigate('/app/alerts', { state: { refresh: Date.now() } })}
                 className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
                 Cancel·lar

@@ -47,8 +47,8 @@ export default function ReadingsPage() {
   const [appliedFilters, setAppliedFilters] = useState(initialFilters)
 
   const activeFilterCount = useMemo(() => {
-    return Object.values(filters).filter((value) => value !== '').length
-  }, [filters])
+    return Object.values(appliedFilters).filter((value) => value !== '').length
+  }, [appliedFilters])
 
   const totalPages = useMemo(() => {
     const pages = Math.ceil((total || 0) / pageSize)
@@ -150,8 +150,8 @@ export default function ReadingsPage() {
   return (
     <div className="space-y-6">
       <CollapsibleFiltersCard
-        title="Filtres"
-        description="Ajusta criteris per localitzar lectures més ràpidament."
+        title="Lectures"
+        description="Consulta l’històric de lectures i filtra la informació segons el dispositiu o el període."
         activeCount={activeFilterCount}
         defaultExpanded={Boolean(deviceNameFromQuery)}
       >

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { clientsService } from '../services/clientsService'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
@@ -63,6 +63,7 @@ function TriStateSwitch({ value, onChange }) {
 
 export default function ClientsPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -108,7 +109,7 @@ export default function ClientsPage() {
   useEffect(() => {
     loadClients({ targetPage: 1 })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [location.key, location.state?.refresh])
 
   function handleFilterChange(event) {
     const { name, value } = event.target
@@ -131,8 +132,8 @@ export default function ClientsPage() {
   return (
     <div className="space-y-6">
       <CollapsibleFiltersCard
-        title="Filtres"
-        description="Ajusta criteris per localitzar clients més ràpidament."
+        title="Clients"
+        description="Consulta els clients registrats i filtra el llistat segons les teves necessitats."
         activeCount={activeFilterCount}
         defaultExpanded={false}
       >
@@ -200,7 +201,7 @@ export default function ClientsPage() {
                         {
                           key: 'open',
                           label: 'Obrir',
-                          onClick: () => navigate(`/clients/${item.id}`),
+                          onClick: () => navigate(`/app/clients/${item.id}`),
                         },
                       ]}
                     />

@@ -27,7 +27,7 @@ const STATUS_OPTIONS = ['online', 'offline', 'warning', 'error']
 
 const UI_TEXT = {
   ca: {
-    createDevice: 'Nou dispositiu',
+    createDevice: 'Creació dispositiu',
     editDevice: 'Editar dispositiu',
     editDeviceHelp: 'Actualitza les dades principals del dispositiu seleccionat.',
     delete: 'Eliminar',
@@ -58,7 +58,7 @@ const UI_TEXT = {
     error: 'Error',
   },
   es: {
-    createDevice: 'Nuevo dispositivo',
+    createDevice: 'Creación dispositivo',
     editDevice: 'Editar dispositivo',
     editDeviceHelp: 'Actualiza los datos principales del dispositivo seleccionado.',
     delete: 'Eliminar',
@@ -89,7 +89,7 @@ const UI_TEXT = {
     error: 'Error',
   },
   en: {
-    createDevice: 'New device',
+    createDevice: 'Device creation',
     editDevice: 'Edit device',
     editDeviceHelp: 'Update the main data of the selected device.',
     delete: 'Delete',

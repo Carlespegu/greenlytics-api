@@ -372,9 +372,8 @@ export default function PlantCreateModal({ isOpen, onClose, onSave, isSaving = f
       return
     }
 
-    onSave({
+    const payload = {
       client_id: form.client_id,
-      installation_id: form.installation_id || null,
       code: form.code.trim(),
       name: form.name.trim(),
       common_name: form.common_name.trim() || null,
@@ -385,7 +384,13 @@ export default function PlantCreateModal({ isOpen, onClose, onSave, isSaving = f
       sun_exposure: form.sun_exposure || null,
       notes: form.notes.trim() || null,
       is_active: Boolean(form.is_active),
-    })
+    }
+
+    if (form.installation_id) {
+      payload.installation_id = form.installation_id
+    }
+
+    onSave(payload)
   }
 
   if (!isOpen) return null

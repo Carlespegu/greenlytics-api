@@ -97,6 +97,8 @@ export default function InstallationsPage() {
   const text = useMemo(() => {
     const texts = {
       ca: {
+        pageTitle: 'Instal·lacions',
+        pageDescription: 'Consulta les instal·lacions, revisa’n l’estat i filtra el llistat ràpidament.',
         filters: 'Filtres',
         listDescription: 'Ajusta criteris per localitzar instal·lacions més ràpidament.',
         name: 'Nom',
@@ -125,6 +127,8 @@ export default function InstallationsPage() {
         all: 'Totes',
       },
       es: {
+        pageTitle: 'Instalaciones',
+        pageDescription: 'Consulta las instalaciones, revisa su estado y filtra el listado rápidamente.',
         filters: 'Filtros',
         listDescription: 'Ajusta criterios para localizar instalaciones más rápido.',
         name: 'Nombre',
@@ -153,6 +157,8 @@ export default function InstallationsPage() {
         all: 'Todas',
       },
       en: {
+        pageTitle: 'Installations',
+        pageDescription: 'Review installations, inspect their status and filter the list quickly.',
         filters: 'Filters',
         listDescription: 'Adjust criteria to find installations faster.',
         name: 'Name',
@@ -186,8 +192,8 @@ export default function InstallationsPage() {
   }, [language])
 
   const activeFilterCount = useMemo(
-    () => Object.values(filters).filter((value) => value !== '' && value !== null).length,
-    [filters]
+    () => Object.values(appliedFilters).filter((value) => value !== '' && value !== null).length,
+    [appliedFilters]
   )
 
   useEffect(() => {
@@ -370,8 +376,8 @@ export default function InstallationsPage() {
   return (
     <div className="space-y-6">
       <CollapsibleFiltersCard
-        title={text.filters}
-        description={text.listDescription}
+        title={text.pageTitle}
+        description={text.pageDescription}
         activeCount={activeFilterCount}
         defaultExpanded={false}
       >

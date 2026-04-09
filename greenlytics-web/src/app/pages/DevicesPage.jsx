@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import BackofficeListHeader from '../components/BackofficeListHeader'
-import DeviceFilters from '../components/DeviceFiltersV2'
-import DeviceEditModal from '../components/DeviceEditModalV2'
+import DeviceFilters from '../components/DeviceFilters'
+import DeviceEditModal from '../components/DeviceEditModal'
 import LoadingOverlay from '../components/LoadingOverlay'
 import RowActionsDropdown from '../components/RowActionsDropdown'
 import { useAuth } from '../context/AuthContext'
@@ -25,6 +25,7 @@ function normalizeDevice(device) {
     description: device.description || '',
     serial_number: device.serial_number || '',
     mac_address: device.mac_address || '',
+    api_key: device.api_key || '',
     firmware_version: device.firmware_version || '',
     hardware_version: device.hardware_version || '',
     wifi_name: device.wifi_name || '',
@@ -50,15 +51,51 @@ function createEmptyDevice() {
     firmware_version: '',
     hardware_version: '',
     wifi_name: '',
-    status: 'offline',
+    api_key: '',
+    status: '',
     last_seen_on: null,
-    is_active: true,
+    is_active: false,
     created_by: '',
     created_on: null,
     modified_by: '',
     modified_on: null,
     deleted_on: null,
   }
+}
+
+function buildDevicePayload(formData = {}, { mode = 'create', user } = {}) {
+  const normalizeOptional = (value) => {
+    if (value === null || value === undefined) return null
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+      return trimmed === '' ? null : trimmed
+    }
+    return value
+  }
+
+  const payload = {
+    device_type_id: formData.device_type_id,
+    code: (formData.code || '').trim(),
+    name: (formData.name || '').trim(),
+    description: normalizeOptional(formData.description),
+    serial_number: normalizeOptional(formData.serial_number),
+    mac_address: normalizeOptional(formData.mac_address),
+    firmware_version: normalizeOptional(formData.firmware_version),
+    hardware_version: normalizeOptional(formData.hardware_version),
+    wifi_name: normalizeOptional(formData.wifi_name),
+    api_key: normalizeOptional(formData.api_key),
+    status: normalizeOptional(formData.status),
+    last_seen_on: formData.last_seen_on || null,
+    is_active: Boolean(formData.is_active),
+  }
+
+  if (mode === 'create') {
+    payload.created_by = user?.username || ''
+  } else {
+    payload.modified_by = user?.username || ''
+  }
+
+  return payload
 }
 
 const EMPTY_FILTERS = {
@@ -97,6 +134,8 @@ export default function DevicesPage() {
   const text = useMemo(() => {
     const texts = {
       ca: {
+        pageTitle: 'Sensors',
+        pageDescription: 'Consulta l’estat dels sensors, revisa el seu detall i filtra el llistat ràpidament.',
         filters: 'Filtres',
         filtersDescription: 'Ajusta criteris per localitzar dispositius més ràpidament.',
         listTitle: 'Llistat de dispositius',
@@ -118,6 +157,8 @@ export default function DevicesPage() {
         saving: 'Desant dispositiu...',
       },
       es: {
+        pageTitle: 'Sensores',
+        pageDescription: 'Consulta el estado de los sensores, revisa su detalle y filtra el listado rápidamente.',
         filters: 'Filtros',
         filtersDescription: 'Ajusta criterios para localizar dispositivos más rápido.',
         listTitle: 'Listado de dispositivos',
@@ -139,6 +180,8 @@ export default function DevicesPage() {
         saving: 'Guardando dispositivo...',
       },
       en: {
+        pageTitle: 'Sensors',
+        pageDescription: 'Review sensor status, inspect details and filter the list quickly.',
         filters: 'Filters',
         filtersDescription: 'Adjust criteria to find devices faster.',
         listTitle: 'Devices list',
@@ -243,17 +286,14 @@ export default function DevicesPage() {
 
     try {
       if (modalMode === 'create') {
-        await devicesService.createDevice({
-          ...createEmptyDevice(),
-          ...formData,
-          created_by: user?.username || '',
-        })
+        await devicesService.createDevice(
+          buildDevicePayload(formData, { mode: 'create', user })
+        )
       } else {
-        await devicesService.updateDevice(selectedDevice.id, {
-          ...normalizeDevice(selectedDevice),
-          ...formData,
-          modified_by: user?.username || selectedDevice.modified_by || '',
-        })
+        await devicesService.updateDevice(
+          selectedDevice.id,
+          buildDevicePayload(formData, { mode: 'edit', user })
+        )
 
         setSuccess('Dispositiu actualitzat correctament.')
       }
@@ -341,8 +381,8 @@ export default function DevicesPage() {
   return (
     <div className="space-y-6">
       <CollapsibleFiltersCard
-        title={text.filters}
-        description={text.filtersDescription}
+        title={text.pageTitle}
+        description={text.pageDescription}
         activeCount={activeFilterCount}
         defaultExpanded={false}
       >

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from App.dependencies.auth import CurrentUserContext, require_roles
-from App.schemas.devices import DeviceCreate, DeviceResponse, DeviceUpdate
+from App.schemas.devices import DeviceCreate, DeviceDetailResponse, DeviceResponse, DeviceUpdate
 from App.schemas.devices_search import DeviceSearchRequest, DeviceSearchResponse
 from App.services.devices_service import (
     create_device_service,
@@ -37,7 +37,7 @@ def search_devices(
     return search_devices_service(db, payload, current_user=current_user)
 
 
-@router.get("/{device_id}", response_model=DeviceResponse)
+@router.get("/{device_id}", response_model=DeviceDetailResponse)
 def get_device(
     device_id: UUID,
     db: Session = Depends(get_db),

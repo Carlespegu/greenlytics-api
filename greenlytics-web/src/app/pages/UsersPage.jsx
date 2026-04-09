@@ -143,8 +143,8 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       <CollapsibleFiltersCard
-        title="Filtres"
-        description="Ajusta criteris per localitzar usuaris més ràpidament."
+        title={t('users')}
+        description="Consulta els usuaris registrats i filtra el llistat segons el teu criteri."
         activeCount={activeFilterCount}
         defaultExpanded={false}
       >

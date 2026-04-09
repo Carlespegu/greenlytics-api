@@ -81,3 +81,7 @@ class DeviceResponse(BaseModel):
     modified_by: Optional[str] = None
     deleted_on: Optional[datetime] = None
     is_deleted: bool
+
+
+class DeviceDetailResponse(DeviceResponse):
+    api_key: Optional[str] = None

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import BackofficeListHeader from '../components/BackofficeListHeader'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
@@ -130,6 +130,7 @@ function ActiveBadge({ isActive }) {
 
 export default function AlertsPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -179,7 +180,7 @@ export default function AlertsPage() {
   useEffect(() => {
     loadAlerts()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [location.key, location.state?.refresh])
 
   async function handleSearch(event) {
     event?.preventDefault?.()
@@ -259,8 +260,8 @@ export default function AlertsPage() {
   return (
     <div className="space-y-6">
       <CollapsibleFiltersCard
-        title="Filtres"
-        description="Ajusta criteris per localitzar alertes més ràpidament."
+        title="Alertes"
+        description="Consulta les regles actives i filtra el llistat per trobar ràpidament cada alerta."
         activeCount={activeFilterCount}
         defaultExpanded={false}
       >
@@ -354,7 +355,7 @@ export default function AlertsPage() {
         </form>
       </CollapsibleFiltersCard>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-visible">
         <BackofficeListHeader
           title="Llistat d'alertes"
           total={total}
@@ -365,7 +366,7 @@ export default function AlertsPage() {
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
         {success ? <p className="mt-4 text-sm text-emerald-600">{success}</p> : null}
 
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4 overflow-x-auto overflow-y-visible">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
@@ -399,7 +400,7 @@ export default function AlertsPage() {
                       actions={[
                         {
                           label: 'Editar',
-                          onClick: () => navigate(`/alerts/${item.id}`),
+                          onClick: () => navigate(`/app/alerts/${item.id}`),
                         },
                         {
                           label: item.is_active ? 'Desactivar' : 'Activar',
