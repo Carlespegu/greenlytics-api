@@ -43,13 +43,16 @@ def get_plant_service(db: Session, plant_id: UUID):
     return plant
 
 
-def _validate_client_installation_consistency(db: Session, client_id: UUID, installation_id: UUID):
+def _validate_client_installation_consistency(db: Session, client_id: UUID, installation_id: UUID | None):
     client = get_client_by_id(db, client_id)
     if not client:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Client not found",
         )
+
+    if installation_id is None:
+        return
 
     installation = get_installation_by_id(db, installation_id)
     if not installation:
@@ -111,7 +114,8 @@ def update_plant_service(db: Session, plant_id: UUID, payload: PlantUpdate):
         )
 
     new_client_id = plant.client_id if payload.client_id is None else payload.client_id
-    new_installation_id = plant.installation_id if payload.installation_id is None else payload.installation_id
+    fields_set = payload.model_fields_set
+    new_installation_id = plant.installation_id if "installation_id" not in fields_set else payload.installation_id
     new_code = plant.code if payload.code is None else payload.code
 
     if (new_client_id != plant.client_id) or (new_installation_id != plant.installation_id):
@@ -127,8 +131,6 @@ def update_plant_service(db: Session, plant_id: UUID, payload: PlantUpdate):
 
     plant.client_id = new_client_id
     plant.installation_id = new_installation_id
-
-    fields_set = payload.model_fields_set
 
     if "code" in fields_set:
         plant.code = payload.code

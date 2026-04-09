@@ -2,6 +2,7 @@ import asyncio
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from App.api_routes.alerts import router as alerts_router
 from App.api_routes.auth import router as auth_router
@@ -93,4 +94,6 @@ async def alert_worker():
 @app.on_event("startup")
 async def startup_alert_worker():
     Base.metadata.create_all(bind=engine, tables=[PlantThreshold.__table__])
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE plants ALTER COLUMN installationid DROP NOT NULL"))
     asyncio.create_task(alert_worker())

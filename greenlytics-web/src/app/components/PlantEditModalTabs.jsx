@@ -91,7 +91,7 @@ const UI_TEXT = {
     confirmDelete: 'Estas segur que vols eliminar aquesta planta?',
     yes: 'Yes',
     no: 'No',
-    requiredInstallation: 'Has de seleccionar una instal·lacio.',
+    requiredInstallation: 'La instal lacio es opcional.',
     requiredCode: 'El camp Codi es obligatori.',
     requiredName: 'El camp Nom es obligatori.',
     selectInstallation: 'Selecciona una instal·lacio',
@@ -100,7 +100,7 @@ const UI_TEXT = {
     uploadPhoto: 'Pujar foto',
     takePhoto: 'Fer foto',
     identifyTitle: 'Identificacio amb foto',
-    identifyHint: 'Pots analitzar una foto abans de guardar. Instal·lacio, codi i nom continuen sent obligatoris al desar.',
+    identifyHint: 'Pots analitzar una foto i completar la fitxa. La instal lacio es opcional i es pot vincular despres.',
     identifying: 'Analitzant foto...',
     preparingPhoto: 'Preparant foto...',
     photoLoaded: 'Dades carregades des de la foto.',
@@ -192,7 +192,7 @@ const UI_TEXT = {
     confirmDelete: 'Estas seguro que quieres eliminar esta planta?',
     yes: 'Yes',
     no: 'No',
-    requiredInstallation: 'Debes seleccionar una instalacion.',
+    requiredInstallation: 'La instalacion es opcional.',
     requiredCode: 'El campo Codigo es obligatorio.',
     requiredName: 'El campo Nombre es obligatorio.',
     selectInstallation: 'Selecciona una instalacion',
@@ -201,7 +201,7 @@ const UI_TEXT = {
     uploadPhoto: 'Subir foto',
     takePhoto: 'Hacer foto',
     identifyTitle: 'Identificacion con foto',
-    identifyHint: 'Puedes analizar una foto antes de guardar. Instalacion, codigo y nombre siguen siendo obligatorios al guardar.',
+    identifyHint: 'Puedes analizar una foto y completar la ficha. La instalacion es opcional y se puede vincular despues.',
     identifying: 'Analizando foto...',
     preparingPhoto: 'Preparando foto...',
     photoLoaded: 'Datos cargados desde la foto.',
@@ -295,7 +295,7 @@ UI_TEXT.en = {
   confirmDelete: 'Are you sure you want to delete this plant?',
   yes: 'Yes',
   no: 'No',
-  requiredInstallation: 'You must select an installation.',
+  requiredInstallation: 'Installation is optional.',
   requiredCode: 'The Code field is required.',
   requiredName: 'The Name field is required.',
   selectInstallation: 'Select an installation',
@@ -304,7 +304,7 @@ UI_TEXT.en = {
   uploadPhoto: 'Upload photo',
   takePhoto: 'Take photo',
   identifyTitle: 'Photo identification',
-  identifyHint: 'You can analyze a photo before saving. Installation, code and name are still required on save.',
+  identifyHint: 'You can analyze a photo and complete the card. Installation is optional and can be linked later.',
   identifying: 'Analyzing photo...',
   preparingPhoto: 'Preparing photo...',
   photoLoaded: 'Data loaded from the photo.',
@@ -781,9 +781,12 @@ export default function PlantEditModalTabs({
           setRelationDevices([])
           return
         }
-        const installation = installations.find((item) => item.id === form.installation_id)
+        const resolvedClientId =
+          form.client_id ||
+          plant?.client_id ||
+          ''
         const devicesPayload = await devicesService.searchDevices(
-          { client_ids: installation?.client_id ? [installation.client_id] : [] },
+          { client_ids: resolvedClientId ? [resolvedClientId] : [] },
           { page: 1, pageSize: 100 }
         )
         if (!mounted) return
@@ -796,7 +799,7 @@ export default function PlantEditModalTabs({
     }
     loadRelations()
     return () => { mounted = false }
-  }, [form.installation_id, installations, isOpen, text.relationEmpty])
+  }, [form.client_id, form.installation_id, isOpen, plant?.client_id, text.relationEmpty])
 
   const thresholdsDirty = useMemo(() => serializeThresholds(thresholds) !== thresholdsBaseline, [thresholds, thresholdsBaseline])
   const filteredInstallations = useMemo(() => !form.client_id ? installations : installations.filter((item) => item.client_id === form.client_id), [form.client_id, installations])
@@ -891,7 +894,6 @@ export default function PlantEditModalTabs({
   function handleSubmit(event) {
     event.preventDefault()
     setValidationError('')
-    if (!form.installation_id) { setValidationError(text.requiredInstallation); setActiveTab('basic'); return }
     if (!form.code.trim()) { setValidationError(text.requiredCode); setActiveTab('basic'); return }
     if (!form.name.trim()) { setValidationError(text.requiredName); setActiveTab('basic'); return }
 
@@ -900,7 +902,7 @@ export default function PlantEditModalTabs({
     onSave({
       plant: {
         client_id: selectedInstallation?.client_id || form.client_id || plant?.client_id,
-        installation_id: form.installation_id,
+        installation_id: form.installation_id || null,
         code: form.code.trim(),
         name: form.name.trim(),
         common_name: form.common_name.trim() || null,

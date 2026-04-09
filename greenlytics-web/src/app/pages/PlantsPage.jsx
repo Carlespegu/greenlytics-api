@@ -3,6 +3,7 @@ import BackofficeListHeader from '../components/BackofficeListHeader'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import LoadingOverlay from '../components/LoadingOverlay'
+import PlantCreateModal from '../components/PlantCreateModal'
 import PlantEditModalTabs from '../components/PlantEditModalTabs'
 import RowActionsDropdown from '../components/RowActionsDropdown'
 import { useAuth } from '../context/AuthContext'
@@ -72,6 +73,7 @@ export default function PlantsPage() {
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState('create')
   const [selectedPlant, setSelectedPlant] = useState(null)
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false)
@@ -241,7 +243,7 @@ export default function PlantsPage() {
     if (!canManagePlants) return
     setSelectedPlant(null)
     setModalMode('create')
-    setIsModalOpen(true)
+    setIsCreateModalOpen(true)
     setOpenDeleteConfirm(false)
     setError('')
     setSuccess('')
@@ -306,6 +308,8 @@ export default function PlantsPage() {
       }
       setSuccess(text.saved)
       setIsModalOpen(false)
+      setIsCreateModalOpen(false)
+      setModalMode('create')
       setSelectedPlant(null)
       await loadPlants()
     } catch (err) {
@@ -463,6 +467,17 @@ export default function PlantsPage() {
         }}
         onSave={handleSave}
         onDelete={handleDeleteConfirmed}
+        isSaving={isSaving}
+        error={error}
+      />
+
+      <PlantCreateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => {
+          if (isSaving) return
+          setIsCreateModalOpen(false)
+        }}
+        onSave={handleSave}
         isSaving={isSaving}
         error={error}
       />

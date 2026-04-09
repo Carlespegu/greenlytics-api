@@ -12,7 +12,7 @@ class Plant(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     client_id = Column("clientid", UUID(as_uuid=True), nullable=False)
-    installation_id = Column("installationid", UUID(as_uuid=True), nullable=False)
+    installation_id = Column("installationid", UUID(as_uuid=True), nullable=True)
 
     code = Column(String(50), nullable=False)
     name = Column(String(150), nullable=False)

@@ -16,7 +16,7 @@ from App.schemas.plants_enums import (
 
 class PlantCreate(BaseModel):
     client_id: UUID
-    installation_id: UUID
+    installation_id: Optional[UUID] = None
 
     code: str
     name: str
@@ -77,7 +77,7 @@ class PlantResponse(BaseModel):
 
     id: UUID
     client_id: UUID
-    installation_id: UUID
+    installation_id: Optional[UUID] = None
 
     code: str
     name: str
