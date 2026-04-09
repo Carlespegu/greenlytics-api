@@ -483,6 +483,7 @@ function normalizeThreshold(item) {
     max_value: toInputValue(item.max_value),
     optimal_min_value: toInputValue(item.optimal_min_value),
     optimal_max_value: toInputValue(item.optimal_max_value),
+    modified_on: item.modified_on || null,
     is_active: item.is_active ?? true,
   }
 }
@@ -494,6 +495,7 @@ function serializeThresholds(thresholds) {
     max_value: item.max_value,
     optimal_min_value: item.optimal_min_value,
     optimal_max_value: item.optimal_max_value,
+    modified_on: item.modified_on,
     unit: item.unit,
     is_active: item.is_active,
   })))
@@ -552,6 +554,7 @@ function buildThresholdUpdates(thresholds, baseline) {
         max_value: parseDecimal(item.max_value),
         optimal_min_value: parseDecimal(item.optimal_min_value),
         optimal_max_value: parseDecimal(item.optimal_max_value),
+        modified_on: item.modified_on || null,
         unit: item.unit || null,
         is_active: Boolean(item.is_active),
       },

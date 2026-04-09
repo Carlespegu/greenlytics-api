@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from App.core.concurrency import ensure_record_is_current
 from App.repositories.plant_thresholds_repository import (
     coerce_latest_numeric_value,
     create_plant_threshold,
@@ -169,6 +170,7 @@ def seed_default_thresholds_for_plant_service(db: Session, plant, created_by: st
 
 def update_plant_threshold_service(db: Session, threshold_id: UUID, payload: PlantThresholdUpdate):
     threshold = get_plant_threshold_service(db, threshold_id)
+    ensure_record_is_current(payload.modified_on, threshold.modified_on)
     reading_type_id = payload.reading_type_id or threshold.reading_type_id
     _validate_threshold_payload(db, threshold.plant_id, reading_type_id, threshold.id)
 

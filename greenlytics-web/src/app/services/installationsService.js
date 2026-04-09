@@ -65,6 +65,7 @@ export const installationsService = {
         api.put(`/installation-devices/${item.id}`, {
           is_active: false,
           unassigned_on: now,
+          modified_on: item.modified_on || null,
           notes: payload?.notes ?? item.notes ?? null,
         })
       )
@@ -86,6 +87,7 @@ export const installationsService = {
       installation_id: installationId,
       client_id: payload?.client_id,
       assigned_count: requestedIds.length,
+      modified_on: payload?.modified_on || null,
       selected_device_ids: requestedIds,
       degraded: true,
     }

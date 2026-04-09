@@ -41,6 +41,7 @@ class PlantThresholdUpdate(BaseModel):
     notes: Optional[str] = None
     source: Optional[str] = None
     is_active: Optional[bool] = None
+    modified_on: Optional[datetime] = None
     modified_by: Optional[str] = None
 
 

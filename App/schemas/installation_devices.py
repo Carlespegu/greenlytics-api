@@ -22,6 +22,7 @@ class InstallationDeviceUpdate(BaseModel):
     unassigned_on: Optional[datetime] = None
     notes: Optional[str] = None
     is_active: Optional[bool] = None
+    modified_on: Optional[datetime] = None
     modified_by: Optional[str] = None
 
 

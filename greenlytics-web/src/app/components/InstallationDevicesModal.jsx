@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import CompactPagination from './CompactPagination'
 import LoadingOverlay from './LoadingOverlay'
+import { resolveConcurrencyErrorMessage } from '../lib/concurrency'
 import { clientsService } from '../services/clientsService'
 import { devicesService } from '../services/devicesService'
 import { installationsService } from '../services/installationsService'
@@ -180,6 +181,7 @@ export default function InstallationDevicesModal({
   const [selectedClient, setSelectedClient] = useState(null)
   const [notes, setNotes] = useState('')
   const [selectedDeviceIds, setSelectedDeviceIds] = useState([])
+  const [summaryModifiedOn, setSummaryModifiedOn] = useState(null)
   const [devices, setDevices] = useState([])
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -240,6 +242,7 @@ export default function InstallationDevicesModal({
         })
         setSelectedDeviceIds((payload.selected_device_ids || []).map(String))
         setNotes(payload.notes || '')
+        setSummaryModifiedOn(payload.modified_on || null)
         setPage(1)
       } catch (err) {
         if (mounted) setError(err.message || text.loadError)
@@ -305,11 +308,12 @@ export default function InstallationDevicesModal({
       await installationsService.syncDeviceAssignments(installation.id, {
         client_id: selectedClient?.id || installation.client_id,
         notes,
+        modified_on: summaryModifiedOn,
         device_ids: selectedDeviceIds,
       })
       onClose(true)
     } catch (err) {
-      setError(err.message || text.saveError)
+      setError(resolveConcurrencyErrorMessage(err, language, text.saveError))
     } finally {
       setIsSaving(false)
     }

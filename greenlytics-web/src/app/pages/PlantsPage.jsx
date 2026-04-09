@@ -320,7 +320,7 @@ export default function PlantsPage() {
       setSelectedPlant(null)
       await loadPlants()
     } catch (err) {
-      setError(err.message || text.saveError)
+      setError(resolveConcurrencyErrorMessage(err, language, text.saveError))
     } finally {
       setIsSaving(false)
     }
@@ -340,7 +340,7 @@ export default function PlantsPage() {
       setSelectedPlant(null)
       await loadPlants()
     } catch (err) {
-      setError(err.message || text.deleteError)
+      setError(resolveConcurrencyErrorMessage(err, language, text.deleteError))
     } finally {
       setIsSaving(false)
     }

@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from App.core.concurrency import ensure_record_is_current
 from App.dependencies.auth import CurrentUserContext
 from App.repositories.clients_repository import get_client_by_id
 from App.repositories.devices_repository import get_device_by_id
@@ -22,6 +23,28 @@ from App.schemas.installations import InstallationUpdate
 from App.services.installations_service import update_installation_service
 from App.schemas.installation_devices import InstallationDeviceCreate, InstallationDeviceUpdate
 from database.models.installation_device import InstallationDevice
+
+
+def _resolve_assignment_snapshot(installation, assignments):
+    timestamps = []
+    for candidate in (
+        getattr(installation, "modified_on", None),
+        getattr(installation, "created_on", None),
+    ):
+        if candidate is not None:
+            timestamps.append(candidate)
+
+    for assignment in assignments:
+        for candidate in (
+            getattr(assignment, "modified_on", None),
+            getattr(assignment, "created_on", None),
+            getattr(assignment, "assigned_on", None),
+            getattr(assignment, "unassigned_on", None),
+        ):
+            if candidate is not None:
+                timestamps.append(candidate)
+
+    return max(timestamps) if timestamps else None
 
 
 def list_installation_devices_service(db: Session):
@@ -91,6 +114,8 @@ def update_installation_device_service(db: Session, installation_device_id: UUID
             status_code=status.HTTP_404_NOT_FOUND,
             detail="InstallationDevice not found",
         )
+
+    ensure_record_is_current(payload.modified_on, installation_device.modified_on)
 
     new_installation_id = installation_device.installation_id if payload.installation_id is None else payload.installation_id
     new_device_id = installation_device.device_id if payload.device_id is None else payload.device_id
@@ -169,6 +194,7 @@ def get_installation_device_assignments_summary_service(db: Session, installatio
         for assignment in active_assignments
         if (assignment.notes or "").strip()
     }
+    modified_on = _resolve_assignment_snapshot(installation, active_assignments)
 
     return {
         "installation_id": installation.id,
@@ -176,6 +202,7 @@ def get_installation_device_assignments_summary_service(db: Session, installatio
         "client_id": installation.client_id,
         "client_name": client.name if client else None,
         "notes": next(iter(notes_values)) if len(notes_values) == 1 else None,
+        "modified_on": modified_on,
         "selected_device_ids": [assignment.device_id for assignment in active_assignments],
     }
 
@@ -230,6 +257,8 @@ def sync_installation_device_assignments_service(
         requested_ids.append(device_id)
 
     current_assignments = get_active_assignments_by_installation_id(db, installation_id)
+    current_snapshot = _resolve_assignment_snapshot(installation, current_assignments)
+    ensure_record_is_current(payload.modified_on, current_snapshot)
     current_by_device_id = {
         str(assignment.device_id): assignment
         for assignment in current_assignments
@@ -306,5 +335,9 @@ def sync_installation_device_assignments_service(
         "installation_id": installation_id,
         "client_id": target_client_id,
         "assigned_count": len(requested_ids),
+        "modified_on": _resolve_assignment_snapshot(
+            installation,
+            get_active_assignments_by_installation_id(db, installation_id),
+        ),
         "selected_device_ids": requested_ids,
     }
