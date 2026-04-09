@@ -1,5 +1,11 @@
 import { config } from '../lib/config'
 
+function delay(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms)
+  })
+}
+
 export const authService = {
   async login(credentials) {
     const body = new URLSearchParams()
@@ -10,21 +16,34 @@ export const authService = {
     body.append('client_id', 'string')
     body.append('client_secret', 'string')
 
-    let response
+    let response = null
 
-    try {
-      response = await fetch(`${config.apiBaseUrl}/auth/login`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: body.toString(),
-      })
-    } catch {
-      throw new Error(
-        'No s’ha pogut connectar amb el servidor. Revisa la connexió o torna-ho a provar.'
-      )
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        response = await fetch(`${config.apiBaseUrl}/auth/login`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: body.toString(),
+        })
+      } catch {
+        if (attempt === 1) {
+          throw new Error(
+            'No s’ha pogut connectar amb el servidor. Revisa la connexió o torna-ho a provar.'
+          )
+        }
+
+        await delay(350)
+        continue
+      }
+
+      if (![502, 503, 504].includes(response.status) || attempt === 1) {
+        break
+      }
+
+      await delay(350)
     }
 
     const rawText = await response.text()
@@ -34,6 +53,10 @@ export const authService = {
     try {
       payload = JSON.parse(rawText)
     } catch {
+      if ([502, 503, 504].includes(response.status)) {
+        throw new Error('El servidor no ha respost correctament. Torna-ho a provar.')
+      }
+
       throw new Error('Error processant la resposta del servidor.')
     }
 

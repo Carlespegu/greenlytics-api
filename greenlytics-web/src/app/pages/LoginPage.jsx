@@ -51,6 +51,7 @@ export default function LoginPage() {
   })
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (isAuthenticated) {
     return <Navigate to="/app" replace />
@@ -58,7 +59,10 @@ export default function LoginPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
+    if (isSubmitting || isLoading) return
+
     setError('')
+    setIsSubmitting(true)
 
     try {
       await login(form)
@@ -66,6 +70,8 @@ export default function LoginPage() {
       navigate(redirectTo, { replace: true })
     } catch (err) {
       setError(err.message || 'No s’ha pogut iniciar sessió.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -171,15 +177,15 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isSubmitting}
             className="inline-flex w-full items-center justify-center gap-3 rounded-xl px-4 py-3 font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-70"
             style={{ backgroundColor: brandPrimary }}
           >
-            {isLoading ? 'Entrant...' : 'Entrar'}
+            {isLoading || isSubmitting ? 'Entrant...' : 'Entrar'}
           </button>
         </form>
       </div>
-      <LoadingOverlay visible={isLoading} label="Entrant..." transparent />
+      <LoadingOverlay visible={isLoading || isSubmitting} label="Entrant..." transparent />
     </div>
   )
 }

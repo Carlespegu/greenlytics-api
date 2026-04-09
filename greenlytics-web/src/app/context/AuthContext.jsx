@@ -126,6 +126,13 @@ export function AuthProvider({ children }) {
         return
       }
 
+      if (user) {
+        if (isMounted) {
+          setIsBootstrapping(false)
+        }
+        return
+      }
+
       try {
         await refreshCurrentUser(token)
       } catch (error) {
@@ -144,7 +151,7 @@ export function AuthProvider({ children }) {
     return () => {
       isMounted = false
     }
-  }, [token])
+  }, [token, user])
 
   async function refreshCurrentUser(explicitToken) {
     const safeToken = explicitToken || token
@@ -160,10 +167,10 @@ export function AuthProvider({ children }) {
 
     try {
       const result = await authService.login(credentials)
-      setToken(result.token)
-
       const me = await authService.me(result.token)
+      setToken(result.token)
       setUser(me)
+      setIsBootstrapping(false)
 
       return {
         token: result.token,
