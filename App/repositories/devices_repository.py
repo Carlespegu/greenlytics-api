@@ -36,20 +36,18 @@ def get_device_by_id(db: Session, device_id: UUID, client_id=None):
     return query.first()
 
 
-def get_device_by_code(db: Session, code: str):
-    return (
-        db.query(Device)
-        .filter(Device.code == code, Device.is_deleted == False)  # noqa: E712
-        .first()
-    )
+def get_device_by_code(db: Session, code: str, include_deleted: bool = False):
+    query = db.query(Device).filter(Device.code == code)
+    if not include_deleted:
+        query = query.filter(Device.is_deleted == False)  # noqa: E712
+    return query.first()
 
 
-def get_device_by_api_key(db: Session, api_key: str):
-    return (
-        db.query(Device)
-        .filter(Device.api_key == api_key, Device.is_deleted == False)  # noqa: E712
-        .first()
-    )
+def get_device_by_api_key(db: Session, api_key: str, include_deleted: bool = False):
+    query = db.query(Device).filter(Device.api_key == api_key)
+    if not include_deleted:
+        query = query.filter(Device.is_deleted == False)  # noqa: E712
+    return query.first()
 
 
 def create_device(db: Session, device: Device):

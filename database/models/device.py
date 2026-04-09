@@ -13,7 +13,7 @@ class Device(Base):
 
     device_type_id = Column("devicetypeid", UUID(as_uuid=True), nullable=False)
 
-    code = Column(String(50), nullable=False, unique=True)
+    code = Column(String(50), nullable=False)
     name = Column(String(150), nullable=False)
     description = Column(Text)
 
@@ -23,7 +23,7 @@ class Device(Base):
     firmware_version = Column("firmwareversion", String(50))
     hardware_version = Column("hardwareversion", String(50))
 
-    api_key = Column("apikey", String(200), unique=True)
+    api_key = Column("apikey", String(200))
 
     wifi_name = Column("wifiname", String(100))
     wifi_password = Column("wifipassword", String(255))

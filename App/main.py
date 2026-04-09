@@ -96,4 +96,18 @@ async def startup_alert_worker():
     Base.metadata.create_all(bind=engine, tables=[PlantThreshold.__table__])
     with engine.begin() as connection:
         connection.execute(text("ALTER TABLE plants ALTER COLUMN installationid DROP NOT NULL"))
+        connection.execute(text("ALTER TABLE devices DROP CONSTRAINT IF EXISTS devices_code_key"))
+        connection.execute(text("ALTER TABLE devices DROP CONSTRAINT IF EXISTS devices_apikey_key"))
+        connection.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_devices_code_active_unique "
+                "ON devices (code) WHERE isdeleted = false"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_devices_apikey_active_unique "
+                "ON devices (apikey) WHERE isdeleted = false AND apikey IS NOT NULL"
+            )
+        )
     asyncio.create_task(alert_worker())

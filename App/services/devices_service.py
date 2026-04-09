@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from App.core.security import generate_api_key
@@ -45,6 +46,24 @@ def _resolve_device_client_scope(current_user):
         return None
 
     return current_user.client_id
+
+
+def _raise_device_uniqueness_error(exc: IntegrityError):
+    message = str(exc.orig).lower() if getattr(exc, "orig", None) else str(exc).lower()
+
+    if "devices_code_key" in message or "idx_devices_code_active_unique" in message or "key (code)=" in message:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Device code already exists",
+        ) from exc
+
+    if "devices_apikey_key" in message or "idx_devices_apikey_active_unique" in message or "key (apikey)=" in message:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Device API key already exists",
+        ) from exc
+
+    raise exc
 
 
 def list_devices_service(db: Session, current_user=None):
@@ -117,7 +136,11 @@ def create_device_service(db: Session, payload: DeviceCreate, created_by: str | 
         created_by=created_by or payload.created_by,
     )
 
-    return create_device(db, device)
+    try:
+        return create_device(db, device)
+    except IntegrityError as exc:
+        db.rollback()
+        _raise_device_uniqueness_error(exc)
 
 
 def update_device_service(db: Session, device_id, payload: DeviceUpdate, modified_by: str | None = None):
@@ -184,7 +207,11 @@ def update_device_service(db: Session, device_id, payload: DeviceUpdate, modifie
 
     device.modified_on = datetime.utcnow()
 
-    return update_device(db, device)
+    try:
+        return update_device(db, device)
+    except IntegrityError as exc:
+        db.rollback()
+        _raise_device_uniqueness_error(exc)
 
 
 def delete_device_service(db: Session, device_id, modified_by: str | None = None):
