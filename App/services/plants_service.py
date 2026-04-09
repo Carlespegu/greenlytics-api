@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from App.core.concurrency import ensure_record_is_current
 from App.repositories.clients_repository import get_client_by_id
 from App.repositories.installations_repository import get_installation_by_id
 from App.repositories.plants_repository import (
@@ -112,6 +113,8 @@ def update_plant_service(db: Session, plant_id: UUID, payload: PlantUpdate):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Plant not found",
         )
+
+    ensure_record_is_current(payload.modified_on, plant.modified_on)
 
     new_client_id = plant.client_id if payload.client_id is None else payload.client_id
     fields_set = payload.model_fields_set

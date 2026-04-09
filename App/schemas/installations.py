@@ -71,6 +71,7 @@ class InstallationUpdate(BaseModel):
     longitude: Optional[Decimal] = None
 
     is_active: Optional[bool] = None
+    modified_on: Optional[datetime] = None
     modified_by: Optional[str] = None
 
     @field_validator("latitude")

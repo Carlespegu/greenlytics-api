@@ -66,6 +66,7 @@ class ClientUpdate(BaseModel):
     PrimaryColor: Optional[str] = None
     SecondaryColor: Optional[str] = None
 
+    ModifiedOn: Optional[datetime] = None
     ModifiedBy: Optional[str] = None
 
 

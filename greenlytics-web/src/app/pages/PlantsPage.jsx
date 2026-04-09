@@ -8,6 +8,7 @@ import PlantEditModalTabs from '../components/PlantEditModalTabs'
 import RowActionsDropdown from '../components/RowActionsDropdown'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
+import { resolveConcurrencyErrorMessage } from '../lib/concurrency'
 import { plantThresholdsService } from '../services/plantThresholdsService'
 import { plantsService } from '../services/plantsService'
 
@@ -267,7 +268,7 @@ export default function PlantsPage() {
       setOpenDeleteConfirm(false)
       setIsModalOpen(true)
     } catch (err) {
-      setError(err.message || text.saveError)
+      setError(resolveConcurrencyErrorMessage(err, language, text.saveError))
     } finally {
       setIsSaving(false)
     }
@@ -285,7 +286,7 @@ export default function PlantsPage() {
       setOpenDeleteConfirm(true)
       setIsModalOpen(true)
     } catch (err) {
-      setError(err.message || text.deleteError)
+      setError(resolveConcurrencyErrorMessage(err, language, text.deleteError))
     } finally {
       setIsSaving(false)
     }

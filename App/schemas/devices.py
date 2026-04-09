@@ -50,6 +50,7 @@ class DeviceUpdate(BaseModel):
     status: Optional[str] = None
     last_seen_on: Optional[datetime] = None
     is_active: Optional[bool] = None
+    modified_on: Optional[datetime] = None
     modified_by: Optional[str] = None
 
 

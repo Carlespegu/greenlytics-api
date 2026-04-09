@@ -9,6 +9,7 @@ import LoadingOverlay from '../components/LoadingOverlay'
 import RowActionsDropdown from '../components/RowActionsDropdown'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
+import { resolveConcurrencyErrorMessage } from '../lib/concurrency'
 import { installationsService } from '../services/installationsService'
 
 function FilterInput({ name, value, onChange, placeholder }) {
@@ -293,7 +294,7 @@ export default function InstallationsPage() {
         }
       }
 
-      setSaveError(err.message || text.saveError)
+      setSaveError(resolveConcurrencyErrorMessage(err, language, text.saveError))
       return
     } finally {
       setIsSaving(false)
@@ -345,7 +346,7 @@ export default function InstallationsPage() {
     try {
       const nextActive = !item.is_active
 
-      await installationsService.updateInstallation(item.id, {
+      const updatedInstallation = await installationsService.updateInstallation(item.id, {
         client_id: item.client_id,
         code: item.code,
         name: item.name,
@@ -358,12 +359,29 @@ export default function InstallationsPage() {
         latitude: item.latitude,
         longitude: item.longitude,
         is_active: nextActive,
+        modified_on: item.modified_on || null,
       })
 
-      const data = await installationsService.listInstallations()
-      setAllItems(Array.isArray(data) ? data : [])
+      setAllItems((prev) =>
+        prev.map((entry) =>
+          entry.id === item.id
+            ? {
+                ...entry,
+                is_active: nextActive,
+                modified_on: updatedInstallation?.modified_on || entry.modified_on,
+              }
+            : entry
+        )
+      )
+
+      try {
+        const data = await installationsService.listInstallations()
+        setAllItems(Array.isArray(data) ? data : [])
+      } catch (refreshError) {
+        // Keep optimistic state if the follow-up refresh fails transiently.
+      }
     } catch (err) {
-      setError(err.message || text.saveError)
+      setError(resolveConcurrencyErrorMessage(err, language, text.saveError))
     } finally {
       setIsSaving(false)
     }

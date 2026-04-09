@@ -919,6 +919,7 @@ export default function PlantEditModalTabs({
         status: form.status || null,
         notes: form.notes.trim() || null,
         is_active: Boolean(form.is_active),
+        modified_on: mode === 'edit' ? form.modified_on || null : undefined,
       },
       thresholdUpdates,
     })

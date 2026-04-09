@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from App.core.concurrency import ensure_record_is_current
 from App.core.security import hash_password
 from App.repositories.clients_repository import get_client_by_id
 from App.repositories.roles_repository import get_role_by_id
@@ -142,6 +143,8 @@ def update_user_service(db: Session, user_id: UUID, payload: UserUpdate):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
+
+    ensure_record_is_current(payload.modified_on, user.modified_on)
 
     if payload.username is not None and payload.username.strip() != user.username:
         safe_username = payload.username.strip()

@@ -9,6 +9,7 @@ import LoadingOverlay from '../components/LoadingOverlay'
 import RowActionsDropdown from '../components/RowActionsDropdown'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
+import { resolveConcurrencyErrorMessage } from '../lib/concurrency'
 import { devicesService } from '../services/devicesService'
 
 function formatDate(value) {
@@ -92,6 +93,7 @@ function buildDevicePayload(formData = {}, { mode = 'create', user } = {}) {
   if (mode === 'create') {
     payload.created_by = user?.username || ''
   } else {
+    payload.modified_on = formData.modified_on || null
     payload.modified_by = user?.username || ''
   }
 
@@ -316,7 +318,7 @@ export default function DevicesPage() {
       setSelectedDevice(null)
       await loadDevices({ targetPage: wasCreating ? 1 : page })
     } catch (err) {
-      setError(err.message || 'No s’ha pogut actualitzar el dispositiu.')
+      setError(resolveConcurrencyErrorMessage(err, language, 'No s’ha pogut actualitzar el dispositiu.'))
     } finally {
       setIsSaving(false)
     }
@@ -367,7 +369,7 @@ export default function DevicesPage() {
     setSuccess('')
 
     try {
-      await devicesService.updateDevice(toggleTarget.id, {
+      const updatedDevice = await devicesService.updateDevice(toggleTarget.id, {
         ...normalizeDevice(toggleTarget),
         is_active: nextValue,
       })
@@ -379,8 +381,15 @@ export default function DevicesPage() {
       )
 
       await loadDevices()
+      setItems((prev) =>
+        prev.map((entry) =>
+          entry.id === toggleTarget.id
+            ? { ...entry, is_active: nextValue, modified_on: updatedDevice?.modified_on || entry.modified_on }
+            : entry
+        )
+      )
     } catch (err) {
-      setError(err.message || 'No s’ha pogut actualitzar l’estat del dispositiu.')
+      setError(resolveConcurrencyErrorMessage(err, language, 'No s’ha pogut actualitzar l’estat del dispositiu.'))
     } finally {
       setToggleTarget(null)
       setIsSaving(false)

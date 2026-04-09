@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from App.core.concurrency import ensure_record_is_current
 from App.repositories.clients_repository import get_client_by_id
 from App.repositories.installations_repository import (
     create_installation,
@@ -102,6 +103,8 @@ def update_installation_service(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Installation not found",
         )
+
+    ensure_record_is_current(payload.modified_on, installation.modified_on)
 
     new_client_id = installation.client_id if payload.client_id is None else payload.client_id
     new_code = installation.code if payload.code is None else payload.code.strip()

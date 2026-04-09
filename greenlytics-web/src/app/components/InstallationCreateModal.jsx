@@ -17,6 +17,7 @@ const EMPTY_FORM = {
   latitude: '',
   longitude: '',
   is_active: true,
+  modified_on: null,
 }
 
 const UI_TEXT = {
@@ -431,6 +432,7 @@ export default function InstallationCreateModal({
       latitude,
       longitude,
       is_active: Boolean(form.is_active),
+      modified_on: mode === 'edit' ? form.modified_on || null : undefined,
     })
   }
 

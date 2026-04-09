@@ -51,6 +51,7 @@ class AlertUpdate(BaseModel):
     exact_boolean_value: Optional[bool] = None
 
     is_active: Optional[bool] = None
+    modified_on: Optional[datetime] = None
     modified_by: Optional[UUID] = None
 
 

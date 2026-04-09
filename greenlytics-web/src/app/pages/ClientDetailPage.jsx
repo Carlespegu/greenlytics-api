@@ -5,6 +5,7 @@ import { usersService } from '../services/usersService'
 import { rolesService } from '../services/rolesService'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
+import { resolveConcurrencyErrorMessage } from '../lib/concurrency'
 import defaultLogo from '../../assets/logo.png'
 
 const EMPTY_FORM = {
@@ -30,6 +31,7 @@ const EMPTY_FORM = {
   FaviconUrl: '',
   PrimaryColor: '#059669',
   SecondaryColor: '#0f172a',
+  ModifiedOn: null,
 }
 
 const EMPTY_USER_FORM = {
@@ -41,6 +43,7 @@ const EMPTY_USER_FORM = {
   password: '',
   role_id: '',
   is_active: true,
+  modified_on: null,
 }
 
 function Field({ label, children, hint, required = false }) {
@@ -290,6 +293,7 @@ export default function ClientDetailPage() {
           FaviconUrl: client.favicon_url || '',
           PrimaryColor: client.primary_color || '#059669',
           SecondaryColor: client.secondary_color || '#0f172a',
+          ModifiedOn: client.modified_on || null,
         })
       } catch (err) {
         setError(err.message || t('clientLoadError'))
@@ -387,7 +391,7 @@ export default function ClientDetailPage() {
         return
       }
 
-      await clientsService.updateClient(clientId, {
+      const updatedClient = await clientsService.updateClient(clientId, {
         Name: form.Name.trim(),
         TradeName: form.TradeName.trim(),
         TaxId: form.TaxId.trim(),
@@ -408,11 +412,13 @@ export default function ClientDetailPage() {
         FaviconUrl: form.FaviconUrl.trim(),
         PrimaryColor: form.PrimaryColor,
         SecondaryColor: form.SecondaryColor,
+        ModifiedOn: form.ModifiedOn || null,
         ModifiedBy: user?.username || user?.email || 'system',
       })
+      setForm((prev) => ({ ...prev, ModifiedOn: updatedClient?.modified_on || prev.ModifiedOn }))
       setSuccess(t('clientSavedSuccess'))
     } catch (err) {
-      setError(err.message || t('clientSaveError'))
+      setError(resolveConcurrencyErrorMessage(err, language, t('clientSaveError')))
     } finally {
       setIsSaving(false)
     }
@@ -435,6 +441,7 @@ function openEditUserModal(item) {
       password: '',
       role_id: String(item.role_id || ''),
       is_active: Boolean(item.is_active),
+      modified_on: item.modified_on || null,
     })
     setUserModalOpen(true)
   }
@@ -484,6 +491,7 @@ function openEditUserModal(item) {
           first_name: userForm.first_name.trim(),
           last_name: userForm.last_name.trim() || null,
           is_active: userForm.is_active,
+          modified_on: userForm.modified_on || null,
         })
       }
 
@@ -492,7 +500,7 @@ function openEditUserModal(item) {
       setUserForm(EMPTY_USER_FORM)
       setSuccess(t('userSavedSuccess'))
     } catch (err) {
-      setUserSaveError(err.message || t('userSaveError'))
+      setUserSaveError(resolveConcurrencyErrorMessage(err, language, t('userSaveError')))
     } finally {
       setUserSaving(false)
     }

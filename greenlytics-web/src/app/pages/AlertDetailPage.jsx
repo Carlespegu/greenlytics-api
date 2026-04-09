@@ -4,6 +4,8 @@ import { alertsService } from '../services/alertsService'
 import { resourceService } from '../services/resourceService'
 import { clientsService } from '../services/clientsService'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
+import { resolveConcurrencyErrorMessage } from '../lib/concurrency'
 
 const EMPTY_FORM = {
   client_id: '',
@@ -21,6 +23,7 @@ const EMPTY_FORM = {
   exact_text_value: '',
   exact_boolean_value: 'true',
   is_active: true,
+  modified_on: null,
 }
 
 function Field({ label, required = false, hint, children }) {
@@ -83,6 +86,7 @@ function buildPayload(form) {
     recipient_email: form.recipient_email.trim() || null,
     condition_type: form.condition_type,
     is_active: Boolean(form.is_active),
+    modified_on: form.modified_on || null,
   }
 
   if (form.condition_type === 'MIN') {
@@ -144,6 +148,7 @@ export default function AlertDetailPage() {
   const navigate = useNavigate()
   const { alertId } = useParams()
   const { user } = useAuth()
+  const { language } = useLanguage()
 
   const isNew = !alertId
 
@@ -233,6 +238,7 @@ export default function AlertDetailPage() {
               ? String(item.exact_boolean_value)
               : 'true',
           is_active: Boolean(item.is_active),
+          modified_on: item.modified_on || null,
         })
       } catch (error) {
         if (!cancelled) {
@@ -376,10 +382,11 @@ export default function AlertDetailPage() {
         return
       }
 
-      await alertsService.updateAlert(alertId, payload)
+      const updated = await alertsService.updateAlert(alertId, payload)
+      setForm((prev) => ({ ...prev, modified_on: updated?.modified_on || prev.modified_on }))
       setSuccess('Alerta actualitzada correctament.')
     } catch (error) {
-      setSaveError(error.message || "No s'ha pogut desar l'alerta.")
+      setSaveError(resolveConcurrencyErrorMessage(error, language, "No s'ha pogut desar l'alerta."))
     } finally {
       setIsSaving(false)
     }

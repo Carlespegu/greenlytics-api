@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from App.core.concurrency import ensure_record_is_current
 from App.repositories.alerts_repository import (
     create_alert,
     get_alert_by_id,
@@ -218,6 +219,8 @@ def update_alert_service(db: Session, alert_id: UUID, payload: AlertUpdate):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Alert not found",
         )
+
+    ensure_record_is_current(payload.modified_on, alert.modified_at)
 
     new_client_id = alert.client_id if payload.client_id is None else payload.client_id
     new_installation_id = alert.installation_id if payload.installation_id is None else payload.installation_id

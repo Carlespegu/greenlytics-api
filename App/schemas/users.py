@@ -25,6 +25,7 @@ class UserUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     is_active: Optional[bool] = None
+    modified_on: Optional[datetime] = None
 
 
 class UserResponse(BaseModel):

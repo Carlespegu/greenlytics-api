@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from App.core.concurrency import ensure_record_is_current
 from App.core.security import generate_api_key
 from App.repositories.devices_repository import (
     create_device,
@@ -150,6 +151,8 @@ def update_device_service(db: Session, device_id, payload: DeviceUpdate, modifie
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Device not found",
         )
+
+    ensure_record_is_current(payload.modified_on, device.modified_on)
 
     if payload.code is not None and payload.code != device.code:
         existing = get_device_by_code(db, payload.code)

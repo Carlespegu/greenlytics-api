@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from App.core.concurrency import ensure_record_is_current
 from App.core.security import generate_api_key, hash_secret
 from App.repositories.clients_repository import (
     create_client,
@@ -167,6 +168,8 @@ def update_client_service(db: Session, client_id: UUID, payload: ClientUpdate):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Client not found"
         )
+
+    ensure_record_is_current(payload.ModifiedOn, client.modified_on)
 
     if payload.Email is not None:
         safe_email = payload.Email.strip().lower()
