@@ -3,10 +3,11 @@ import BackofficeListHeader from '../components/BackofficeListHeader'
 import CollapsibleFiltersCard from '../components/CollapsibleFiltersCard'
 import CompactPagination from '../components/CompactPagination'
 import LoadingOverlay from '../components/LoadingOverlay'
-import PlantEditModal from '../components/PlantEditModal'
+import PlantEditModalTabs from '../components/PlantEditModalTabs'
 import RowActionsDropdown from '../components/RowActionsDropdown'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
+import { plantThresholdsService } from '../services/plantThresholdsService'
 import { plantsService } from '../services/plantsService'
 
 function FilterInput({ name, value, onChange, placeholder }) {
@@ -288,10 +289,20 @@ export default function PlantsPage() {
     setSuccess('')
 
     try {
+      const plantPayload = payload?.plant || payload
+      const thresholdUpdates = Array.isArray(payload?.thresholdUpdates) ? payload.thresholdUpdates : []
+
       if (modalMode === 'create') {
-        await plantsService.createPlant(payload)
+        await plantsService.createPlant(plantPayload)
       } else {
-        await plantsService.updatePlant(selectedPlant.id, payload)
+        await plantsService.updatePlant(selectedPlant.id, plantPayload)
+        if (thresholdUpdates.length > 0) {
+          await Promise.all(
+            thresholdUpdates.map((item) =>
+              plantThresholdsService.updateThreshold(item.id, item.payload)
+            )
+          )
+        }
       }
       setSuccess(text.saved)
       setIsModalOpen(false)
@@ -436,7 +447,7 @@ export default function PlantsPage() {
         />
       </section>
 
-      <PlantEditModal
+      <PlantEditModalTabs
         isOpen={isModalOpen}
         mode={modalMode}
         plant={selectedPlant}

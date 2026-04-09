@@ -24,6 +24,23 @@ export const plantsService = {
     return api.post('/plants', payload)
   },
 
+  async listPlantReadings(plantId, { limit = 500, days = 10 } = {}) {
+    const payload = await api.get(`/readings?limit=${limit}`)
+    const items = normalizeList(payload)
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - days)
+
+    return items
+      .filter((item) => String(item?.plant_id || '') === String(plantId))
+      .filter((item) => {
+        const timestamp = item?.ts || item?.created_on
+        if (!timestamp) return false
+        const parsed = new Date(timestamp)
+        return !Number.isNaN(parsed.getTime()) && parsed >= cutoff
+      })
+      .sort((left, right) => new Date(left.ts || left.created_on) - new Date(right.ts || right.created_on))
+  },
+
   async identifyPlantFromImage({ clientId, installationId, file, language = 'ca' }) {
     const formData = new FormData()
     if (clientId) formData.append('client_id', clientId)
