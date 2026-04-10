@@ -13,6 +13,7 @@ from App.schemas.plants_identification import PlantIdentificationResponse
 
 
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
+REQUIRED_IMAGE_PARTS = ("leaf", "trunk", "general")
 
 
 def _language_name(language_code: str) -> str:
@@ -135,39 +136,11 @@ def _build_suggested_code(
     return f"{cleaned}-{client_part}{installation_part}-{str(uuid4())[:4]}".upper()
 
 
-def identify_plant_from_image(
-    *,
-    client_id: UUID | None,
-    installation_id: UUID | None,
-    filename: str | None,
-    content_type: str | None,
-    image_bytes: bytes,
-    language_code: str = "ca",
-) -> PlantIdentificationResponse:
-    if not settings.OPENAI_API_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="OPENAI_API_KEY is not configured",
-        )
-
-    if not image_bytes:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Image file is required",
-        )
-
-    if len(image_bytes) > MAX_IMAGE_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="Image is too large. Max size is 8 MB",
-        )
-
-    data_url = _read_image_as_data_url(filename, content_type, image_bytes)
-    response_language = _language_name(language_code)
-
-    prompt = (
+def _build_identification_prompt(response_language: str) -> str:
+    return (
         "You are a plant identification assistant for GreenLytics. "
-        "Analyze the photo and identify the plant as accurately as possible. "
+        "You will receive three photos of the same plant: a leaf photo, a trunk photo, and a general full-plant photo. "
+        "Analyze all photos together and identify the plant as accurately as possible. "
         "Return only valid JSON with these keys: "
         "name, common_name, scientific_name, plant_type, location_type, sun_exposure, status, "
         "care_summary, current_state, confidence. "
@@ -186,16 +159,15 @@ def identify_plant_from_image(
         f"Requested response language: {response_language}."
     )
 
+
+def _call_openai_for_identification(*, content_items: list[dict[str, Any]]):
     payload = {
         "model": settings.OPENAI_MODEL,
         "text": {"format": {"type": "json_object"}},
         "input": [
             {
                 "role": "user",
-                "content": [
-                    {"type": "input_text", "text": prompt},
-                    {"type": "input_image", "image_url": data_url},
-                ],
+                "content": content_items,
             }
         ],
     }
@@ -227,20 +199,26 @@ def identify_plant_from_image(
 
     structured_payload = _extract_structured_json(raw_payload)
     if structured_payload is not None:
-        identified = structured_payload
-    else:
-        output_text = _extract_output_text(raw_payload)
+        return structured_payload
 
-        try:
-            identified = _extract_json_object(output_text)
-        except json.JSONDecodeError as exc:
-            excerpt = output_text.strip().replace("\n", " ")[:400]
-            print(f"plant_identification.invalid_json excerpt={excerpt}")
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"OpenAI returned invalid JSON for plant identification: {excerpt}",
-            ) from exc
+    output_text = _extract_output_text(raw_payload)
+    try:
+        return _extract_json_object(output_text)
+    except json.JSONDecodeError as exc:
+        excerpt = output_text.strip().replace("\n", " ")[:400]
+        print(f"plant_identification.invalid_json excerpt={excerpt}")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"OpenAI returned invalid JSON for plant identification: {excerpt}",
+        ) from exc
 
+
+def _build_identification_response(
+    *,
+    client_id: UUID | None,
+    installation_id: UUID | None,
+    identified: dict[str, Any],
+) -> PlantIdentificationResponse:
     name = (identified.get("name") or identified.get("common_name") or identified.get("scientific_name") or "Plant").strip()
     common_name = (identified.get("common_name") or None)
     scientific_name = (identified.get("scientific_name") or None)
@@ -263,4 +241,92 @@ def identify_plant_from_image(
         care_summary=care_summary,
         current_state=current_state,
         confidence=_normalize_confidence(identified.get("confidence")),
+    )
+
+
+def identify_plant_from_images(
+    *,
+    client_id: UUID | None,
+    installation_id: UUID | None,
+    images: dict[str, dict[str, Any]],
+    language_code: str = "ca",
+) -> PlantIdentificationResponse:
+    if not settings.OPENAI_API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="OPENAI_API_KEY is not configured",
+        )
+
+    response_language = _language_name(language_code)
+    missing_parts = [part for part in REQUIRED_IMAGE_PARTS if part not in images]
+    if missing_parts:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Missing required images: {', '.join(missing_parts)}",
+        )
+
+    content_items: list[dict[str, Any]] = [
+        {"type": "input_text", "text": _build_identification_prompt(response_language)}
+    ]
+
+    for part in REQUIRED_IMAGE_PARTS:
+        image = images[part]
+        image_bytes = image.get("image_bytes") or b""
+        if not image_bytes:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Image file is required for '{part}'")
+        if len(image_bytes) > MAX_IMAGE_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Image '{part}' is too large. Max size is 8 MB",
+            )
+        content_items.append({"type": "input_text", "text": f"{part.title()} photo"})
+        content_items.append(
+            {
+                "type": "input_image",
+                "image_url": _read_image_as_data_url(
+                    image.get("filename"),
+                    image.get("content_type"),
+                    image_bytes,
+                ),
+            }
+        )
+
+    identified = _call_openai_for_identification(content_items=content_items)
+    return _build_identification_response(
+        client_id=client_id,
+        installation_id=installation_id,
+        identified=identified,
+    )
+
+
+def identify_plant_from_image(
+    *,
+    client_id: UUID | None,
+    installation_id: UUID | None,
+    filename: str | None,
+    content_type: str | None,
+    image_bytes: bytes,
+    language_code: str = "ca",
+) -> PlantIdentificationResponse:
+    return identify_plant_from_images(
+        client_id=client_id,
+        installation_id=installation_id,
+        images={
+            "general": {
+                "filename": filename,
+                "content_type": content_type,
+                "image_bytes": image_bytes,
+            },
+            "leaf": {
+                "filename": filename,
+                "content_type": content_type,
+                "image_bytes": image_bytes,
+            },
+            "trunk": {
+                "filename": filename,
+                "content_type": content_type,
+                "image_bytes": image_bytes,
+            },
+        },
+        language_code=language_code,
     )

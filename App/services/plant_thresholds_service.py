@@ -119,7 +119,7 @@ def create_plant_threshold_service(db: Session, payload: PlantThresholdCreate):
     return create_plant_threshold(db, threshold)
 
 
-def seed_default_thresholds_for_plant_service(db: Session, plant, created_by: str | None = None):
+def seed_default_thresholds_for_plant_service(db: Session, plant, created_by: str | None = None, commit: bool = True):
     seeded_items = []
     reading_types = get_all_reading_types(db)
 
@@ -163,7 +163,10 @@ def seed_default_thresholds_for_plant_service(db: Session, plant, created_by: st
             is_active=True,
             created_by=created_by,
         )
-        seeded_items.append(create_plant_threshold(db, threshold))
+        if commit:
+            seeded_items.append(create_plant_threshold(db, threshold))
+        else:
+            seeded_items.append(threshold)
 
     return seeded_items
 

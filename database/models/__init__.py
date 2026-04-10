@@ -6,6 +6,8 @@ from database.models.device_type import DeviceType
 from database.models.device import Device
 from database.models.installation_device import InstallationDevice
 from database.models.plant import Plant
+from database.models.photo import Photo
+from database.models.photo_type import PhotoType
 from database.models.reading import Reading
 from database.models.reading_type import ReadingType
 from database.models.reading_value import ReadingValue

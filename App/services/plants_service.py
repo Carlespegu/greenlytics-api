@@ -1,5 +1,5 @@
 from datetime import datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -15,6 +15,7 @@ from App.repositories.plants_repository import (
     search_plants,
     update_plant,
 )
+from App.services.photos_service import create_photo_record
 from App.services.plant_thresholds_service import seed_default_thresholds_for_plant_service
 from App.schemas.plants import PlantCreate, PlantUpdate
 from database.models.plant import Plant
@@ -104,6 +105,88 @@ def create_plant_service(db: Session, payload: PlantCreate):
     created_plant = create_plant(db, plant)
     seed_default_thresholds_for_plant_service(db, created_plant, payload.created_by)
     return created_plant
+
+
+def create_plant_with_photos_service(
+    db: Session,
+    *,
+    payload: PlantCreate,
+    photos: list[dict],
+):
+    _validate_client_installation_consistency(db, payload.client_id, payload.installation_id)
+
+    existing = get_plant_by_client_and_code(db, payload.client_id, payload.code)
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Plant with code '{payload.code}' already exists for this client",
+        )
+
+    uploaded_paths: list[str] = []
+    plant = Plant(
+        id=uuid4(),
+        client_id=payload.client_id,
+        installation_id=payload.installation_id,
+        code=payload.code,
+        name=payload.name,
+        common_name=payload.common_name,
+        scientific_name=payload.scientific_name,
+        plant_type=payload.plant_type,
+        planting_type=payload.planting_type,
+        location_type=payload.location_type,
+        sun_exposure=payload.sun_exposure,
+        pot_size_cm=payload.pot_size_cm,
+        height_cm=payload.height_cm,
+        width_cm=payload.width_cm,
+        planting_date=payload.planting_date,
+        last_repotting_date=payload.last_repotting_date,
+        status=payload.status,
+        notes=payload.notes,
+        is_active=payload.is_active,
+        created_by=payload.created_by,
+    )
+
+    try:
+        db.add(plant)
+        db.flush()
+
+        for threshold in seed_default_thresholds_for_plant_service(
+            db,
+            plant,
+            payload.created_by,
+            commit=False,
+        ):
+            db.add(threshold)
+
+        for photo_payload in photos:
+            photo = create_photo_record(
+                db,
+                photo_type_code="plant",
+                object_id=plant.id,
+                photo_part=photo_payload["photo_part"],
+                filename=photo_payload.get("filename"),
+                content_type=photo_payload.get("content_type"),
+                content=photo_payload.get("content") or b"",
+                created_by=payload.created_by,
+                notes=photo_payload.get("notes"),
+                captured_on=photo_payload.get("captured_on"),
+            )
+            uploaded_paths.append(photo.storage_path)
+
+        db.commit()
+        db.refresh(plant)
+        return plant
+    except Exception:
+        db.rollback()
+        if uploaded_paths:
+            from App.services.photo_storage_service import delete_file_from_storage
+
+            for path in uploaded_paths:
+                try:
+                    delete_file_from_storage(path)
+                except Exception:
+                    pass
+        raise
 
 
 def update_plant_service(db: Session, plant_id: UUID, payload: PlantUpdate):

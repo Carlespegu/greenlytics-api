@@ -35,4 +35,9 @@ class Settings:
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
     OPENAI_API_URL: str = os.getenv("OPENAI_API_URL", "https://api.openai.com/v1/responses")
 
+    SUPABASE_URL: str | None = os.getenv("SUPABASE_URL")
+    SUPABASE_SERVICE_ROLE_KEY: str | None = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    SUPABASE_STORAGE_BUCKET: str = os.getenv("SUPABASE_STORAGE_BUCKET", "photos_greenlytics")
+    SUPABASE_SIGNED_URL_EXPIRES_IN: int = int(os.getenv("SUPABASE_SIGNED_URL_EXPIRES_IN", "3600"))
+
 settings = Settings()

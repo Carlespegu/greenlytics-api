@@ -134,9 +134,23 @@ const UI_TEXT = {
     serial: 'Serial',
     mac: 'MAC',
     photosTitle: 'Fotos i analisi',
-    photosHelper: 'Fes o puja una foto per completar automaticament la fitxa de la planta.',
-    noPhotoPreview: 'Encara no hi ha cap foto carregada en aquesta sessio.',
-    photoHistoryPending: 'La persistencia de fotos es pot ampliar en una fase seguent.',
+    photosHelper: 'Gestiona la cronologia de fotos de la planta i afegeix noves imatges quan calgui.',
+    noPhotoPreview: 'Encara no hi ha cap foto seleccionada.',
+    photoTimelineEmpty: 'Encara no hi ha fotos guardades per a aquesta planta.',
+    photoPart: 'Tipus de foto',
+    leaf: 'Fulla',
+    trunk: 'Tronc',
+    general: 'General',
+    evolution: 'Evolucio',
+    capturedOn: 'Capturada el',
+    addPhoto: 'Afegir foto',
+    uploadingPhoto: 'Pujant foto...',
+    photoSaved: 'Foto guardada correctament.',
+    deletePhoto: 'Eliminar foto',
+    analyzeLatestPhotos: 'Analitzar ultima serie',
+    photoNotes: 'Notes de la foto',
+    loadingPhotos: 'Carregant fotos...',
+    photosError: 'No s han pogut carregar les fotos.',
     status_unknown: 'Sense dades',
     status_healthy: 'Correcta',
     status_warning: 'Avis',
@@ -235,9 +249,23 @@ const UI_TEXT = {
     serial: 'Serial',
     mac: 'MAC',
     photosTitle: 'Fotos y analisis',
-    photosHelper: 'Haz o sube una foto para completar automaticamente la ficha de la planta.',
-    noPhotoPreview: 'Todavia no hay ninguna foto cargada en esta sesion.',
-    photoHistoryPending: 'La persistencia de fotos se puede ampliar en una fase posterior.',
+    photosHelper: 'Gestiona la cronologia de fotos de la planta y anade nuevas imagenes cuando haga falta.',
+    noPhotoPreview: 'Todavia no hay ninguna foto seleccionada.',
+    photoTimelineEmpty: 'Todavia no hay fotos guardadas para esta planta.',
+    photoPart: 'Tipo de foto',
+    leaf: 'Hoja',
+    trunk: 'Tronco',
+    general: 'General',
+    evolution: 'Evolucion',
+    capturedOn: 'Capturada el',
+    addPhoto: 'Anadir foto',
+    uploadingPhoto: 'Subiendo foto...',
+    photoSaved: 'Foto guardada correctamente.',
+    deletePhoto: 'Eliminar foto',
+    analyzeLatestPhotos: 'Analizar ultima serie',
+    photoNotes: 'Notas de la foto',
+    loadingPhotos: 'Cargando fotos...',
+    photosError: 'No se han podido cargar las fotos.',
     status_unknown: 'Sin datos',
     status_healthy: 'Correcta',
     status_warning: 'Aviso',
@@ -338,9 +366,23 @@ UI_TEXT.en = {
   serial: 'Serial',
   mac: 'MAC',
   photosTitle: 'Photos and analysis',
-  photosHelper: 'Take or upload a photo to auto-complete the plant card.',
-  noPhotoPreview: 'There is no photo loaded in this session yet.',
-  photoHistoryPending: 'Persistent photo history can be added in a later phase.',
+  photosHelper: 'Manage the photo timeline of the plant and add new images when needed.',
+  noPhotoPreview: 'There is no selected photo yet.',
+  photoTimelineEmpty: 'There are no photos stored for this plant yet.',
+  photoPart: 'Photo type',
+  leaf: 'Leaf',
+  trunk: 'Trunk',
+  general: 'General',
+  evolution: 'Evolution',
+  capturedOn: 'Captured on',
+  addPhoto: 'Add photo',
+  uploadingPhoto: 'Uploading photo...',
+  photoSaved: 'Photo uploaded successfully.',
+  deletePhoto: 'Delete photo',
+  analyzeLatestPhotos: 'Analyze latest set',
+  photoNotes: 'Photo notes',
+  loadingPhotos: 'Loading photos...',
+  photosError: 'Could not load the photos.',
   status_unknown: 'No data',
   status_healthy: 'Healthy',
   status_warning: 'Warning',
@@ -640,6 +682,15 @@ export default function PlantEditModalTabs({
   const [isIdentifying, setIsIdentifying] = useState(false)
   const [identificationInfo, setIdentificationInfo] = useState(null)
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState('')
+  const [photoUploadFile, setPhotoUploadFile] = useState(null)
+  const [photoUploadPart, setPhotoUploadPart] = useState('evolution')
+  const [photoUploadNotes, setPhotoUploadNotes] = useState('')
+  const [photoUploadCapturedOn, setPhotoUploadCapturedOn] = useState('')
+  const [plantPhotos, setPlantPhotos] = useState([])
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const [photosError, setPhotosError] = useState('')
+  const [photoSuccess, setPhotoSuccess] = useState('')
   const [thresholds, setThresholds] = useState([])
   const [thresholdsBaseline, setThresholdsBaseline] = useState('[]')
   const [isLoadingThresholds, setIsLoadingThresholds] = useState(false)
@@ -662,6 +713,13 @@ export default function PlantEditModalTabs({
     setValidationError('')
     setShowDeleteConfirm(Boolean(initialDeleteConfirm))
     setIdentificationInfo(null)
+    setPhotoUploadFile(null)
+    setPhotoUploadPart('evolution')
+    setPhotoUploadNotes('')
+    setPhotoUploadCapturedOn('')
+    setPlantPhotos([])
+    setPhotosError('')
+    setPhotoSuccess('')
     setThresholds([])
     setThresholdsBaseline('[]')
     setThresholdsError('')
@@ -804,6 +862,11 @@ export default function PlantEditModalTabs({
     return () => { mounted = false }
   }, [form.client_id, form.installation_id, isOpen, plant?.client_id, text.relationEmpty])
 
+  useEffect(() => {
+    if (!isOpen || mode !== 'edit' || !plant?.id) return
+    loadPlantPhotos(plant.id)
+  }, [isOpen, mode, plant?.id])
+
   const thresholdsDirty = useMemo(() => serializeThresholds(thresholds) !== thresholdsBaseline, [thresholds, thresholdsBaseline])
   const filteredInstallations = useMemo(() => !form.client_id ? installations : installations.filter((item) => item.client_id === form.client_id), [form.client_id, installations])
   const selectedInstallation = useMemo(() => installations.find((item) => item.id === form.installation_id) || null, [form.installation_id, installations])
@@ -830,67 +893,125 @@ export default function PlantEditModalTabs({
     setThresholds((prev) => prev.map((item) => (item.id === thresholdId ? { ...item, [field]: value } : item)))
   }
 
+  function getPhotoPartLabel(part) {
+    return text[part] || part
+  }
+
   function toggleMetric(code) {
     setSelectedMetricCodes((prev) => prev.includes(code) ? prev.filter((item) => item !== code) : [...prev, code])
   }
 
   async function handleImageSelection(file) {
-    if (!file) return
-    const previewUrl = URL.createObjectURL(file)
-    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
-    setPhotoPreviewUrl(previewUrl)
-
-    const installation = installations.find((item) => item.id === form.installation_id)
-    let clientId = installation?.client_id || form.client_id || plant?.client_id
-    const installationId = form.installation_id || plant?.installation_id || ''
-
+    if (!file || mode !== 'edit' || !plant?.id) return
     setValidationError('')
+    setPhotosError('')
+    setPhotoSuccess('')
     setIsOptimizingPhoto(true)
 
     try {
       const optimizedFile = await optimizeImageForPlantIdentification(file)
+      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
+      setPhotoPreviewUrl(URL.createObjectURL(optimizedFile))
+      setPhotoUploadFile(optimizedFile)
+    } catch (err) {
+      setPhotosError(err.message || text.photosError)
+    } finally {
       setIsOptimizingPhoto(false)
-      setIsIdentifying(true)
+      if (uploadInputRef.current) uploadInputRef.current.value = ''
+      if (cameraInputRef.current) cameraInputRef.current.value = ''
+    }
+  }
 
-      if (installationId && !clientId) {
-        const fullInstallation = await installationsService.getInstallation(installationId)
-        clientId = fullInstallation?.client_id || ''
-      }
+  async function loadPlantPhotos(currentPlantId) {
+    if (!currentPlantId) return
+    setIsLoadingPhotos(true)
+    setPhotosError('')
+    setPhotoSuccess('')
+    try {
+      const payload = await plantsService.listPlantPhotos(currentPlantId)
+      setPlantPhotos(Array.isArray(payload) ? payload : [])
+    } catch (err) {
+      setPhotosError(err.message || text.photosError)
+    } finally {
+      setIsLoadingPhotos(false)
+    }
+  }
 
-      const identified = await plantsService.identifyPlantFromImage({
-        clientId,
-        installationId,
-        file: optimizedFile,
-        language,
+  async function handleUploadPhoto() {
+    if (!plant?.id || !photoUploadFile) {
+      setPhotosError(text.noPhotoPreview)
+      return
+    }
+
+    setPhotosError('')
+    setPhotoSuccess('')
+    setIsUploadingPhoto(true)
+    try {
+      await plantsService.uploadPlantPhoto(plant.id, {
+        photoPart: photoUploadPart,
+        file: photoUploadFile,
+        notes: photoUploadNotes,
+        capturedOn: photoUploadCapturedOn || null,
       })
+      setPhotoUploadFile(null)
+      setPhotoUploadNotes('')
+      setPhotoUploadCapturedOn('')
+      if (photoPreviewUrl) {
+        URL.revokeObjectURL(photoPreviewUrl)
+        setPhotoPreviewUrl('')
+      }
+      setPhotoSuccess(text.photoSaved)
+      await loadPlantPhotos(plant.id)
+    } catch (err) {
+      setPhotosError(err.message || text.photosError)
+    } finally {
+      setIsUploadingPhoto(false)
+    }
+  }
 
+  async function handleDeletePhoto(photoId) {
+    if (!plant?.id) return
+    setPhotosError('')
+    setPhotoSuccess('')
+    setIsUploadingPhoto(true)
+    try {
+      await plantsService.deletePlantPhoto(plant.id, photoId)
+      await loadPlantPhotos(plant.id)
+    } catch (err) {
+      setPhotosError(err.message || text.photosError)
+    } finally {
+      setIsUploadingPhoto(false)
+    }
+  }
+
+  async function handleAnalyzeLatestPhotos() {
+    if (!plant?.id) return
+    setPhotosError('')
+    setPhotoSuccess('')
+    setIsIdentifying(true)
+    try {
+      const identified = await plantsService.analyzeLatestPlantPhotos(plant.id, language)
       setForm((prev) => ({
         ...prev,
-        client_id: clientId || prev.client_id,
         code: identified.suggested_code || prev.code,
         name: identified.name || prev.name,
-        common_name: identified.common_name || '',
-        scientific_name: identified.scientific_name || '',
-        plant_type: identified.plant_type || '',
-        location_type: identified.location_type || '',
-        sun_exposure: identified.sun_exposure || '',
-        status: identified.status || '',
+        common_name: identified.common_name || prev.common_name || '',
+        scientific_name: identified.scientific_name || prev.scientific_name || '',
+        plant_type: identified.plant_type || prev.plant_type || '',
+        location_type: identified.location_type || prev.location_type || '',
+        sun_exposure: identified.sun_exposure || prev.sun_exposure || '',
+        status: identified.status || prev.status || '',
         notes: identified.notes || prev.notes || '',
       }))
-
       setIdentificationInfo({
         confidence: identified.confidence,
         care_summary: identified.care_summary || '',
         current_state: identified.current_state || '',
       })
-      setActiveTab('photos')
     } catch (err) {
-      setValidationError(err.message || text.identifyError)
+      setPhotosError(err.message || text.identifyError)
     } finally {
-      setIsOptimizingPhoto(false)
       setIsIdentifying(false)
-      if (uploadInputRef.current) uploadInputRef.current.value = ''
-      if (cameraInputRef.current) cameraInputRef.current.value = ''
     }
   }
 
@@ -1126,23 +1247,75 @@ export default function PlantEditModalTabs({
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
                 <h3 className="text-base font-semibold text-emerald-900">{text.photosTitle}</h3>
                 <p className="mt-1 text-sm text-emerald-800">{text.photosHelper}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => handleImageSelection(event.target.files?.[0] || null)} />
-                  <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => handleImageSelection(event.target.files?.[0] || null)} />
-                  <button type="button" disabled={!canEdit || isSaving || isIdentifying || isOptimizingPhoto} onClick={() => uploadInputRef.current?.click()} className="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50">{text.uploadPhoto}</button>
-                  <button type="button" disabled={!canEdit || isSaving || isIdentifying || isOptimizingPhoto} onClick={() => cameraInputRef.current?.click()} className="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50">{text.takePhoto}</button>
+                <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[220px,1fr]">
+                  <div className="space-y-3">
+                    <label className="space-y-2 text-sm text-slate-700">
+                      <span>{text.photoPart}</span>
+                      <select value={photoUploadPart} onChange={(event) => setPhotoUploadPart(event.target.value)} disabled={!canEdit || isSaving || isUploadingPhoto} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-400 disabled:bg-slate-50">
+                        <option value="leaf">{text.leaf}</option>
+                        <option value="trunk">{text.trunk}</option>
+                        <option value="general">{text.general}</option>
+                        <option value="evolution">{text.evolution}</option>
+                      </select>
+                    </label>
+                    <label className="space-y-2 text-sm text-slate-700">
+                      <span>{text.capturedOn}</span>
+                      <input type="datetime-local" value={photoUploadCapturedOn} onChange={(event) => setPhotoUploadCapturedOn(event.target.value)} disabled={!canEdit || isSaving || isUploadingPhoto} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-400 disabled:bg-slate-50" />
+                    </label>
+                    <label className="space-y-2 text-sm text-slate-700">
+                      <span>{text.photoNotes}</span>
+                      <textarea value={photoUploadNotes} onChange={(event) => setPhotoUploadNotes(event.target.value)} disabled={!canEdit || isSaving || isUploadingPhoto} rows={3} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-400 disabled:bg-slate-50" />
+                    </label>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => handleImageSelection(event.target.files?.[0] || null)} />
+                      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => handleImageSelection(event.target.files?.[0] || null)} />
+                      <button type="button" disabled={!canEdit || isSaving || isUploadingPhoto || isOptimizingPhoto} onClick={() => uploadInputRef.current?.click()} className="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50">{text.uploadPhoto}</button>
+                      <button type="button" disabled={!canEdit || isSaving || isUploadingPhoto || isOptimizingPhoto} onClick={() => cameraInputRef.current?.click()} className="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50">{text.takePhoto}</button>
+                      <button type="button" disabled={!canEdit || isSaving || isUploadingPhoto || !photoUploadFile} onClick={handleUploadPhoto} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">{text.addPhoto}</button>
+                      <button type="button" disabled={!canEdit || isSaving || isUploadingPhoto || isIdentifying} onClick={handleAnalyzeLatestPhotos} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">{text.analyzeLatestPhotos}</button>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                      {photoPreviewUrl ? <img src={photoPreviewUrl} alt="Plant preview" className="h-[260px] w-full rounded-2xl object-cover" /> : <div className="flex h-[260px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">{text.noPhotoPreview}</div>}
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr,1fr]">
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  {photoPreviewUrl ? <img src={photoPreviewUrl} alt="Plant preview" className="h-[360px] w-full rounded-2xl object-cover" /> : <div className="flex h-[360px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">{text.noPhotoPreview}</div>}
+                  <div className="space-y-4">
+                    {photosError ? <p className="text-sm text-red-600">{photosError}</p> : null}
+                    {photoSuccess ? <p className="text-sm text-emerald-600">{photoSuccess}</p> : null}
+                    {isLoadingPhotos ? <p className="text-sm text-slate-500">{text.loadingPhotos}</p> : null}
+                    <div className="space-y-3">
+                      {plantPhotos.map((photo) => (
+                        <div key={photo.id} className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-4 md:flex-row">
+                          <div className="h-32 w-full overflow-hidden rounded-2xl bg-slate-100 md:w-44">
+                            {photo.signed_url ? <img src={photo.signed_url} alt={getPhotoPartLabel(photo.photo_part)} className="h-full w-full object-cover" /> : null}
+                          </div>
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">{getPhotoPartLabel(photo.photo_part)}</p>
+                                <p className="text-xs text-slate-500">{photo.captured_on ? new Date(photo.captured_on).toLocaleString(language === 'en' ? 'en-GB' : language) : '-'}</p>
+                              </div>
+                              {canEdit ? <button type="button" onClick={() => handleDeletePhoto(photo.id)} disabled={isSaving || isUploadingPhoto} className="rounded-xl border border-red-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">{text.deletePhoto}</button> : null}
+                            </div>
+                            <p className="text-sm text-slate-600 break-all">{photo.notes || '-'}</p>
+                          </div>
+                        </div>
+                      ))}
+                      {!isLoadingPhotos && plantPhotos.length === 0 ? <p className="text-sm text-slate-500">{text.photoTimelineEmpty}</p> : null}
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-4">
                   <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-sm font-medium text-slate-900">{text.identifyTitle}</p><p className="mt-1 text-sm text-slate-500">{text.identifyHint}</p></div>
                   <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-sm font-medium text-slate-900">{text.confidence}</p><p className="mt-2 text-2xl font-semibold text-slate-900">{identificationInfo?.confidence != null ? `${Math.round(identificationInfo.confidence * 100)}%` : '-'}</p></div>
                   <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-sm font-medium text-slate-900">{text.currentState}</p><p className="mt-2 text-sm text-slate-600">{identificationInfo?.current_state || '-'}</p></div>
                   <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-sm font-medium text-slate-900">{text.careSummary}</p><p className="mt-2 text-sm text-slate-600">{identificationInfo?.care_summary || '-'}</p></div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">{text.photoHistoryPending}</div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">{text.photosHelper}</div>
                 </div>
               </div>
             </section>
@@ -1171,8 +1344,8 @@ export default function PlantEditModalTabs({
       </div>
 
       <LoadingOverlay
-        visible={isSaving || isLoadingInstallations || isIdentifying || isOptimizingPhoto || isLoadingThresholds || isLoadingHealthSummary || isLoadingReadings || isLoadingRelations}
-        label={isOptimizingPhoto ? text.preparingPhoto : isIdentifying ? text.identifying : isSaving ? text.saving : isLoadingThresholds || isLoadingHealthSummary ? text.loadingThresholds : isLoadingReadings ? text.chartLoading : isLoadingRelations ? text.relationTitle : text.loadingInstallations}
+        visible={isSaving || isLoadingInstallations || isIdentifying || isOptimizingPhoto || isLoadingThresholds || isLoadingHealthSummary || isLoadingReadings || isLoadingRelations || isLoadingPhotos || isUploadingPhoto}
+        label={isOptimizingPhoto ? text.preparingPhoto : isIdentifying ? text.identifying : isUploadingPhoto ? text.uploadingPhoto : isSaving ? text.saving : isLoadingPhotos ? text.loadingPhotos : isLoadingThresholds || isLoadingHealthSummary ? text.loadingThresholds : isLoadingReadings ? text.chartLoading : isLoadingRelations ? text.relationTitle : text.loadingInstallations}
         transparent
       />
     </div>

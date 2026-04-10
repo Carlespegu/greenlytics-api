@@ -28,9 +28,9 @@ const char* WIFI_PASSWORD = "h447xhrL";
 // API
 // -------------------------
 // Change this endpoint if your backend uses a different batch path.
-const char* API_URL = "https://api.greenlytics.app/device-readings/batch";
+const char* API_URL = "https://api.greenlytics.app/device-readings";
 const char* API_KEY = "7I128ji0yiT-0CROHYefMuhAjoe-XiPT8vKxDEDJVqw";
-const char* DEVICE_ID = "ESP32-PLANT-001";
+const char* DEVICE_ID = "ESP32-001";
 
 // -------------------------
 // TIMING / POWER STRATEGY

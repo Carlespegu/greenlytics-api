@@ -79,6 +79,156 @@ export const plantsService = {
     return payload
   },
 
+  async identifyPlantFromPhotos({ clientId, installationId, files, language = 'ca' }) {
+    const formData = new FormData()
+    if (clientId) formData.append('client_id', clientId)
+    if (installationId) formData.append('installation_id', installationId)
+    formData.append('language', language)
+    formData.append('leaf_image', files.leaf)
+    formData.append('trunk_image', files.trunk)
+    formData.append('general_image', files.general)
+
+    const token = storage.getToken()
+    const response = await fetch(`${config.apiBaseUrl}/plants/identify-from-photos`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    })
+
+    if (response.status === 401) {
+      storage.clearSession()
+      window.location.href = '/login'
+      throw new Error('Sessio expirada')
+    }
+
+    const contentType = response.headers.get('content-type') || ''
+    const isJson = contentType.includes('application/json')
+    const payload = isJson ? await response.json() : await response.text()
+
+    if (!response.ok) {
+      throw new Error(
+        payload?.detail ||
+          payload?.message ||
+          payload?.error ||
+          'No sha pogut identificar la planta'
+      )
+    }
+
+    return payload
+  },
+
+  async createPlantWithPhotos({ plant, files }) {
+    const formData = new FormData()
+    formData.append('payload', JSON.stringify(plant))
+    formData.append('leaf_image', files.leaf)
+    formData.append('trunk_image', files.trunk)
+    formData.append('general_image', files.general)
+
+    const token = storage.getToken()
+    const response = await fetch(`${config.apiBaseUrl}/plants/with-photos`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    })
+
+    if (response.status === 401) {
+      storage.clearSession()
+      window.location.href = '/login'
+      throw new Error('Sessio expirada')
+    }
+
+    const contentType = response.headers.get('content-type') || ''
+    const isJson = contentType.includes('application/json')
+    const payload = isJson ? await response.json() : await response.text()
+
+    if (!response.ok) {
+      throw new Error(
+        payload?.detail ||
+          payload?.message ||
+          payload?.error ||
+          'No sha pogut crear la planta'
+      )
+    }
+
+    return payload
+  },
+
+  async listPlantPhotos(plantId) {
+    const payload = await api.get(`/plants/${plantId}/photos`)
+    return normalizeList(payload)
+  },
+
+  async uploadPlantPhoto(plantId, { photoPart, file, notes = '', capturedOn = null }) {
+    const formData = new FormData()
+    formData.append('photo_part', photoPart)
+    if (notes) formData.append('notes', notes)
+    if (capturedOn) formData.append('captured_on', capturedOn)
+    formData.append('image', file)
+
+    const token = storage.getToken()
+    const response = await fetch(`${config.apiBaseUrl}/plants/${plantId}/photos`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    })
+
+    if (response.status === 401) {
+      storage.clearSession()
+      window.location.href = '/login'
+      throw new Error('Sessio expirada')
+    }
+
+    const contentType = response.headers.get('content-type') || ''
+    const isJson = contentType.includes('application/json')
+    const payload = isJson ? await response.json() : await response.text()
+
+    if (!response.ok) {
+      throw new Error(payload?.detail || payload?.message || 'No sha pogut pujar la foto')
+    }
+
+    return payload
+  },
+
+  async deletePlantPhoto(plantId, photoId) {
+    return api.delete(`/plants/${plantId}/photos/${photoId}`)
+  },
+
+  async analyzeLatestPlantPhotos(plantId, language = 'ca') {
+    const formData = new FormData()
+    formData.append('language', language)
+
+    const token = storage.getToken()
+    const response = await fetch(`${config.apiBaseUrl}/plants/${plantId}/photos/analyze-latest`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    })
+
+    if (response.status === 401) {
+      storage.clearSession()
+      window.location.href = '/login'
+      throw new Error('Sessio expirada')
+    }
+
+    const contentType = response.headers.get('content-type') || ''
+    const isJson = contentType.includes('application/json')
+    const payload = isJson ? await response.json() : await response.text()
+
+    if (!response.ok) {
+      throw new Error(payload?.detail || payload?.message || 'No sha pogut analitzar les fotos')
+    }
+
+    return payload
+  },
+
   async updatePlant(plantId, payload) {
     return api.put(`/plants/${plantId}`, payload)
   },

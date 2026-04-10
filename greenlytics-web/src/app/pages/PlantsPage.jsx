@@ -302,7 +302,14 @@ export default function PlantsPage() {
       const thresholdUpdates = Array.isArray(payload?.thresholdUpdates) ? payload.thresholdUpdates : []
 
       if (modalMode === 'create') {
-        await plantsService.createPlant(plantPayload)
+        if (payload?.photos?.leaf && payload?.photos?.trunk && payload?.photos?.general) {
+          await plantsService.createPlantWithPhotos({
+            plant: plantPayload,
+            files: payload.photos,
+          })
+        } else {
+          await plantsService.createPlant(plantPayload)
+        }
       } else {
         await plantsService.updatePlant(selectedPlant.id, plantPayload)
         if (thresholdUpdates.length > 0) {

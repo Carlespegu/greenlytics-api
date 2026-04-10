@@ -22,6 +22,12 @@ const EMPTY_FORM = {
   is_active: true,
 }
 
+const EMPTY_PHOTOS = {
+  leaf: null,
+  trunk: null,
+  general: null,
+}
+
 const OPTION_SETS = {
   plant_type: ['plant', 'crop', 'tree', 'shrub'],
   planting_type: ['single', 'group', 'plot'],
@@ -32,16 +38,21 @@ const OPTION_SETS = {
 const UI_TEXT = {
   ca: {
     title: 'Nova planta',
-    helper: 'La foto es el primer pas. Completa el minim imprescindible i vincula la instal lacio mes endavant si cal.',
-    photoTitle: 'Foto i identificacio',
-    photoHelper: 'Pots pujar o fer una foto per omplir automaticament gran part de la fitxa.',
-    uploadPhoto: 'Pujar foto',
+    helper: 'Per donar d alta una planta has d aportar tres fotos: fulla, tronc i general.',
+    photoTitle: 'Fotos obligatories',
+    photoHelper: 'Les tres fotos es comprimiran abans d enviar-les a OpenAI i al backend.',
+    leaf: 'Fulla',
+    trunk: 'Tronc',
+    general: 'General',
+    uploadPhoto: 'Pujar',
     takePhoto: 'Fer foto',
+    analyze: 'Analitzar 3 fotos',
+    analyzing: 'Analitzant 3 fotos...',
     preparingPhoto: 'Preparant foto...',
-    identifying: 'Analitzant foto...',
-    photoLoaded: 'Dades carregades des de la foto.',
-    identifyError: 'No s ha pogut identificar la planta a partir de la foto.',
-    noPhotoPreview: 'Encara no hi ha cap foto carregada en aquesta sessio.',
+    photoRequired: 'Has d afegir les tres fotos obligatories: fulla, tronc i general.',
+    photoLoaded: 'Dades carregades des de les tres fotos.',
+    identifyError: 'No s ha pogut identificar la planta a partir de les tres fotos.',
+    noPhotoPreview: 'Encara no hi ha cap foto carregada.',
     confidence: 'Confianca',
     currentState: 'Estat detectat',
     careSummary: 'Cures recomanades',
@@ -72,16 +83,21 @@ const UI_TEXT = {
   },
   es: {
     title: 'Nueva planta',
-    helper: 'La foto es el primer paso. Completa lo minimo imprescindible y vincula la instalacion mas adelante si hace falta.',
-    photoTitle: 'Foto e identificacion',
-    photoHelper: 'Puedes subir o hacer una foto para completar automaticamente gran parte de la ficha.',
-    uploadPhoto: 'Subir foto',
+    helper: 'Para dar de alta una planta debes aportar tres fotos: hoja, tronco y general.',
+    photoTitle: 'Fotos obligatorias',
+    photoHelper: 'Las tres fotos se comprimen antes de enviarlas a OpenAI y al backend.',
+    leaf: 'Hoja',
+    trunk: 'Tronco',
+    general: 'General',
+    uploadPhoto: 'Subir',
     takePhoto: 'Hacer foto',
+    analyze: 'Analizar 3 fotos',
+    analyzing: 'Analizando 3 fotos...',
     preparingPhoto: 'Preparando foto...',
-    identifying: 'Analizando foto...',
-    photoLoaded: 'Datos cargados desde la foto.',
-    identifyError: 'No se ha podido identificar la planta a partir de la foto.',
-    noPhotoPreview: 'Todavia no hay ninguna foto cargada en esta sesion.',
+    photoRequired: 'Debes añadir las tres fotos obligatorias: hoja, tronco y general.',
+    photoLoaded: 'Datos cargados desde las tres fotos.',
+    identifyError: 'No se ha podido identificar la planta a partir de las tres fotos.',
+    noPhotoPreview: 'Todavia no hay ninguna foto cargada.',
     confidence: 'Confianza',
     currentState: 'Estado detectado',
     careSummary: 'Cuidados recomendados',
@@ -112,16 +128,21 @@ const UI_TEXT = {
   },
   en: {
     title: 'New plant',
-    helper: 'Photo comes first. Complete only the minimum data and link the installation later if needed.',
-    photoTitle: 'Photo and identification',
-    photoHelper: 'You can upload or take a photo to auto-fill a large part of the plant card.',
-    uploadPhoto: 'Upload photo',
+    helper: 'To create a plant you must provide three photos: leaf, trunk and general view.',
+    photoTitle: 'Required photos',
+    photoHelper: 'All three photos are compressed before being sent to OpenAI and the backend.',
+    leaf: 'Leaf',
+    trunk: 'Trunk',
+    general: 'General',
+    uploadPhoto: 'Upload',
     takePhoto: 'Take photo',
+    analyze: 'Analyze 3 photos',
+    analyzing: 'Analyzing 3 photos...',
     preparingPhoto: 'Preparing photo...',
-    identifying: 'Analyzing photo...',
-    photoLoaded: 'Data loaded from the photo.',
-    identifyError: 'The plant could not be identified from the photo.',
-    noPhotoPreview: 'There is no photo loaded in this session yet.',
+    photoRequired: 'You must add the three required photos: leaf, trunk and general.',
+    photoLoaded: 'Data loaded from the three photos.',
+    identifyError: 'The plant could not be identified from the three photos.',
+    noPhotoPreview: 'There is no photo loaded yet.',
     confidence: 'Confidence',
     currentState: 'Detected state',
     careSummary: 'Recommended care',
@@ -230,6 +251,29 @@ function normalizeInstallation(item) {
   }
 }
 
+function PhotoCard({ label, previewUrl, onUpload, onCamera, disabled, uploadRef, cameraRef, uploadLabel, cameraLabel }) {
+  return (
+    <div className="space-y-3 rounded-2xl border border-emerald-200 bg-white p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-emerald-900">{label}</p>
+        <div className="flex gap-2">
+          <input ref={uploadRef} type="file" accept="image/*" className="hidden" onChange={(event) => onUpload(event.target.files?.[0] || null)} />
+          <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => onCamera(event.target.files?.[0] || null)} />
+          <button type="button" disabled={disabled} onClick={() => uploadRef.current?.click()} className="rounded-xl border border-emerald-300 bg-white px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50">{uploadLabel}</button>
+          <button type="button" disabled={disabled} onClick={() => cameraRef.current?.click()} className="rounded-xl border border-emerald-300 bg-white px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50">{cameraLabel}</button>
+        </div>
+      </div>
+      {previewUrl ? (
+        <img src={previewUrl} alt={label} className="h-52 w-full rounded-2xl object-cover" />
+      ) : (
+        <div className="flex h-52 items-center justify-center rounded-2xl border border-dashed border-emerald-300 bg-emerald-50 text-sm text-emerald-900/70">
+          {label}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function PlantCreateModal({ isOpen, onClose, onSave, isSaving = false, error = '' }) {
   const { language } = useLanguage()
   const { roleCode, user } = useAuth()
@@ -244,21 +288,33 @@ export default function PlantCreateModal({ isOpen, onClose, onSave, isSaving = f
   const [isLoadingInstallations, setIsLoadingInstallations] = useState(false)
   const [isOptimizingPhoto, setIsOptimizingPhoto] = useState(false)
   const [isIdentifying, setIsIdentifying] = useState(false)
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState('')
   const [identificationInfo, setIdentificationInfo] = useState(null)
-  const uploadInputRef = useRef(null)
-  const cameraInputRef = useRef(null)
+  const [photoFiles, setPhotoFiles] = useState(EMPTY_PHOTOS)
+  const [photoPreviews, setPhotoPreviews] = useState({ leaf: '', trunk: '', general: '' })
+  const uploadInputRefs = {
+    leaf: useRef(null),
+    trunk: useRef(null),
+    general: useRef(null),
+  }
+  const cameraInputRefs = {
+    leaf: useRef(null),
+    trunk: useRef(null),
+    general: useRef(null),
+  }
 
   useEffect(() => {
     if (!isOpen) return
     setForm({ ...EMPTY_FORM, client_id: isAdmin ? '' : String(user?.client_id || '') })
     setValidationError('')
     setIdentificationInfo(null)
-    if (photoPreviewUrl) {
-      URL.revokeObjectURL(photoPreviewUrl)
-      setPhotoPreviewUrl('')
-    }
-  }, [isAdmin, isOpen, photoPreviewUrl, user?.client_id])
+    setPhotoFiles(EMPTY_PHOTOS)
+    setPhotoPreviews((prev) => {
+      Object.values(prev).forEach((value) => {
+        if (value) URL.revokeObjectURL(value)
+      })
+      return { leaf: '', trunk: '', general: '' }
+    })
+  }, [isAdmin, isOpen, user?.client_id])
 
   useEffect(() => {
     if (!isOpen || !isAdmin) return
@@ -314,29 +370,51 @@ export default function PlantCreateModal({ isOpen, onClose, onSave, isSaving = f
     ))
   }
 
-  async function handleImageSelection(file) {
+  const hasAllRequiredPhotos = useMemo(
+    () => Boolean(photoFiles.leaf && photoFiles.trunk && photoFiles.general),
+    [photoFiles]
+  )
+
+  async function handleImageSelection(part, file) {
     if (!file) return
     setValidationError('')
-    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
-    setPhotoPreviewUrl(URL.createObjectURL(file))
 
     try {
       setIsOptimizingPhoto(true)
       const optimizedFile = await optimizeImage(file)
+      setPhotoFiles((prev) => ({ ...prev, [part]: optimizedFile }))
+      setPhotoPreviews((prev) => {
+        if (prev[part]) URL.revokeObjectURL(prev[part])
+        return { ...prev, [part]: URL.createObjectURL(optimizedFile) }
+      })
       setIsOptimizingPhoto(false)
+    } catch (err) {
+      setValidationError(err.message || text.preparingPhoto)
+    } finally {
+      setIsOptimizingPhoto(false)
+    }
+  }
 
-      setIsIdentifying(true)
-      const payload = await plantsService.identifyPlantFromImage({
+  async function handleAnalyze() {
+    if (!hasAllRequiredPhotos) {
+      setValidationError(text.photoRequired)
+      return
+    }
+
+    setValidationError('')
+    setIsIdentifying(true)
+    try {
+      const payload = await plantsService.identifyPlantFromPhotos({
         clientId: form.client_id || undefined,
         installationId: form.installation_id || undefined,
-        file: optimizedFile,
+        files: photoFiles,
         language,
       })
 
       setIdentificationInfo(payload)
       setForm((prev) => ({
         ...prev,
-        code: prev.code || payload.code || '',
+        code: prev.code || payload.suggested_code || '',
         name: prev.name || payload.name || payload.common_name || '',
         common_name: payload.common_name || prev.common_name || '',
         scientific_name: payload.scientific_name || prev.scientific_name || '',
@@ -344,15 +422,12 @@ export default function PlantCreateModal({ isOpen, onClose, onSave, isSaving = f
         planting_type: payload.planting_type || prev.planting_type || '',
         location_type: payload.location_type || prev.location_type || '',
         sun_exposure: payload.sun_exposure || prev.sun_exposure || '',
-        notes: payload.care_summary || payload.current_state
-          ? [payload.care_summary, payload.current_state].filter(Boolean).join('\n\n')
-          : prev.notes,
+        notes: payload.notes || prev.notes,
       }))
     } catch (err) {
       setValidationError(err.message || text.identifyError)
     } finally {
       setIsIdentifying(false)
-      setIsOptimizingPhoto(false)
     }
   }
 
@@ -369,6 +444,10 @@ export default function PlantCreateModal({ isOpen, onClose, onSave, isSaving = f
     }
     if (!form.name.trim()) {
       setValidationError(text.requiredName)
+      return
+    }
+    if (!hasAllRequiredPhotos) {
+      setValidationError(text.photoRequired)
       return
     }
 
@@ -390,7 +469,10 @@ export default function PlantCreateModal({ isOpen, onClose, onSave, isSaving = f
       payload.installation_id = form.installation_id
     }
 
-    onSave(payload)
+    onSave({
+      plant: payload,
+      photos: photoFiles,
+    })
   }
 
   if (!isOpen) return null
@@ -409,25 +491,50 @@ export default function PlantCreateModal({ isOpen, onClose, onSave, isSaving = f
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+          <section className="space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5">
+            <div>
+              <h3 className="text-base font-semibold text-emerald-900">{text.photoTitle}</h3>
+              <p className="mt-1 text-sm text-emerald-800">{text.photoHelper}</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+              {['leaf', 'trunk', 'general'].map((part) => (
+                <PhotoCard
+                  key={part}
+                  label={text[part]}
+                  previewUrl={photoPreviews[part]}
+                  uploadRef={uploadInputRefs[part]}
+                  cameraRef={cameraInputRefs[part]}
+                  uploadLabel={text.uploadPhoto}
+                  cameraLabel={text.takePhoto}
+                  disabled={isSaving || isIdentifying || isOptimizingPhoto}
+                  onUpload={(file) => handleImageSelection(part, file)}
+                  onCamera={(file) => handleImageSelection(part, file)}
+                />
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                disabled={isSaving || isIdentifying || isOptimizingPhoto || !hasAllRequiredPhotos}
+                onClick={handleAnalyze}
+                className="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isIdentifying ? text.analyzing : text.analyze}
+              </button>
+            </div>
+          </section>
+
           <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.15fr,0.85fr]">
-            <div className="space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5">
+            <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
               <div>
-                <h3 className="text-base font-semibold text-emerald-900">{text.photoTitle}</h3>
-                <p className="mt-1 text-sm text-emerald-800">{text.photoHelper}</p>
+                <h3 className="text-base font-semibold text-slate-900">{text.currentState}</h3>
+                <p className="mt-1 text-sm text-slate-500">{text.noPhotoPreview}</p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => handleImageSelection(event.target.files?.[0] || null)} />
-                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => handleImageSelection(event.target.files?.[0] || null)} />
-                <button type="button" disabled={isSaving || isIdentifying || isOptimizingPhoto} onClick={() => uploadInputRef.current?.click()} className="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50">{text.uploadPhoto}</button>
-                <button type="button" disabled={isSaving || isIdentifying || isOptimizingPhoto} onClick={() => cameraInputRef.current?.click()} className="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50">{text.takePhoto}</button>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                {['leaf', 'trunk', 'general'].map((part) => (
+                  photoPreviews[part] ? <img key={part} src={photoPreviews[part]} alt={text[part]} className="h-40 w-full rounded-2xl object-cover" /> : <div key={part} className="flex h-40 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">{text[part]}</div>
+                ))}
               </div>
-              {photoPreviewUrl ? (
-                <img src={photoPreviewUrl} alt="Plant preview" className="h-[320px] w-full rounded-2xl object-cover" />
-              ) : (
-                <div className="flex h-[320px] items-center justify-center rounded-2xl border border-dashed border-emerald-300 bg-white/70 px-6 text-center text-sm text-emerald-900/70">
-                  {text.noPhotoPreview}
-                </div>
-              )}
             </div>
 
             <div className="space-y-4">
@@ -527,7 +634,7 @@ export default function PlantCreateModal({ isOpen, onClose, onSave, isSaving = f
 
         <LoadingOverlay
           visible={isSaving || isLoadingClients || isLoadingInstallations || isIdentifying || isOptimizingPhoto}
-          label={isOptimizingPhoto ? text.preparingPhoto : isIdentifying ? text.identifying : isSaving ? text.saving : isLoadingClients ? text.loadingClients : text.loadingInstallations}
+          label={isOptimizingPhoto ? text.preparingPhoto : isIdentifying ? text.analyzing : isSaving ? text.saving : isLoadingClients ? text.loadingClients : text.loadingInstallations}
           transparent
         />
       </div>

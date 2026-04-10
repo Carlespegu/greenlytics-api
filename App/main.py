@@ -24,6 +24,8 @@ from App.core.config import settings
 from App.services.alert_jobs_service import process_pending_alert_jobs
 from database.base import Base
 import database.models  # noqa: F401
+from database.models.photo import Photo
+from database.models.photo_type import PhotoType
 from database.models.plant_threshold import PlantThreshold
 from database.session import SessionLocal, engine
 
@@ -93,11 +95,17 @@ async def alert_worker():
 
 @app.on_event("startup")
 async def startup_alert_worker():
-    Base.metadata.create_all(bind=engine, tables=[PlantThreshold.__table__])
+    Base.metadata.create_all(bind=engine, tables=[PlantThreshold.__table__, PhotoType.__table__, Photo.__table__])
     with engine.begin() as connection:
         connection.execute(text("ALTER TABLE plants ALTER COLUMN installationid DROP NOT NULL"))
         connection.execute(text("ALTER TABLE devices DROP CONSTRAINT IF EXISTS devices_code_key"))
         connection.execute(text("ALTER TABLE devices DROP CONSTRAINT IF EXISTS devices_apikey_key"))
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS idx_photos_entity_lookup "
+                "ON photos (phototypeid, idobject, capturedon DESC)"
+            )
+        )
         connection.execute(
             text(
                 "CREATE UNIQUE INDEX IF NOT EXISTS idx_devices_code_active_unique "
@@ -108,6 +116,27 @@ async def startup_alert_worker():
             text(
                 "CREATE UNIQUE INDEX IF NOT EXISTS idx_devices_apikey_active_unique "
                 "ON devices (apikey) WHERE isdeleted = false AND apikey IS NOT NULL"
+            )
+        )
+        connection.execute(
+            text(
+                "INSERT INTO photo_types (id, code, name) "
+                "SELECT '11111111-1111-1111-1111-111111111111'::uuid, 'plant', 'Plant' "
+                "WHERE NOT EXISTS (SELECT 1 FROM photo_types WHERE code = 'plant')"
+            )
+        )
+        connection.execute(
+            text(
+                "INSERT INTO photo_types (id, code, name) "
+                "SELECT '22222222-2222-2222-2222-222222222222'::uuid, 'device', 'Device' "
+                "WHERE NOT EXISTS (SELECT 1 FROM photo_types WHERE code = 'device')"
+            )
+        )
+        connection.execute(
+            text(
+                "INSERT INTO photo_types (id, code, name) "
+                "SELECT '33333333-3333-3333-3333-333333333333'::uuid, 'installation', 'Installation' "
+                "WHERE NOT EXISTS (SELECT 1 FROM photo_types WHERE code = 'installation')"
             )
         )
     asyncio.create_task(alert_worker())
