@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using Npgsql;
 
 namespace GreenLytics.V3.Infrastructure.Persistence;
 
@@ -22,6 +23,7 @@ public sealed class DesignTimeGreenLyticsDbContextFactory : IDesignTimeDbContext
                 configuration.GetConnectionString("DefaultConnection"),
                 configuration["Database:ConnectionString"])
             ?? throw new InvalidOperationException("Database connection string is missing.");
+        connectionString = NormalizePostgresConnectionString(connectionString);
 
         var optionsBuilder = new DbContextOptionsBuilder<GreenLyticsDbContext>();
         optionsBuilder.UseNpgsql(connectionString);
@@ -40,5 +42,59 @@ public sealed class DesignTimeGreenLyticsDbContextFactory : IDesignTimeDbContext
         }
 
         return null;
+    }
+
+    private static string NormalizePostgresConnectionString(string connectionString)
+    {
+        if (!Uri.TryCreate(connectionString, UriKind.Absolute, out var uri)
+            || (uri.Scheme != "postgresql" && uri.Scheme != "postgres"))
+        {
+            return connectionString;
+        }
+
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = uri.Host,
+            Port = uri.IsDefaultPort ? 5432 : uri.Port,
+            Database = uri.AbsolutePath.Trim('/'),
+            Username = Uri.UnescapeDataString(uri.UserInfo.Split(':', 2)[0]),
+            SslMode = SslMode.Require,
+            TrustServerCertificate = true,
+        };
+
+        if (uri.UserInfo.Contains(':'))
+        {
+            builder.Password = Uri.UnescapeDataString(uri.UserInfo.Split(':', 2)[1]);
+        }
+
+        var query = uri.Query.TrimStart('?')
+            .Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        foreach (var segment in query)
+        {
+            var pair = segment.Split('=', 2);
+            if (pair.Length != 2)
+            {
+                continue;
+            }
+
+            var key = Uri.UnescapeDataString(pair[0]);
+            var value = Uri.UnescapeDataString(pair[1]);
+
+            if (key.Equals("sslmode", StringComparison.OrdinalIgnoreCase)
+                && Enum.TryParse<SslMode>(value, true, out var sslMode))
+            {
+                builder.SslMode = sslMode;
+            }
+
+            if (key.Equals("trust server certificate", StringComparison.OrdinalIgnoreCase)
+                || key.Equals("trust_server_certificate", StringComparison.OrdinalIgnoreCase))
+            {
+                builder.TrustServerCertificate = value.Equals("true", StringComparison.OrdinalIgnoreCase)
+                    || value == "1";
+            }
+        }
+
+        return builder.ConnectionString;
     }
 }
