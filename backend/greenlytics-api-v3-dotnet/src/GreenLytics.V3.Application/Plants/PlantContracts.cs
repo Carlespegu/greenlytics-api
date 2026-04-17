@@ -49,6 +49,14 @@ public sealed record DeletePlantCommand(
     Guid PlantId
 );
 
+public sealed record AnalyzePlantPhotosCommand(
+    Guid ClientId,
+    string? LanguageCode,
+    PlantPhotoPayload LeafPhoto,
+    PlantPhotoPayload TrunkPhoto,
+    PlantPhotoPayload GeneralPhoto
+);
+
 public sealed record CreatePlantPhotoCommand(
     Guid ClientId,
     Guid PlantId,

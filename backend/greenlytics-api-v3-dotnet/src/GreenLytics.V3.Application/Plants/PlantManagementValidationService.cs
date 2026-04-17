@@ -129,6 +129,13 @@ public sealed class PlantManagementValidationService
         return new ValidatedPlantDeleteRequest(plant);
     }
 
+    public async Task<ValidatedPlantAnalysisRequest> ValidateAnalyzePhotosAsync(Guid clientId, CancellationToken cancellationToken = default)
+    {
+        CurrentUserAuthorization.RequireCanManagePlants(_currentUser);
+        await EnsureClientAccessAsync(clientId, "clientId", cancellationToken);
+        return new ValidatedPlantAnalysisRequest(clientId);
+    }
+
     public async Task<ValidatedPlantsSearchRequest> ValidateSearchAsync(PlantsSearchRequest request, CancellationToken cancellationToken = default)
     {
         CurrentUserAuthorization.RequireCanViewPlants(_currentUser);
@@ -543,6 +550,7 @@ public sealed class PlantManagementValidationService
 }
 
 public sealed record ValidatedPlantScope(Plant Plant);
+public sealed record ValidatedPlantAnalysisRequest(Guid ClientId);
 
 public sealed record ValidatedCreatePlantRequest(
     Guid ClientId,

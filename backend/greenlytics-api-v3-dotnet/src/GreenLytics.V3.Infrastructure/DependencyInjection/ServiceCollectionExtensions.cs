@@ -5,6 +5,7 @@ using GreenLytics.V3.Application.Clients;
 using GreenLytics.V3.Application.Devices;
 using GreenLytics.V3.Application.Installations;
 using GreenLytics.V3.Application.Plants;
+using GreenLytics.V3.Application.Photos;
 using GreenLytics.V3.Application.Readings;
 using GreenLytics.V3.Application.TableMetadata;
 using GreenLytics.V3.Application.Users;
@@ -43,6 +44,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthenticationSettings, AuthenticationSettings>();
         services.AddSingleton<IDeviceSecretService, DeviceSecretService>();
         services.AddScoped<IUserSessionValidator, UserSessionValidator>();
+        services.AddHttpClient<IPlantAnalysisService, OpenAiPlantAnalysisService>((provider, client) =>
+        {
+            var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<OpenAiOptions>>().Value;
+            client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(Math.Max(5, options.TimeoutSeconds));
+        });
         services.AddHttpClient<ISupabaseAuthGateway, SupabaseAuthGateway>((provider, client) =>
         {
             var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<SupabaseAuthenticationOptions>>().Value;
@@ -50,6 +57,7 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddScoped<CreatePlantHandler>();
+        services.AddScoped<AnalyzePlantPhotosHandler>();
         services.AddScoped<UpdatePlantHandler>();
         services.AddScoped<DeletePlantHandler>();
         services.AddScoped<AlertManagementValidationService>();
@@ -59,6 +67,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<UpdateAlertHandler>();
         services.AddScoped<SetAlertActiveStatusHandler>();
         services.AddScoped<PlantManagementValidationService>();
+        services.AddScoped<PhotoRequestValidationService>();
         services.AddScoped<GetPlantDetailHandler>();
         services.AddScoped<SearchPlantsHandler>();
         services.AddScoped<ListPlantPhotosHandler>();

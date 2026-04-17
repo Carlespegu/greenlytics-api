@@ -71,6 +71,15 @@ public sealed record PlantEventDto(
     Guid? UpdatedByUserId
 );
 
+public sealed record AnalyzePlantPhotosDto(
+    string? SpeciesName,
+    decimal? Confidence,
+    string? HealthStatus,
+    string? Observations,
+    IReadOnlyList<string> PossibleIssues,
+    IReadOnlyList<string> CareRecommendations
+);
+
 public sealed record PlantLatestReadingSummaryDto(
     Guid ReadingId,
     DateTime ReadAt,

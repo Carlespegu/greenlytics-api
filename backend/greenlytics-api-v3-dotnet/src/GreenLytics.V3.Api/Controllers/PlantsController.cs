@@ -2,6 +2,7 @@ using GreenLytics.V3.Application.Plants;
 using GreenLytics.V3.Shared.Contracts;
 using GreenLytics.V3.Shared.Exceptions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GreenLytics.V3.Api.Controllers;
@@ -14,6 +15,7 @@ public sealed class PlantsController : ControllerBase
     private readonly SearchPlantsHandler _searchPlantsHandler;
     private readonly GetPlantDetailHandler _getPlantDetailHandler;
     private readonly CreatePlantHandler _createPlantHandler;
+    private readonly AnalyzePlantPhotosHandler _analyzePlantPhotosHandler;
     private readonly UpdatePlantHandler _updatePlantHandler;
     private readonly DeletePlantHandler _deletePlantHandler;
     private readonly ListPlantPhotosHandler _listPlantPhotosHandler;
@@ -33,6 +35,7 @@ public sealed class PlantsController : ControllerBase
         SearchPlantsHandler searchPlantsHandler,
         GetPlantDetailHandler getPlantDetailHandler,
         CreatePlantHandler createPlantHandler,
+        AnalyzePlantPhotosHandler analyzePlantPhotosHandler,
         UpdatePlantHandler updatePlantHandler,
         DeletePlantHandler deletePlantHandler,
         ListPlantPhotosHandler listPlantPhotosHandler,
@@ -51,6 +54,7 @@ public sealed class PlantsController : ControllerBase
         _searchPlantsHandler = searchPlantsHandler;
         _getPlantDetailHandler = getPlantDetailHandler;
         _createPlantHandler = createPlantHandler;
+        _analyzePlantPhotosHandler = analyzePlantPhotosHandler;
         _updatePlantHandler = updatePlantHandler;
         _deletePlantHandler = deletePlantHandler;
         _listPlantPhotosHandler = listPlantPhotosHandler;
@@ -115,6 +119,29 @@ public sealed class PlantsController : ControllerBase
         catch (Exception exception)
         {
             return ToErrorResult<PlantDetailDto>(exception);
+        }
+    }
+
+    /// <summary>
+    /// Analitza les 3 fotos requerides d una planta i retorna una proposta inicial amb IA.
+    /// </summary>
+    [HttpPost("clients/{clientId:guid}/plants/analyze-photos")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<ApiEnvelope<AnalyzePlantPhotosDto>>> AnalyzePhotos(
+        Guid clientId,
+        [FromForm] AnalyzePlantPhotosRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _analyzePlantPhotosHandler.HandleAsync(
+                await request.ToCommandAsync(clientId, cancellationToken),
+                cancellationToken);
+            return Ok(new ApiEnvelope<AnalyzePlantPhotosDto>(true, result));
+        }
+        catch (Exception exception)
+        {
+            return ToErrorResult<AnalyzePlantPhotosDto>(exception);
         }
     }
 
@@ -376,6 +403,9 @@ public sealed class PlantsController : ControllerBase
             UnauthorizedAccessException unauthorizedException => StatusCode(
                 StatusCodes.Status401Unauthorized,
                 new ApiEnvelope<T>(false, default, unauthorizedException.Message, "unauthorized")),
+            PlantAnalysisFailedException analysisException => StatusCode(
+                analysisException.IsTimeout ? StatusCodes.Status504GatewayTimeout : StatusCodes.Status503ServiceUnavailable,
+                new ApiEnvelope<T>(false, default, analysisException.Message, "plant_analysis_unavailable")),
             EntityNotFoundException notFoundException => NotFound(
                 new ApiEnvelope<T>(false, default, notFoundException.Message, "not_found")),
             _ => StatusCode(
@@ -410,6 +440,40 @@ public sealed class UpdatePlantRequest
 
     public UpdatePlantCommand ToCommand(Guid clientId, Guid plantId)
         => new(clientId, plantId, InstallationId, Code, Name, Description, PlantTypeId, PlantStatusId, IsActive);
+}
+
+public sealed class AnalyzePlantPhotosRequest
+{
+    public string? Language { get; set; }
+    public IFormFile? LeafImage { get; set; }
+    public IFormFile? TrunkImage { get; set; }
+    public IFormFile? GeneralImage { get; set; }
+
+    public async Task<AnalyzePlantPhotosCommand> ToCommandAsync(Guid clientId, CancellationToken cancellationToken)
+        => new(
+            clientId,
+            Language,
+            await ToPayloadAsync(LeafImage, "leaf", cancellationToken),
+            await ToPayloadAsync(TrunkImage, "trunk", cancellationToken),
+            await ToPayloadAsync(GeneralImage, "general", cancellationToken));
+
+    private static async Task<PlantPhotoPayload> ToPayloadAsync(IFormFile? formFile, string part, CancellationToken cancellationToken)
+    {
+        if (formFile is null || formFile.Length == 0)
+        {
+            return PlantPhotoPayload.Empty() with { PhotoPart = part };
+        }
+
+        await using var stream = formFile.OpenReadStream();
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream, cancellationToken);
+
+        return new PlantPhotoPayload(
+            formFile.FileName,
+            string.IsNullOrWhiteSpace(formFile.ContentType) ? "application/octet-stream" : formFile.ContentType,
+            memoryStream.ToArray(),
+            part);
+    }
 }
 
 public sealed class CreatePlantPhotoRequest
