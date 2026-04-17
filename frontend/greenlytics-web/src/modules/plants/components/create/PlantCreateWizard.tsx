@@ -112,7 +112,7 @@ export function PlantCreateWizard({
   const uploadedCount = useMemo(() => Object.values(photosBySlot).filter(Boolean).length, [photosBySlot]);
   const canContinueFromManualStepOne = draft.code.trim().length > 0 && draft.name.trim().length > 0;
   const canContinueFromAiStepOne = uploadedCount === 3 && aiPhase === 'completed';
-  const canSaveToBackend = uploadedCount === 3;
+  const canSaveToBackend = mode === 'manual' || uploadedCount === 3;
 
   useEffect(() => {
     photosBySlotRef.current = photosBySlot;
@@ -294,7 +294,11 @@ export function PlantCreateWizard({
       errors.name = 'Name is required.';
     }
 
-    if (uploadedCount !== 3) {
+    if (!draft.installationId.trim()) {
+      errors.installationId = 'Installation is required.';
+    }
+
+    if (mode === 'ai' && uploadedCount !== 3) {
       errors.photos = 'The 3 photo views are required for the current backend create flow.';
     }
 
@@ -379,7 +383,7 @@ export function PlantCreateWizard({
               </div>
               <div>
                 <strong>{result.photos.length}</strong>
-                <span>Fotos guardades</span>
+                <span>Fotos persistides</span>
               </div>
               <div>
                 <strong>{result.analysis.confidence !== null ? `${Math.round(result.analysis.confidence * 100)}%` : 'N/A'}</strong>
