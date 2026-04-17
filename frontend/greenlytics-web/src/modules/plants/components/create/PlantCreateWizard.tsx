@@ -43,7 +43,7 @@ const defaultPhotosBySlot: Record<PhotoSlotKey, PlantPhotoDraft | null> = {
 };
 
 const maxPhotoSizeBytes = 5 * 1024 * 1024;
-const acceptedMimeTypes = new Set(['image/jpeg', 'image/jpg', 'image/png']);
+const acceptedMimeTypes = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
 
 function mapErrorsByField(errors: BackendValidationError[]) {
   return errors.reduce<Record<string, string>>((accumulator, error) => {
@@ -83,6 +83,7 @@ function resolveHealthVariant(healthStatus: string | null) {
 }
 
 export function PlantCreateWizard({
+  clientId,
   installations,
   plantTypes,
   plantingTypes,
@@ -106,7 +107,7 @@ export function PlantCreateWizard({
   const [result, setResult] = useState<Awaited<ReturnType<CreatePlantModalProps['onSubmit']>> | null>(null);
   const photosBySlotRef = useRef<Record<PhotoSlotKey, PlantPhotoDraft | null>>(defaultPhotosBySlot);
 
-  const aiSimulation = usePlantAiSimulation();
+  const aiSimulation = usePlantAiSimulation(clientId);
   const { phase: aiPhase, proposal: aiProposal, isRunning: isAiRunning, reset: resetAiSimulation, run: runAiSimulation } = aiSimulation;
   const steps = useMemo(() => getSteps(mode), [mode]);
   const uploadedCount = useMemo(() => Object.values(photosBySlot).filter(Boolean).length, [photosBySlot]);
@@ -186,7 +187,7 @@ export function PlantCreateWizard({
 
     const file = files[0];
     if (!acceptedMimeTypes.has(file.type)) {
-      setFieldErrors((current) => ({ ...current, photos: 'Only JPG and PNG photos are allowed.' }));
+      setFieldErrors((current) => ({ ...current, photos: 'Only JPG, PNG and WEBP photos are allowed.' }));
       return;
     }
 
@@ -241,12 +242,23 @@ export function PlantCreateWizard({
       return;
     }
 
-    const simulated = await runAiSimulation(draft, photosBySlot);
-    setDraft(simulated.draft);
-    setFloweringMonths(simulated.floweringMonths);
-    setFertilizationSeasons(simulated.fertilizationSeasons);
-    setSubmitMessage(null);
-    setStep(2);
+    try {
+      const simulated = await runAiSimulation(draft, photosBySlot);
+      setDraft(simulated.draft);
+      setFloweringMonths(simulated.floweringMonths);
+      setFertilizationSeasons(simulated.fertilizationSeasons);
+      setSubmitMessage(null);
+      setStep(2);
+    } catch (error) {
+      if (isApiError(error)) {
+        setFieldErrors(mapErrorsByField(error.validationErrors));
+        setSubmitMessage(error.message);
+      } else if (error instanceof Error) {
+        setSubmitMessage(error.message);
+      } else {
+        setSubmitMessage('No hem pogut completar l analisi amb IA. Torna-ho a provar.');
+      }
+    }
   }
 
   function validateCurrentStep() {

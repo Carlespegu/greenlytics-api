@@ -119,6 +119,7 @@ export interface AnalyzePlantPhotosResult {
 }
 
 interface AnalyzePlantPhotosInput {
+  clientId: string;
   language?: string;
   leafImage?: File;
   trunkImage?: File;
@@ -184,30 +185,24 @@ export const plantsApi = {
   search: (request: PlantSearchRequest) => postSearch<PlantListItem, PlantSearchFiltersInput, PlantSortField>('/api/plants/search', request),
   create: (clientId: string, input: CreatePlantInput) => httpClient.post<PlantDetail>(`/api/clients/${clientId}/plants`, input),
   analyzePhotos: async (input: AnalyzePlantPhotosInput): Promise<AnalyzePlantPhotosResult> => {
-    const files = [input.leafImage, input.trunkImage, input.generalImage].filter((file): file is File => Boolean(file));
-    const seed = files.map((file) => file.name).join(' ').toLowerCase();
-    const suggestedSpecies = seed.includes('ficus')
-      ? 'Ficus elastica'
-      : seed.includes('monstera')
-        ? 'Monstera deliciosa'
-        : seed.includes('spath')
-          ? 'Spathiphyllum wallisii'
-          : 'Plant specimen';
+    const formData = new FormData();
 
-    await new Promise((resolve) => setTimeout(resolve, 900));
+    if (input.language) {
+      formData.append('language', input.language);
+    }
 
-    return {
-      speciesName: suggestedSpecies,
-      confidence: files.length === 3 ? 0.84 : 0.62,
-      healthStatus: files.length === 3 ? 'healthy' : 'warning',
-      observations: input.language === 'en'
-        ? 'Visual review completed with the current frontend simulation flow.'
-        : 'Revisio visual completada amb el flux de simulacio actual del frontend.',
-      possibleIssues: files.length === 3 ? [] : ['incomplete_visual_input'],
-      careRecommendations: [
-        'Monitor substrate moisture before watering again.',
-        'Maintain indirect bright light and stable humidity.',
-      ],
-    };
+    if (input.leafImage) {
+      formData.append('leafImage', input.leafImage);
+    }
+
+    if (input.trunkImage) {
+      formData.append('trunkImage', input.trunkImage);
+    }
+
+    if (input.generalImage) {
+      formData.append('generalImage', input.generalImage);
+    }
+
+    return httpClient.post<AnalyzePlantPhotosResult>(`/api/clients/${input.clientId}/plants/analyze-photos`, formData);
   },
 };

@@ -84,6 +84,7 @@ export type CreatePlantSubmitInput = {
 
 export type CreatePlantModalProps = {
   open: boolean;
+  clientId: string | null;
   installations: OptionItem[];
   plantTypes: OptionItem[];
   plantingTypes: OptionItem[];

@@ -97,6 +97,7 @@ export function CreatePlantPage() {
       <section className="panel-card records-card records-card--create">
         <PlantCreateWizard
           open
+          clientId={activeClientId}
           installations={installationsQuery.data ?? []}
           installationsLoading={installationsQuery.isLoading}
           plantTypes={[]}

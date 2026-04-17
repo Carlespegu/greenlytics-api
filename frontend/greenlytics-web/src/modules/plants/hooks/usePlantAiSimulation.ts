@@ -110,7 +110,7 @@ function mergeDraftWithProposal(draft: PlantDraft, proposal: PlantAiProposal): P
   };
 }
 
-export function usePlantAiSimulation() {
+export function usePlantAiSimulation(clientId: string | null) {
   const [phase, setPhase] = useState<AiSimulationPhase>('idle');
   const [log, setLog] = useState<string[]>([]);
   const [proposal, setProposal] = useState<PlantAiProposal>(defaultAiProposal);
@@ -131,33 +131,41 @@ export function usePlantAiSimulation() {
     setPhase('preparing');
     setLog(['Preparant payload amb les 3 vistes requerides...']);
 
-    setPhase('sending');
-    setLog((current) => [...current, 'Enviant les fotos al backend per a l analisi...']);
+    try {
+      setPhase('sending');
+      setLog((current) => [...current, 'Enviant les fotos al backend per a l analisi...']);
 
-    const analysis = await plantsApi.analyzePhotos({
-      language: 'ca',
-      leafImage: photosBySlot.leaf?.file,
-      trunkImage: photosBySlot.stem?.file,
-      generalImage: photosBySlot.general?.file,
-    });
+      if (!clientId) {
+        throw new Error('No active client selected for AI analysis.');
+      }
 
-    setPhase('analyzing');
-    setLog((current) => [...current, 'Processant la resposta i preparant la proposta editable...']);
+      const analysis = await plantsApi.analyzePhotos({
+        clientId,
+        language: 'ca',
+        leafImage: photosBySlot.leaf?.file,
+        trunkImage: photosBySlot.stem?.file,
+        generalImage: photosBySlot.general?.file,
+      });
 
-    const nextProposal = buildProposalFromAnalysis(currentDraft, analysis);
+      setPhase('analyzing');
+      setLog((current) => [...current, 'Processant la resposta i preparant la proposta editable...']);
 
-    setPhase('completed');
-    setLog((current) => [...current, 'Analisi completada. Ja pots revisar i ajustar la proposta.']);
-    setProposal(nextProposal);
-    setIsRunning(false);
+      const nextProposal = buildProposalFromAnalysis(currentDraft, analysis);
 
-    return {
-      draft: mergeDraftWithProposal(currentDraft, nextProposal),
-      floweringMonths: nextProposal.floweringMonths,
-      fertilizationSeasons: nextProposal.fertilizationSeasons,
-      proposal: nextProposal,
-    };
-  }, []);
+      setPhase('completed');
+      setLog((current) => [...current, 'Analisi completada. Ja pots revisar i ajustar la proposta.']);
+      setProposal(nextProposal);
+
+      return {
+        draft: mergeDraftWithProposal(currentDraft, nextProposal),
+        floweringMonths: nextProposal.floweringMonths,
+        fertilizationSeasons: nextProposal.fertilizationSeasons,
+        proposal: nextProposal,
+      };
+    } finally {
+      setIsRunning(false);
+    }
+  }, [clientId]);
 
   return {
     phase,
