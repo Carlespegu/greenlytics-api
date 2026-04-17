@@ -1,0 +1,681 @@
+import { useMemo, useState } from "react";
+
+export default function GreenLyticsPlantDetailMock() {
+  const tabs = [
+    { id: "summary", label: "Resum" },
+    { id: "photos", label: "Historial fotos" },
+    { id: "readings", label: "Lectures" },
+  ];
+
+  const [activeTab, setActiveTab] = useState("summary");
+  const [reviewPhotos, setReviewPhotos] = useState({
+    leaf: null,
+    stem: null,
+    general: null,
+  });
+  const [reviewRunning, setReviewRunning] = useState(false);
+  const [reviewLog, setReviewLog] = useState([]);
+  const [newReviewReady, setNewReviewReady] = useState(false);
+
+  const plant = {
+    code: "PLT-SPAT-001",
+    name: "Espatifil",
+    scientificName: "Spathiphyllum",
+    commonName: "Llíri de la pau",
+    installation: "Zona Recepció",
+    statusNotes:
+      "Planta estable, amb lleu pal·lidesa en algunes fulles. Es recomana seguiment del reg i de la llum indirecta.",
+    soilType: "Orgànic, drenat i lleugerament àcid",
+    fertilizer: "Fertilitzant líquid equilibrat",
+    fertilizationSeasons: ["Primavera", "Estiu"],
+    needs: {
+      soilMoisture: { min: 40, max: 65, latest: 58, unit: "%" },
+      airHumidity: { min: 50, max: 75, latest: 47, unit: "%" },
+      temperature: { min: 16, max: 28, latest: 24, unit: "°C" },
+      light: { min: 2500, max: 9000, latest: 1800, unit: "lux" },
+    },
+  };
+
+  const photoTimeline = [
+    {
+      id: 1,
+      date: "14/04/2026 · 10:32",
+      title: "Revisió estat · IA",
+      summary:
+        "Lleu pèrdua de color i marques en fulles. Revisar llum i humitat ambiental.",
+      confidence: 0.91,
+      images: [
+        "https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1512428813834-c702c7702b78?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=900&q=80",
+      ],
+    },
+    {
+      id: 2,
+      date: "07/04/2026 · 09:15",
+      title: "Alta inicial",
+      summary:
+        "Identificació inicial de l’espècie i alta de fitxa botànica.",
+      confidence: 0.88,
+      images: [
+        "https://images.unsplash.com/photo-1463936575829-25148e1db1b8?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1463154545680-d59320fd685d?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=900&q=80",
+      ],
+    },
+  ];
+
+  const linkedReadings = [
+    {
+      date: "14/04/2026 09:50",
+      soilMoisture: 58,
+      airHumidity: 47,
+      temperature: 24,
+      light: 1800,
+    },
+    {
+      date: "13/04/2026 21:20",
+      soilMoisture: 61,
+      airHumidity: 52,
+      temperature: 23,
+      light: 0,
+    },
+    {
+      date: "13/04/2026 09:20",
+      soilMoisture: 63,
+      airHumidity: 49,
+      temperature: 25,
+      light: 2200,
+    },
+    {
+      date: "12/04/2026 21:20",
+      soilMoisture: 59,
+      airHumidity: 55,
+      temperature: 22,
+      light: 0,
+    },
+  ];
+
+  const comparisonCards = useMemo(
+    () => [
+      {
+        label: "Humitat sòl",
+        min: plant.needs.soilMoisture.min,
+        max: plant.needs.soilMoisture.max,
+        latest: plant.needs.soilMoisture.latest,
+        unit: plant.needs.soilMoisture.unit,
+      },
+      {
+        label: "Humitat aire",
+        min: plant.needs.airHumidity.min,
+        max: plant.needs.airHumidity.max,
+        latest: plant.needs.airHumidity.latest,
+        unit: plant.needs.airHumidity.unit,
+      },
+      {
+        label: "Temperatura",
+        min: plant.needs.temperature.min,
+        max: plant.needs.temperature.max,
+        latest: plant.needs.temperature.latest,
+        unit: plant.needs.temperature.unit,
+      },
+      {
+        label: "Llum",
+        min: plant.needs.light.min,
+        max: plant.needs.light.max,
+        latest: plant.needs.light.latest,
+        unit: plant.needs.light.unit,
+      },
+    ],
+    [plant]
+  );
+
+  function simulateReview() {
+    const complete = Object.values(reviewPhotos).filter(Boolean).length === 3;
+    if (!complete) return;
+
+    setReviewRunning(true);
+    setNewReviewReady(false);
+    setReviewLog([
+      "Preparant les 3 noves fotos de revisió...",
+      "Enviant nova anàlisi d’estat a OpenAI...",
+    ]);
+
+    window.setTimeout(() => {
+      setReviewLog((prev) => [
+        ...prev,
+        "Analitzant diferències respecte a l’última revisió...",
+      ]);
+    }, 700);
+
+    window.setTimeout(() => {
+      setReviewLog((prev) => [
+        ...prev,
+        "Historial fotogràfic actualitzat i cronologia preparada.",
+      ]);
+      setReviewRunning(false);
+      setNewReviewReady(true);
+      setActiveTab("photos");
+    }, 1800);
+  }
+
+  return (
+    <div className="min-h-screen bg-[#06111d] text-white p-6 md:p-10">
+      <div className="mx-auto max-w-7xl rounded-[30px] border border-emerald-500/20 bg-[linear-gradient(180deg,_#071526_0%,_#04101b_100%)] shadow-2xl overflow-hidden">
+        <div className="border-b border-white/10 px-8 py-6">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.22em] text-emerald-300/70">
+                GreenLytics · Detall de planta
+              </p>
+              <h1 className="mt-2 text-2xl font-semibold">{plant.name}</h1>
+              <p className="mt-1 text-sm text-slate-400">
+                Consulta completa de la fitxa, revisions fotogràfiques,
+                historial i comparativa amb lectures.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <Badge label="Code" value={plant.code} />
+              <Badge label="Instal·lació" value={plant.installation} />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-6 px-8 py-8 lg:grid-cols-[1.25fr_0.95fr]">
+          <section className="space-y-6">
+            <div className="rounded-2xl border border-white/10 bg-[#0b1b30] p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold">Fitxa principal</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Mateix format que l’alta, però orientat a consulta i edició
+                    de dades ja existents.
+                  </p>
+                </div>
+                <button className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-medium text-black">
+                  Editar fitxa
+                </button>
+              </div>
+
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <Info label="Nom científic" value={plant.scientificName} />
+                <Info label="Nom popular" value={plant.commonName} />
+                <Info label="Tipus sòl" value={plant.soilType} />
+                <Info label="Fertilitzant" value={plant.fertilizer} />
+              </div>
+
+              <div className="mt-4 rounded-2xl bg-[#142742] p-4">
+                <div className="text-sm font-medium text-slate-200">
+                  Notes estat
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  {plant.statusNotes}
+                </p>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <SeasonBlock
+                  title="Floració"
+                  items={["Abr", "Mai", "Jun", "Jul"]}
+                  tone="emerald"
+                />
+                <SeasonBlock
+                  title="Època fertilització"
+                  items={plant.fertilizationSeasons}
+                  tone="amber"
+                />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold">
+                    Nova revisió d’estat
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Afegeix 3 noves fotos per generar una revisió, guardar-la a
+                    l’historial i ordenar-la per data.
+                  </p>
+                </div>
+                <div className="rounded-xl bg-[#142742] px-3 py-2 text-xs text-slate-300">
+                  {Object.values(reviewPhotos).filter(Boolean).length}/3 fotos
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-3">
+                {[
+                  { key: "leaf", title: "Fulles i flors" },
+                  { key: "stem", title: "Tija" },
+                  { key: "general", title: "General" },
+                ].map((item) => (
+                  <div
+                    key={item.key}
+                    className="rounded-2xl border border-dashed border-emerald-400/30 p-4"
+                  >
+                    <div className="text-sm font-semibold">{item.title}</div>
+                    <div className="mt-3 rounded-xl bg-[#142742] p-3 text-xs text-center text-slate-300">
+                      {reviewPhotos[item.key] || "Pendent de pujar"}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setReviewPhotos((prev) => ({
+                          ...prev,
+                          [item.key]: `${item.title}.jpg`,
+                        }))
+                      }
+                      className="mt-3 w-full rounded-xl bg-[#19324f] px-3 py-2 text-xs hover:bg-[#214166]"
+                    >
+                      Simular upload
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                <div className="text-sm text-slate-400">
+                  La revisió generarà una nova entrada cronològica amb
+                  diagnòstic i fotos.
+                </div>
+                <button
+                  type="button"
+                  onClick={simulateReview}
+                  disabled={
+                    Object.values(reviewPhotos).filter(Boolean).length !== 3 ||
+                    reviewRunning
+                  }
+                  className={`rounded-xl px-4 py-2 text-sm font-medium ${
+                    Object.values(reviewPhotos).filter(Boolean).length === 3 &&
+                    !reviewRunning
+                      ? "bg-emerald-500 text-black"
+                      : "bg-white/10 text-slate-500"
+                  }`}
+                >
+                  {reviewRunning
+                    ? "Analitzant revisió..."
+                    : "Llançar nova revisió"}
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-[#0b1b30] p-5">
+              <div className="flex flex-wrap items-center gap-3 border-b border-white/10 pb-4">
+                {tabs.map((tab) => {
+                  const active = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`rounded-xl px-4 py-2 text-sm transition ${
+                        active
+                          ? "bg-emerald-500 text-black"
+                          : "bg-white/[0.04] text-slate-300"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {activeTab === "summary" ? (
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {comparisonCards.map((card) => (
+                    <ComparisonCard key={card.label} {...card} />
+                  ))}
+                </div>
+              ) : null}
+
+              {activeTab === "photos" ? (
+                <div className="mt-5 space-y-4">
+                  {newReviewReady ? (
+                    <TimelineCard
+                      date="14/04/2026 · 12:10"
+                      title="Nova revisió estat · pendent de guardar backend"
+                      summary="Nova comparativa visual generada a partir de 3 fotos. Es detecta la mateixa tendència d’estrès lumínic lleu."
+                      confidence={0.92}
+                      highlight
+                      images={[
+                        "https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?auto=format&fit=crop&w=900&q=80",
+                        "https://images.unsplash.com/photo-1512428813834-c702c7702b78?auto=format&fit=crop&w=900&q=80",
+                        "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=900&q=80",
+                      ]}
+                    />
+                  ) : null}
+                  {photoTimeline.map((item) => (
+                    <TimelineCard key={item.id} {...item} />
+                  ))}
+                </div>
+              ) : null}
+
+              {activeTab === "readings" ? (
+                <div className="mt-5 overflow-hidden rounded-2xl border border-white/10">
+                  <table className="min-w-full divide-y divide-white/10 text-sm">
+                    <thead className="bg-[#11233b] text-slate-300">
+                      <tr>
+                        <th className="px-4 py-3 text-left">Data</th>
+                        <th className="px-4 py-3 text-left">Hum. sòl</th>
+                        <th className="px-4 py-3 text-left">Hum. aire</th>
+                        <th className="px-4 py-3 text-left">Temp.</th>
+                        <th className="px-4 py-3 text-left">Llum</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/10 bg-[#0f1f35]">
+                      {linkedReadings.map((row) => (
+                        <tr key={row.date}>
+                          <td className="px-4 py-3 text-slate-200">
+                            {row.date}
+                          </td>
+                          <td className="px-4 py-3 text-slate-300">
+                            {row.soilMoisture}%
+                          </td>
+                          <td className="px-4 py-3 text-slate-300">
+                            {row.airHumidity}%
+                          </td>
+                          <td className="px-4 py-3 text-slate-300">
+                            {row.temperature} °C
+                          </td>
+                          <td className="px-4 py-3 text-slate-300">
+                            {row.light} lux
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </div>
+          </section>
+
+          <aside className="space-y-6">
+            <div className="rounded-2xl border border-white/10 bg-[#0b1b30] p-5">
+              <h2 className="text-lg font-semibold">
+                Última lectura vs rang esperat
+              </h2>
+              <div className="mt-4 space-y-4">
+                {comparisonCards.map((item) => (
+                  <ReadingStatus key={item.label} {...item} />
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-[#0b1b30] p-5">
+              <h2 className="text-lg font-semibold">Cronologia resumida</h2>
+              <div className="mt-4 space-y-3">
+                <MiniEvent date="14/04" title="Revisió estat IA" />
+                <MiniEvent date="13/04" title="Lectures nocturnes registrades" />
+                <MiniEvent date="07/04" title="Alta inicial de planta" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-5">
+              <h2 className="text-lg font-semibold">Simulació nova revisió</h2>
+              <div className="mt-3 min-h-[130px] rounded-xl bg-[#142742] p-3 text-xs text-slate-300 space-y-2">
+                {reviewLog.length === 0 ? (
+                  <div className="text-slate-500">
+                    Encara no s’ha simulat cap nova revisió.
+                  </div>
+                ) : null}
+                {reviewLog.map((line, index) => (
+                  <div key={`${line}-${index}`}>• {line}</div>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Badge({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#0b1b30] px-4 py-3">
+      <div className="text-xs uppercase tracking-[0.16em] text-slate-400">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-medium text-white">{value}</div>
+    </div>
+  );
+}
+
+function Info({ label, value }) {
+  return (
+    <div className="flex justify-between gap-4 rounded-xl bg-[#142742] p-3">
+      <span className="text-slate-400">{label}</span>
+      <span className="text-right text-slate-100">{value}</span>
+    </div>
+  );
+}
+
+function SeasonBlock({ title, items, tone }) {
+  const toneClasses =
+    tone === "amber"
+      ? "border-amber-300/30 bg-amber-400/15 text-amber-100"
+      : "border-emerald-400/30 bg-emerald-500/15 text-emerald-100";
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#12233b] p-4">
+      <div className="text-sm font-medium text-slate-200">{title}</div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {items.map((item) => (
+          <div key={item} className={`rounded-xl border px-3 py-2 text-xs ${toneClasses}`}>
+            {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ComparisonCard({ label, min, max, latest, unit }) {
+  const inRange = latest >= min && latest <= max;
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#12233b] p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-medium text-slate-100">{label}</div>
+        <div
+          className={`rounded-full px-3 py-1 text-xs ${
+            inRange
+              ? "bg-emerald-500/15 text-emerald-200"
+              : "bg-amber-400/15 text-amber-100"
+          }`}
+        >
+          {inRange ? "Dins rang" : "Fora rang"}
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+        <MiniStat label="Mín" value={`${min} ${unit}`} />
+        <MiniStat label="Última" value={`${latest} ${unit}`} highlight />
+        <MiniStat label="Màx" value={`${max} ${unit}`} />
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, highlight = false }) {
+  return (
+    <div className={`rounded-xl p-3 ${highlight ? "bg-sky-500/15" : "bg-[#0d1b2e]"}`}>
+      <div className="text-xs uppercase tracking-[0.16em] text-slate-400">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-medium text-white">{value}</div>
+    </div>
+  );
+}
+
+function TimelineCard({
+  date,
+  title,
+  summary,
+  confidence,
+  highlight = false,
+  images = [],
+}) {
+  const [open, setOpen] = useState(false);
+  const [index, setIndex] = useState(0);
+
+  return (
+    <>
+      <div
+        className={`rounded-2xl border p-4 ${
+          highlight
+            ? "border-emerald-400/30 bg-emerald-500/10"
+            : "border-white/10 bg-[#12233b]"
+        }`}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-xs uppercase tracking-[0.16em] text-slate-400">
+              {date}
+            </div>
+            <div className="mt-1 text-sm font-semibold text-white">{title}</div>
+          </div>
+          <div className="rounded-full bg-[#0d1b2e] px-3 py-1 text-xs text-slate-300">
+            Confidence {confidence}
+          </div>
+        </div>
+
+        <p className="mt-3 text-sm leading-6 text-slate-300">{summary}</p>
+
+        {images.length > 0 ? (
+          <div className="mt-4 flex gap-2">
+            {images.map((src, i) => (
+              <button
+                key={`${src}-${i}`}
+                type="button"
+                onClick={() => {
+                  setIndex(i);
+                  setOpen(true);
+                }}
+                className="h-16 w-16 overflow-hidden rounded-lg border border-white/10 bg-[#0b1b30]"
+              >
+                <img src={src} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      {open ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6">
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="absolute right-6 top-6 rounded-full bg-white/10 px-3 py-2 text-white"
+          >
+            ✕
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setIndex((prev) => (prev - 1 + images.length) % images.length)
+            }
+            className="absolute left-6 rounded-full bg-white/10 px-4 py-3 text-2xl text-white"
+          >
+            ‹
+          </button>
+
+          <div className="max-w-4xl">
+            <img
+              src={images[index]}
+              alt={`Foto ampliada ${index + 1}`}
+              className="max-h-[80vh] w-auto rounded-2xl"
+            />
+            <div className="mt-4 text-center text-sm text-slate-300">
+              Imatge {index + 1} de {images.length}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIndex((prev) => (prev + 1) % images.length)}
+            className="absolute right-6 rounded-full bg-white/10 px-4 py-3 text-2xl text-white"
+          >
+            ›
+          </button>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function ReadingStatus({ label, min, max, latest, unit }) {
+  const effectiveMax = Math.max(max, latest, 1);
+  const markerPosition = (latest / effectiveMax) * 100;
+  const rangeStart = (min / effectiveMax) * 100;
+  const rangeEnd = (max / effectiveMax) * 100;
+
+  const below = latest < min;
+  const above = latest > max;
+  const inRange = !below && !above;
+
+  return (
+    <div className="rounded-2xl bg-[#142742] p-4">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-medium text-slate-100">{label}</span>
+        <span
+          className={`text-xs font-medium ${
+            inRange ? "text-emerald-300" : "text-amber-300"
+          }`}
+        >
+          {latest} {unit}
+        </span>
+      </div>
+
+      <div className="mt-4">
+        <div className="relative h-2 rounded-full bg-[#0b1b30] overflow-visible">
+          <div
+            className="absolute top-0 h-2 rounded-full bg-emerald-400/60"
+            style={{
+              left: `${rangeStart}%`,
+              width: `${Math.max(rangeEnd - rangeStart, 0)}%`,
+            }}
+          />
+          <div
+            className={`absolute -top-1 h-4 w-[3px] rounded-full ${
+              inRange ? "bg-emerald-300" : "bg-amber-300"
+            }`}
+            style={{ left: `calc(${markerPosition}% - 1.5px)` }}
+          />
+        </div>
+
+        <div className="mt-2 flex justify-between text-xs text-slate-400">
+          <span>0</span>
+          <span>{max} {unit}</span>
+        </div>
+
+        <div className="mt-2 text-xs">
+          {below ? (
+            <span className="text-amber-300">
+              Per sota del mínim ({min} {unit})
+            </span>
+          ) : above ? (
+            <span className="text-amber-300">
+              Per sobre del màxim ({max} {unit})
+            </span>
+          ) : (
+            <span className="text-emerald-300">
+              Dins del rang ({min} - {max} {unit})
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MiniEvent({ date, title }) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-[#142742] p-3">
+      <div className="rounded-lg bg-emerald-500/15 px-2 py-1 text-xs text-emerald-100">
+        {date}
+      </div>
+      <div className="text-sm text-slate-200">{title}</div>
+    </div>
+  );
+}

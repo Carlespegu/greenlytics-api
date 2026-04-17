@@ -1,0 +1,34 @@
+# Environment and secrets
+.env
+.env.*
+!.env.production.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Node / frontend
+node_modules/
+dist/
+.vercel/
+
+# .NET build outputs
+bin/
+obj/
+artifacts/
+publish/
+api-compile-out/
+.dotnet/
+*.binlog
+*-build.log
+*-restore.log
+*.zip
+
+# Logs
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

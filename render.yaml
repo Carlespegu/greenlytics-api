@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: greenlytics-api-v3
+    runtime: dotnet
+    rootDir: backend/greenlytics-api-v3-dotnet
+    buildCommand: dotnet publish .\src\GreenLytics.V3.Api\GreenLytics.V3.Api.csproj -c Release -o .\publish
+    startCommand: dotnet .\publish\GreenLytics.V3.Api.dll

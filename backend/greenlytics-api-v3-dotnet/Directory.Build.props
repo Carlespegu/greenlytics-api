@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <GreenLyticsArtifactsRoot>$([System.Environment]::GetFolderPath(SpecialFolder.LocalApplicationData))\GreenLyticsV3\</GreenLyticsArtifactsRoot>
+    <BaseIntermediateOutputPath>$(GreenLyticsArtifactsRoot)obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(GreenLyticsArtifactsRoot)bin\$(MSBuildProjectName)\</BaseOutputPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);**\bin\**;**\obj\**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>
