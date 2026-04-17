@@ -93,19 +93,34 @@ public sealed class LoginHandler
 
     private async Task<User> ResolveLocalUserAsync(SupabaseAuthTokens tokens, CancellationToken cancellationToken)
     {
-        var user = await _dbContext.Users
+        var matchedByExternalId = await _dbContext.Users
             .Include(x => x.Role)
-            .SingleOrDefaultAsync(x => !x.IsDeleted && x.ExternalAuthId == tokens.SupabaseUserId.ToString(), cancellationToken);
+            .Where(x => !x.IsDeleted && x.ExternalAuthId == tokens.SupabaseUserId.ToString())
+            .ToListAsync(cancellationToken);
+
+        if (matchedByExternalId.Count > 1)
+        {
+            throw new InvalidOperationException("Multiple local users are linked to the same Supabase identity.");
+        }
+
+        var user = matchedByExternalId.SingleOrDefault();
 
         if (user is null && !string.IsNullOrWhiteSpace(tokens.Email))
         {
-            user = await _dbContext.Users
+            var matchedByEmail = await _dbContext.Users
                 .Include(x => x.Role)
-                .SingleOrDefaultAsync(
+                .Where(
                     x => !x.IsDeleted
                          && x.Email == tokens.Email
-                         && x.ExternalAuthId == null,
-                    cancellationToken);
+                         && x.ExternalAuthId == null)
+                .ToListAsync(cancellationToken);
+
+            if (matchedByEmail.Count > 1)
+            {
+                throw new InvalidOperationException("Multiple local users share the same email address and are not linked to Supabase.");
+            }
+
+            user = matchedByEmail.SingleOrDefault();
         }
 
         if (user is null)
