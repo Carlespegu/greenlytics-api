@@ -1,18 +1,40 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { useActiveClient } from '@/modules/clients/hooks/ActiveClientContext';
 import { plantsApi } from '@/modules/plants/api/plantsApi';
+import { PlantCareTab } from '@/modules/plants/components/detail/PlantCareTab';
+import { PlantDetailAside } from '@/modules/plants/components/detail/PlantDetailAside';
 import { PlantDetailHeader } from '@/modules/plants/components/detail/PlantDetailHeader';
-import { PlantPhotoTimeline, type PlantPhotoTimelineEntry } from '@/modules/plants/components/detail/PlantPhotoTimeline';
-import { PlantSummarySection } from '@/modules/plants/components/detail/PlantSummarySection';
+import { PlantHistoryTab } from '@/modules/plants/components/detail/PlantHistoryTab';
+import { PlantOverviewTab } from '@/modules/plants/components/detail/PlantOverviewTab';
+import { PlantPhotosTab } from '@/modules/plants/components/detail/PlantPhotosTab';
+import { PlantReadingsTab } from '@/modules/plants/components/detail/PlantReadingsTab';
+import { PlantRecommendationsTab } from '@/modules/plants/components/detail/PlantRecommendationsTab';
+import { PlantSummaryCards } from '@/modules/plants/components/detail/PlantSummaryCards';
+import { buildPlantDetailViewModel } from '@/modules/plants/components/detail/plantDetailViewModel';
+import { EmptyState } from '@/shared/components/EmptyState';
+import { LoadingScreen } from '@/shared/ui/LoadingScreen';
 import { Tabs } from '@/shared/ui/Tabs';
 
+const tabItems = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'care', label: 'Care' },
+  { id: 'photos', label: 'Photos' },
+  { id: 'readings', label: 'Readings' },
+  { id: 'recommendations', label: 'Recommendations' },
+  { id: 'history', label: 'History' },
+] as const;
+
+type DetailTabId = (typeof tabItems)[number]['id'];
+
 export function PlantDetailPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { plantId } = useParams();
   const { clientId: activeClientId } = useActiveClient();
-  const [activeTab, setActiveTab] = useState('summary');
+  const [activeTab, setActiveTab] = useState<DetailTabId>('overview');
 
   const plantDetailQuery = useQuery({
     queryKey: ['plant-detail', activeClientId, plantId],
@@ -23,124 +45,71 @@ export function PlantDetailPage() {
   });
 
   const plant = plantDetailQuery.data;
+  const viewModel = useMemo(() => (plant ? buildPlantDetailViewModel(plant) : null), [plant]);
 
-  const facts = useMemo(() => [
-    { label: 'Client', value: plant?.clientName ?? 'No client' },
-    { label: 'Installation', value: plant?.installationName ?? 'No installation' },
-    { label: 'Plant type', value: plant?.plantTypeName ?? 'No plant type' },
-    { label: 'Plant status', value: plant?.plantStatusName ?? 'No plant status' },
-    { label: 'Thresholds', value: String(plant?.thresholdsCount ?? 0) },
-    { label: 'Events', value: String(plant?.eventsCount ?? 0) },
-  ], [plant]);
+  function handleBackToList() {
+    if ((location.state as { fromPlantsList?: boolean } | null)?.fromPlantsList) {
+      navigate(-1);
+      return;
+    }
 
-  const timelineEntries = useMemo<PlantPhotoTimelineEntry[]>(
-    () =>
-      (plant?.photos ?? []).map((photo) => ({
-        id: photo.id,
-        date: new Date(photo.createdAt).toLocaleString(),
-        title: photo.photoTypeName ?? photo.fileName,
-        summary: photo.isPrimary ? 'Primary photo' : 'Plant photo',
-        images: [photo.fileUrl],
-      })),
-    [plant?.photos],
-  );
+    navigate('/plants/search');
+  }
+
+  if (plantDetailQuery.isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (!plant || !viewModel) {
+    return (
+      <div className="module-page plant-detail-v3">
+        <EmptyState title="Plant not found" description="The requested plant detail is not available in the current client scope." />
+      </div>
+    );
+  }
 
   return (
-    <div className="module-page plant-detail-page">
+    <div className="module-page plant-detail-v3">
       <PlantDetailHeader
-        code={plant?.code ?? plantId ?? 'unknown-plant'}
-        installation={plant?.installationName ?? plant?.installationCode ?? 'Unassigned'}
-        title={plant?.name ?? 'Plant detail'}
+        plant={plant}
+        primaryPhotoUrl={viewModel.primaryPhoto?.fileUrl ?? plant.primaryPhotoUrl}
+        onBack={handleBackToList}
+        onOpenCare={() => setActiveTab('care')}
+        onOpenHistory={() => setActiveTab('history')}
+        onOpenPhotos={() => setActiveTab('photos')}
+        onViewInstallation={() => navigate(`/installations/${plant.installationId}`)}
       />
 
-      <div className="detail-stack">
-        <PlantSummarySection facts={facts} notes={plant?.description ?? 'No description available.'} />
+      <PlantSummaryCards cards={viewModel.summaryCards} />
 
-        <section className="panel-card">
-          <Tabs
-            activeTab={activeTab}
-            items={[
-              { id: 'summary', label: 'Summary' },
-              { id: 'photos', label: 'Photo history' },
-              { id: 'thresholds', label: 'Thresholds' },
-              { id: 'events', label: 'Events' },
-            ]}
-            onChange={setActiveTab}
-          />
-        </section>
-
-        {activeTab === 'summary' ? (
-          <section className="panel-card">
-            <div className="section-heading">
-              <div>
-                <strong>Operational summary</strong>
-                <p>Current plant status, latest reading context and primary photo.</p>
-              </div>
-            </div>
-            <div className="detail-grid">
-              <article className="detail-item">
-                <span>Active</span>
-                <strong>{plant?.isActive ? 'Yes' : 'No'}</strong>
-              </article>
-              <article className="detail-item">
-                <span>Latest reading</span>
-                <strong>{plant?.latestReading ? new Date(plant.latestReading.readAt).toLocaleString() : 'No readings'}</strong>
-              </article>
-              <article className="detail-item">
-                <span>Latest device</span>
-                <strong>{plant?.latestReading?.deviceCode ?? 'No device'}</strong>
-              </article>
-              <article className="detail-item">
-                <span>Primary photo</span>
-                <strong>{plant?.primaryPhotoUrl ? 'Configured' : 'Not configured'}</strong>
-              </article>
-            </div>
+      <div className="plant-detail-v3__layout">
+        <main className="plant-detail-v3__main">
+          <section className="panel-card plant-detail-v3__tabs-card">
+            <Tabs activeTab={activeTab} items={[...tabItems]} onChange={(tab) => setActiveTab(tab as DetailTabId)} />
           </section>
-        ) : null}
 
-        {activeTab === 'photos' ? <PlantPhotoTimeline entries={timelineEntries} /> : null}
+          {activeTab === 'overview' ? (
+            <PlantOverviewTab
+              plant={plant}
+              lastEventLabel={viewModel.lastEventLabel}
+              lastPhotoLabel={viewModel.lastPhotoLabel}
+              lastReadingLabel={viewModel.lastReadingLabel}
+              updatedLabel={viewModel.updatedLabel}
+            />
+          ) : null}
 
-        {activeTab === 'thresholds' ? (
-          <section className="panel-card">
-            <div className="section-heading">
-              <div>
-                <strong>Thresholds</strong>
-                <p>Configured reading thresholds for this plant.</p>
-              </div>
-            </div>
-            <div className="detail-grid">
-              {(plant?.thresholds ?? []).length === 0 ? <p className="card-muted">No thresholds configured yet.</p> : null}
-              {(plant?.thresholds ?? []).map((threshold) => (
-                <article className="detail-item" key={threshold.id}>
-                  <span>{threshold.readingTypeName ?? threshold.readingTypeCode ?? 'Threshold'}</span>
-                  <strong>
-                    Min {threshold.minValue ?? '-'} / Opt {threshold.optimalValue ?? '-'} / Max {threshold.maxValue ?? '-'} {threshold.unitTypeCode ?? ''}
-                  </strong>
-                </article>
-              ))}
-            </div>
-          </section>
-        ) : null}
+          {activeTab === 'care' ? <PlantCareTab plant={plant} thresholdMap={viewModel.thresholdMap} /> : null}
+          {activeTab === 'photos' ? <PlantPhotosTab photos={plant.photos} /> : null}
+          {activeTab === 'readings' ? <PlantReadingsTab metrics={viewModel.readingsMetrics} plant={plant} /> : null}
+          {activeTab === 'recommendations' ? <PlantRecommendationsTab recommendations={viewModel.recommendations} /> : null}
+          {activeTab === 'history' ? <PlantHistoryTab entries={viewModel.historyEntries} /> : null}
+        </main>
 
-        {activeTab === 'events' ? (
-          <section className="panel-card">
-            <div className="section-heading">
-              <div>
-                <strong>Events</strong>
-                <p>Business events registered for this plant.</p>
-              </div>
-            </div>
-            <div className="detail-grid">
-              {(plant?.events ?? []).length === 0 ? <p className="card-muted">No events registered yet.</p> : null}
-              {(plant?.events ?? []).map((event) => (
-                <article className="detail-item detail-item--wide" key={event.id}>
-                  <span>{event.eventTypeName ?? event.eventTypeCode ?? 'Event'} · {new Date(event.eventDate).toLocaleDateString()}</span>
-                  <strong>{event.title}</strong>
-                </article>
-              ))}
-            </div>
-          </section>
-        ) : null}
+        <PlantDetailAside
+          nextCareAction={viewModel.nextCareAction}
+          plant={plant}
+          topRecommendation={viewModel.recommendations[0] ?? null}
+        />
       </div>
     </div>
   );

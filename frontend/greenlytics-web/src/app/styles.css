@@ -1683,3 +1683,456 @@ img { display: block; max-width: 100%; }
     align-items: stretch;
   }
 }
+
+/* Plant detail v3 */
+.plant-detail-v3 {
+  display: grid;
+  gap: 16px;
+}
+.plant-detail-v3__header,
+.plant-detail-v3__tabs-card,
+.plant-detail-v3__section-card,
+.plant-detail-v3__summary-card,
+.plant-detail-v3__aside-card,
+.plant-detail-v3__reading-card {
+  border-radius: 28px;
+}
+.plant-detail-v3__breadcrumb-row,
+.plant-detail-v3__header-main,
+.plant-detail-v3__hero,
+.plant-detail-v3__title-row,
+.plant-detail-v3__meta-strip,
+.plant-detail-v3__header-actions,
+.plant-detail-v3__layout,
+.plant-detail-v3__tab-columns,
+.plant-detail-v3__care-card-header,
+.plant-detail-v3__summary-card-header,
+.plant-detail-v3__reading-card-header,
+.plant-detail-v3__history-toolbar,
+.plant-detail-v3__photo-card-actions,
+.plant-detail-v3__recommendation-head,
+.plant-detail-v3__aside-head,
+.plant-detail-v3__aside-row {
+  display: flex;
+  gap: 12px;
+}
+.plant-detail-v3__tab-stack,
+.plant-detail-v3__main,
+.plant-detail-v3__info-grid,
+.plant-detail-v3__care-grid,
+.plant-detail-v3__summary-strip,
+.plant-detail-v3__photo-grid,
+.plant-detail-v3__recommendation-list,
+.plant-detail-v3__context-card-list,
+.plant-detail-v3__aside,
+.plant-detail-v3__simple-table,
+.plant-detail-v3__range-selector,
+.plant-detail-v3__action-grid {
+  display: grid;
+  gap: 14px;
+}
+.plant-detail-v3__header {
+  padding: 18px 20px 20px;
+}
+.plant-detail-v3__breadcrumb-row {
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.plant-detail-v3__breadcrumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+.plant-detail-v3__breadcrumbs button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+.plant-detail-v3__header-main {
+  flex-direction: column;
+}
+.plant-detail-v3__hero {
+  align-items: stretch;
+}
+.plant-detail-v3__hero-photo {
+  width: 168px;
+  min-width: 168px;
+  border-radius: 26px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+.plant-detail-v3__hero-photo img {
+  width: 100%;
+  height: 100%;
+  min-height: 168px;
+  object-fit: cover;
+}
+.plant-detail-v3__hero-copy {
+  display: grid;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+.plant-detail-v3__eyebrow {
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7ccfb2;
+}
+.plant-detail-v3__title-row {
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.plant-detail-v3__title-row h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  letter-spacing: -0.04em;
+}
+.plant-detail-v3__title-row p,
+.plant-detail-v3__summary-card p,
+.plant-detail-v3__care-card p,
+.plant-detail-v3__chart-placeholder p,
+.plant-detail-v3__photo-card-meta p,
+.plant-detail-v3__recommendation-card p,
+.plant-detail-v3__context-card p,
+.plant-detail-v3__aside-head p,
+.plant-detail-v3__aside-note span {
+  margin: 0;
+  color: var(--text-muted);
+}
+.plant-detail-v3__badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.plant-detail-v3__meta-strip {
+  flex-wrap: wrap;
+}
+.plant-detail-v3__meta-strip > div {
+  min-width: 180px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+  display: grid;
+  gap: 4px;
+}
+.plant-detail-v3__meta-strip span,
+.plant-detail-v3__info-item span,
+.plant-detail-v3__threshold-card span,
+.plant-detail-v3__simple-row span,
+.plant-detail-v3__aside-row span,
+.plant-detail-v3__recommendation-meta span,
+.plant-detail-v3__reading-card-header span {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+}
+.plant-detail-v3__header-actions {
+  flex-wrap: wrap;
+}
+.plant-detail-v3__summary-strip {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.plant-detail-v3__summary-card {
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+.plant-detail-v3__summary-card strong {
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+.plant-detail-v3__summary-card-header {
+  align-items: center;
+  justify-content: space-between;
+}
+.plant-detail-v3__summary-icon,
+.plant-detail-v3__care-icon,
+.plant-detail-v3__aside-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(34, 197, 94, 0.1);
+  color: #7fffd4;
+  flex-shrink: 0;
+}
+.plant-detail-v3__layout {
+  align-items: start;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.72fr);
+}
+.plant-detail-v3__tabs-card {
+  padding: 10px;
+}
+.plant-detail-v3__tab-stack {
+  grid-template-columns: 1fr;
+}
+.plant-detail-v3__section-card {
+  padding: 18px;
+}
+.plant-detail-v3__info-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.plant-detail-v3__info-item,
+.plant-detail-v3__threshold-card,
+.plant-detail-v3__care-card,
+.plant-detail-v3__reading-card,
+.plant-detail-v3__context-card {
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+}
+.plant-detail-v3__info-item,
+.plant-detail-v3__threshold-card {
+  display: grid;
+  gap: 6px;
+}
+.plant-detail-v3__info-item strong,
+.plant-detail-v3__threshold-card strong,
+.plant-detail-v3__simple-row strong,
+.plant-detail-v3__aside-row strong,
+.plant-detail-v3__context-card strong {
+  line-height: 1.35;
+}
+.plant-detail-v3__info-item--wide,
+.plant-detail-v3__care-card--wide {
+  grid-column: span 2;
+}
+.plant-detail-v3__care-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.plant-detail-v3__care-card {
+  display: grid;
+  gap: 10px;
+}
+.plant-detail-v3__care-card-header,
+.plant-detail-v3__aside-head {
+  align-items: center;
+}
+.plant-detail-v3__action-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.plant-detail-v3__future-action {
+  width: 100%;
+  justify-content: center;
+}
+.plant-detail-v3__primary-photo {
+  display: grid;
+  gap: 12px;
+}
+.plant-detail-v3__primary-photo img {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: 24px;
+}
+.plant-detail-v3__primary-photo-meta {
+  display: grid;
+  gap: 4px;
+}
+.plant-detail-v3__photo-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.plant-detail-v3__photo-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 22px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+}
+.plant-detail-v3__photo-card-image {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  border-radius: 18px;
+  overflow: hidden;
+}
+.plant-detail-v3__photo-card-image img {
+  width: 100%;
+  aspect-ratio: 1 / 0.72;
+  object-fit: cover;
+}
+.plant-detail-v3__photo-card-meta {
+  display: grid;
+  gap: 10px;
+}
+.plant-detail-v3__photo-card-actions {
+  flex-wrap: wrap;
+}
+.plant-detail-v3__readings-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.plant-detail-v3__reading-card {
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+.plant-detail-v3__reading-card strong {
+  font-size: 1.05rem;
+}
+.plant-detail-v3__reading-card-header {
+  justify-content: space-between;
+  align-items: center;
+}
+.plant-detail-v3__range-selector {
+  grid-auto-flow: column;
+  gap: 8px;
+}
+.plant-detail-v3__range-chip {
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
+}
+.plant-detail-v3__range-chip--active {
+  border-color: rgba(34, 197, 94, 0.24);
+  background: rgba(34, 197, 94, 0.08);
+}
+.plant-detail-v3__chart-placeholder {
+  padding: 20px;
+  border-radius: 22px;
+  border: 1px dashed rgba(56, 189, 248, 0.2);
+  background: rgba(56, 189, 248, 0.04);
+  display: grid;
+  gap: 10px;
+}
+.plant-detail-v3__chart-placeholder > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.plant-detail-v3__tab-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.plant-detail-v3__simple-table,
+.plant-detail-v3__aside-list {
+  gap: 10px;
+}
+.plant-detail-v3__simple-row,
+.plant-detail-v3__aside-row {
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+}
+.plant-detail-v3__context-card-list {
+  grid-template-columns: 1fr;
+}
+.plant-detail-v3__context-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.plant-detail-v3__recommendation-list {
+  grid-template-columns: 1fr;
+}
+.plant-detail-v3__recommendation-card {
+  padding: 16px;
+  border-radius: 22px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+  display: grid;
+  gap: 12px;
+}
+.plant-detail-v3__recommendation-head {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.plant-detail-v3__recommendation-meta {
+  display: grid;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
+}
+.plant-detail-v3__history-toolbar {
+  align-items: center;
+  gap: 10px;
+}
+.plant-detail-v3__history-toolbar select {
+  min-height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.08);
+  background: #142742;
+  color: var(--text);
+  padding: 0 12px;
+}
+.plant-detail-v3__aside {
+  position: sticky;
+  top: 18px;
+}
+.plant-detail-v3__aside-card {
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+.plant-detail-v3__aside-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+}
+@media (max-width: 1380px) {
+  .plant-detail-v3__summary-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .plant-detail-v3__action-grid,
+  .plant-detail-v3__info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .plant-detail-v3__readings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1100px) {
+  .plant-detail-v3__layout,
+  .plant-detail-v3__tab-columns,
+  .plant-detail-v3__hero,
+  .plant-detail-v3__care-grid,
+  .plant-detail-v3__photo-grid {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+  .plant-detail-v3__aside {
+    position: static;
+  }
+}
+@media (max-width: 760px) {
+  .plant-detail-v3__summary-strip,
+  .plant-detail-v3__info-grid,
+  .plant-detail-v3__action-grid,
+  .plant-detail-v3__readings-grid {
+    grid-template-columns: 1fr;
+  }
+  .plant-detail-v3__breadcrumb-row,
+  .plant-detail-v3__title-row,
+  .plant-detail-v3__meta-strip,
+  .plant-detail-v3__header-actions,
+  .plant-detail-v3__recommendation-head,
+  .plant-detail-v3__history-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .plant-detail-v3__info-item--wide,
+  .plant-detail-v3__care-card--wide {
+    grid-column: span 1;
+  }
+}

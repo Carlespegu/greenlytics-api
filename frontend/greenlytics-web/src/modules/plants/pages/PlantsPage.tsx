@@ -379,7 +379,7 @@ export function PlantsPage() {
           items={plantsQuery.data?.items ?? []}
           sortDirection={sortDirection}
           sortField={sortField}
-          onRowClick={(plant) => navigate(`/plants/${plant.id}`)}
+          onRowClick={(plant) => navigate(`/plants/${plant.id}`, { state: { fromPlantsList: true } })}
           onSortChange={handleSortChange}
         />
 
