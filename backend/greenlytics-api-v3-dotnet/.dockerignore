@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+.dotnet/
+artifacts/
+api-compile-out/
+v3build/
+*.log
+*.binlog
+.git/
+.gitignore
