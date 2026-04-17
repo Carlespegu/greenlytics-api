@@ -216,7 +216,6 @@ public sealed class OpenAiPlantAnalysisService : IPlantAnalysisService
                 ["possibleIssues"] = new
                 {
                     type = "array",
-                    uniqueItems = true,
                     items = new
                     {
                         type = "string",
@@ -240,7 +239,6 @@ public sealed class OpenAiPlantAnalysisService : IPlantAnalysisService
                 ["careRecommendations"] = new
                 {
                     type = "array",
-                    uniqueItems = true,
                     items = new
                     {
                         type = "string",
