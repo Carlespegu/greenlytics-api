@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { SortDirection } from '@/types/api';
 
 export interface DataTableColumn<TItem> {
@@ -35,8 +36,17 @@ export function DataTable<TItem>({
   onRowClick,
   onSortChange,
 }: DataTableProps<TItem>) {
+  const { t } = useI18n();
+
   if (isLoading) {
-    return <div className="records-table__empty"><div className="empty-state"><h3>Loading data</h3><p>Fetching the latest records for this client scope.</p></div></div>;
+    return (
+      <div className="records-table__empty">
+        <div className="empty-state">
+          <h3>{t('records.loadingTitle')}</h3>
+          <p>{t('records.loadingDescription')}</p>
+        </div>
+      </div>
+    );
   }
 
   if (items.length === 0) {

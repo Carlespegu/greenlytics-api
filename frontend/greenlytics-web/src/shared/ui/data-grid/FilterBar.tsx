@@ -1,6 +1,8 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
+
 interface FilterBarProps extends PropsWithChildren {
   activeCount: number;
   isOpen: boolean;
@@ -9,6 +11,8 @@ interface FilterBarProps extends PropsWithChildren {
 }
 
 export function FilterBar({ activeCount, isOpen, actions, onToggle, children }: FilterBarProps) {
+  const { t } = useI18n();
+
   return (
     <section className={`records-filter-bar${isOpen ? ' records-filter-bar--open' : ''}`}>
       <button
@@ -19,7 +23,7 @@ export function FilterBar({ activeCount, isOpen, actions, onToggle, children }: 
       >
         <span className="records-filter-bar__toggle-copy">
           <SlidersHorizontal size={16} />
-          <span>Filters</span>
+          <span>{t('records.filters')}</span>
         </span>
         <span className="records-filter-bar__toggle-meta">
           <span className="records-filter-bar__count">{activeCount}</span>
