@@ -18,13 +18,27 @@ public sealed class DesignTimeGreenLyticsDbContextFactory : IDesignTimeDbContext
             .AddEnvironmentVariables()
             .Build();
 
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? configuration["Database:ConnectionString"]
+        var connectionString = GetFirstConfiguredValue(
+                configuration.GetConnectionString("DefaultConnection"),
+                configuration["Database:ConnectionString"])
             ?? throw new InvalidOperationException("Database connection string is missing.");
 
         var optionsBuilder = new DbContextOptionsBuilder<GreenLyticsDbContext>();
         optionsBuilder.UseNpgsql(connectionString);
 
         return new GreenLyticsDbContext(optionsBuilder.Options);
+    }
+
+    private static string? GetFirstConfiguredValue(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return null;
     }
 }

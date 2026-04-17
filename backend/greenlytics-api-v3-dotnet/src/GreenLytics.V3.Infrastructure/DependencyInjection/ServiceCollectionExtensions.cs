@@ -22,8 +22,9 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddGreenLyticsInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? configuration["Database:ConnectionString"]
+        var connectionString = GetFirstConfiguredValue(
+                configuration.GetConnectionString("DefaultConnection"),
+                configuration["Database:ConnectionString"])
             ?? throw new InvalidOperationException("Database connection string is missing.");
 
         services.Configure<SupabaseAuthenticationOptions>(configuration.GetSection(SupabaseAuthenticationOptions.SectionName));
@@ -112,6 +113,19 @@ public static class ServiceCollectionExtensions
         services.AddScoped<GetCurrentUserHandler>();
 
         return services;
+    }
+
+    private static string? GetFirstConfiguredValue(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return null;
     }
 }
 
