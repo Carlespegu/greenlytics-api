@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { postSearch } from '@/api/search';
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import { useActiveClient } from '@/modules/clients/hooks/ActiveClientContext';
 import { plantsApi, type CreatePlantWithPhotosResult } from '@/modules/plants/api/plantsApi';
 import { PlantCreateWizard } from '@/modules/plants/components/create/PlantCreateWizard';
@@ -13,6 +14,7 @@ import { RecordsPageHeader } from '@/shared/ui/data-grid/RecordsPageHeader';
 export function CreatePlantPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const { clientId: activeClientId } = useActiveClient();
 
   const installationsQuery = useQuery({
@@ -34,11 +36,11 @@ export function CreatePlantPage() {
   const createPlantMutation = useMutation({
     mutationFn: async (input: CreatePlantSubmitInput): Promise<CreatePlantWithPhotosResult> => {
       if (!activeClientId) {
-        throw new Error('No active client selected.');
+        throw new Error(t('plantCreate.noActiveClient'));
       }
 
       if (!input.installationId) {
-        throw new Error('Installation is required to create a plant.');
+        throw new Error(t('plantCreate.installationRequiredCreate'));
       }
 
       const detail = await plantsApi.create(activeClientId, {
@@ -76,7 +78,7 @@ export function CreatePlantPage() {
         throw error;
       }
 
-      throw new Error('The plant could not be created.');
+      throw new Error(t('plantCreate.genericCreateError'));
     }
   }
 
@@ -84,12 +86,12 @@ export function CreatePlantPage() {
     <div className="module-page records-page records-page--create">
       <RecordsPageHeader
         className="records-page-header--sticky"
-        title="Create plant"
-        subtitle="Recovered guided flow for plant onboarding, with the current V3 backend as the source of truth."
+        title={t('plantCreate.pageTitle')}
+        subtitle={t('plantCreate.pageSubtitle')}
         actions={(
           <button className="secondary-button" type="button" onClick={() => navigate('/plants/search')}>
             <ArrowLeft size={16} />
-            <span>Back to plants</span>
+            <span>{t('plantCreate.backToPlants')}</span>
           </button>
         )}
       />

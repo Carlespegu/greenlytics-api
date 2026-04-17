@@ -1,6 +1,7 @@
 import { ImagePlus, LoaderCircle, Sparkles, Upload, X } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { PhotoSlotKey, PlantPhotoDraft } from '@/modules/plants/types/plant.types';
 
 interface PlantPhotoUploadStepProps {
@@ -13,12 +14,6 @@ interface PlantPhotoUploadStepProps {
   mode?: 'manual' | 'ai';
 }
 
-const photoSlots: Array<{ key: PhotoSlotKey; title: string; hint: string }> = [
-  { key: 'leaf', title: '1. Fulles i flors', hint: 'Primer pla de fulles i, si n hi ha, de la flor.' },
-  { key: 'stem', title: '2. Tija', hint: 'Foto de la tija o base per ajudar a la identificacio.' },
-  { key: 'general', title: '3. General', hint: 'Vista completa de la planta i del seu port.' },
-];
-
 export function PlantPhotoUploadStep({
   photosBySlot,
   fieldErrors,
@@ -28,11 +23,18 @@ export function PlantPhotoUploadStep({
   onAnalyze,
   mode = 'ai',
 }: PlantPhotoUploadStepProps) {
+  const { t } = useI18n();
   const inputRefs = {
     leaf: useRef<HTMLInputElement | null>(null),
     stem: useRef<HTMLInputElement | null>(null),
     general: useRef<HTMLInputElement | null>(null),
   };
+
+  const photoSlots: Array<{ key: PhotoSlotKey; title: string; hint: string }> = [
+    { key: 'leaf', title: t('plantCreate.slotLeafTitle'), hint: t('plantCreate.slotLeafHint') },
+    { key: 'stem', title: t('plantCreate.slotStemTitle'), hint: t('plantCreate.slotStemHint') },
+    { key: 'general', title: t('plantCreate.slotGeneralTitle'), hint: t('plantCreate.slotGeneralHint') },
+  ];
 
   const uploadedCount = useMemo(
     () => Object.values(photosBySlot).filter(Boolean).length,
@@ -44,10 +46,10 @@ export function PlantPhotoUploadStep({
     <section className="plant-create-v2__section plant-create-v2__section--accent">
       <div className="plant-create-v2__section-head plant-create-v2__section-head--split">
         <div>
-          <h4>{isAiMode ? 'Alta amb IA' : 'Fotos de referencia'}</h4>
-          <p>{isAiMode ? 'Puja 3 fotos i executa l analisi al backend per preomplir la fitxa.' : 'Puja 3 fotos per adjuntar-les al guardat final sense executar IA.'}</p>
+          <h4>{isAiMode ? t('plantCreate.photosAiTitle') : t('plantCreate.referencePhotosTitle')}</h4>
+          <p>{isAiMode ? t('plantCreate.photosAiSubtitle') : t('plantCreate.referencePhotosSubtitle')}</p>
         </div>
-        <span className="plant-create-v2__counter">{uploadedCount}/3 fotos</span>
+        <span className="plant-create-v2__counter">{t('plantCreate.photosCounter', { count: uploadedCount })}</span>
       </div>
 
       <div className="plant-create-v2__photos-grid">
@@ -70,14 +72,14 @@ export function PlantPhotoUploadStep({
                   onClick={() => inputRefs[slot.key].current?.click()}
                 >
                   <ImagePlus size={18} />
-                  <span>Sense preview</span>
+                  <span>{t('plantCreate.noPreview')}</span>
                 </button>
               )}
 
               <div className="plant-create-v2__photo-actions">
                 <input
                   ref={inputRefs[slot.key]}
-                  accept="image/png,image/jpeg"
+                  accept="image/png,image/jpeg,image/webp"
                   className="create-plant-modal__input"
                   type="file"
                   onChange={(event) => onSelectFile(slot.key, event.target.files)}
@@ -85,13 +87,13 @@ export function PlantPhotoUploadStep({
 
                 <button type="button" className="secondary-button" onClick={() => inputRefs[slot.key].current?.click()}>
                   <Upload size={16} />
-                  <span>{photo ? 'Canviar foto' : 'Pujar foto'}</span>
+                  <span>{photo ? t('plantCreate.changePhoto') : t('plantCreate.uploadPhoto')}</span>
                 </button>
 
                 {photo ? (
                   <button type="button" className="ghost-button" onClick={() => onRemovePhoto(slot.key)}>
                     <X size={16} />
-                    <span>Eliminar</span>
+                    <span>{t('plantCreate.remove')}</span>
                   </button>
                 ) : null}
               </div>
@@ -104,15 +106,15 @@ export function PlantPhotoUploadStep({
 
       {isAiMode ? (
         <div className="plant-create-v2__inline-actions">
-          <p>L analisi retornara una proposta inicial de code, noms i observacions per revisar.</p>
+          <p>{t('plantCreate.aiProposalHint')}</p>
           <button type="button" className="primary-button" disabled={uploadedCount !== 3 || isAnalyzing} onClick={onAnalyze}>
             {isAnalyzing ? <LoaderCircle className="spin" size={16} /> : <Sparkles size={16} />}
-            <span>{isAnalyzing ? 'Analitzant...' : 'Analitzar amb IA'}</span>
+            <span>{isAnalyzing ? t('plantCreate.analyzing') : t('plantCreate.analyzeWithAi')}</span>
           </button>
         </div>
       ) : (
         <div className="plant-create-v2__inline-actions">
-          <p>Aquestes tres fotos s enviaran directament al backend quan guardis la planta.</p>
+          <p>{t('plantCreate.directUploadHint')}</p>
         </div>
       )}
     </section>

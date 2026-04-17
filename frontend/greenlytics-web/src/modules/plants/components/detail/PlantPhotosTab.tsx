@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ImagePlus, Star, Trash2 } from 'lucide-react';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { PlantPhotoRecord } from '@/modules/plants/api/plantsApi';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ImageCarouselModal } from '@/shared/ui/ImageCarouselModal';
@@ -11,21 +12,26 @@ interface PlantPhotosTabProps {
 }
 
 export function PlantPhotosTab({ photos }: PlantPhotosTabProps) {
+  const { locale, t } = useI18n();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const primaryPhoto = photos.find((photo) => photo.isPrimary) ?? photos[0] ?? null;
   const imageUrls = useMemo(() => photos.map((photo) => photo.fileUrl), [photos]);
+
+  const formatPhotoDate = (value: string) => (
+    new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+  );
 
   return (
     <>
       <div className="plant-detail-v3__tab-stack">
         <section className="panel-card plant-detail-v3__section-card">
           <SectionHeading
-            title="Primary photo"
-            subtitle="Current visual reference used to identify the plant at a glance."
+            title={t('plantDetail.primaryPhoto')}
+            subtitle={t('plantDetail.primaryPhotoSubtitle')}
             action={(
               <button className="secondary-button" disabled title="Photo upload UI is the next step." type="button">
                 <ImagePlus size={16} />
-                <span>Upload photo</span>
+                <span>{t('plantDetail.uploadPhoto')}</span>
               </button>
             )}
           />
@@ -35,22 +41,22 @@ export function PlantPhotosTab({ photos }: PlantPhotosTabProps) {
               <img alt={`${primaryPhoto.fileName} primary`} src={primaryPhoto.fileUrl} />
               <div className="plant-detail-v3__primary-photo-meta">
                 <strong>{primaryPhoto.photoTypeName ?? primaryPhoto.fileName}</strong>
-                <p>{new Intl.DateTimeFormat('ca-ES', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(primaryPhoto.createdAt))}</p>
+                <p>{formatPhotoDate(primaryPhoto.createdAt)}</p>
               </div>
             </div>
           ) : (
-            <EmptyState title="No primary photo" description="Upload a photo to start visual monitoring of the plant." />
+            <EmptyState title={t('plantDetail.noPrimaryPhoto')} description={t('plantDetail.noPrimaryPhotoDescription')} />
           )}
         </section>
 
         <section className="panel-card plant-detail-v3__section-card">
           <SectionHeading
-            title="Photo gallery"
-            subtitle="Visual history of the plant with metadata and future-ready actions."
+            title={t('plantDetail.photoGallery')}
+            subtitle={t('plantDetail.photoGallerySubtitle')}
           />
 
           {photos.length === 0 ? (
-            <EmptyState title="No photos yet" description="This plant still has no visual history in the current backend." />
+            <EmptyState title={t('plantDetail.noPhotosYet')} description={t('plantDetail.noPhotosDescription')} />
           ) : (
             <div className="plant-detail-v3__photo-grid">
               {photos.map((photo, index) => (
@@ -61,16 +67,16 @@ export function PlantPhotosTab({ photos }: PlantPhotosTabProps) {
                   <div className="plant-detail-v3__photo-card-meta">
                     <div>
                       <strong>{photo.photoTypeName ?? photo.fileName}</strong>
-                      <p>{new Intl.DateTimeFormat('ca-ES', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(photo.createdAt))}</p>
+                      <p>{formatPhotoDate(photo.createdAt)}</p>
                     </div>
                     <div className="plant-detail-v3__photo-card-actions">
                       <button className="ghost-button" disabled title="Set primary action hook pending." type="button">
                         <Star size={15} />
-                        <span>{photo.isPrimary ? 'Primary' : 'Set primary'}</span>
+                        <span>{photo.isPrimary ? t('plantDetail.primary') : t('plantDetail.setPrimary')}</span>
                       </button>
                       <button className="ghost-button" disabled title="Delete photo action hook pending." type="button">
                         <Trash2 size={15} />
-                        <span>Delete</span>
+                        <span>{t('plantDetail.delete')}</span>
                       </button>
                     </div>
                   </div>

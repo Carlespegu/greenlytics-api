@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { postSearch } from '@/api/search';
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import { useActiveClient } from '@/modules/clients/hooks/ActiveClientContext';
 import { devicesApi, type DeviceListItem, type DeviceSearchFiltersInput, type DeviceSortField } from '@/modules/devices/api/devicesApi';
 import { EmptyState } from '@/shared/components/EmptyState';
@@ -88,17 +89,10 @@ function countActiveFilters(filters: DeviceFiltersDraft) {
   ].filter(Boolean).length;
 }
 
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return 'Never';
-  }
-
-  return new Date(value).toLocaleString();
-}
-
 export function DevicesPage() {
   const navigate = useNavigate();
   const { clientId: activeClientId } = useActiveClient();
+  const { locale, t } = useI18n();
 
   const [isFilterBarOpen, setIsFilterBarOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState<DeviceFiltersDraft>(defaultFilters);
@@ -137,61 +131,82 @@ export function DevicesPage() {
     refetchOnWindowFocus: false,
   });
 
+  const formatDateTime = (value: string | null) => {
+    if (!value) {
+      return t('records.never');
+    }
+
+    return new Intl.DateTimeFormat(locale, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(value));
+  };
+
   const columns = useMemo<DataTableColumn<DeviceListItem>[]>(() => ([
     {
       id: 'code',
-      label: 'Code',
+      label: t('devicesPage.code'),
       sortable: true,
       render: (device) => <span className="records-table__primary">{device.code}</span>,
     },
     {
       id: 'name',
-      label: 'Name',
+      label: t('devicesPage.name'),
       sortable: true,
       render: (device) => (
         <div className="records-table__stack">
           <span className="records-table__primary">{device.name}</span>
-          <span>{device.installationName ?? 'No installation assigned'}</span>
+          <span>{device.installationName ?? t('devicesPage.noInstallationAssigned')}</span>
         </div>
       ),
     },
     {
       id: 'deviceTypeName',
-      label: 'Device type',
+      label: t('devicesPage.deviceType'),
       sortable: true,
-      render: (device) => device.deviceTypeName ?? 'Unspecified',
+      render: (device) => device.deviceTypeName ?? t('devicesPage.unspecified'),
     },
     {
       id: 'serialNumber',
-      label: 'Serial',
+      label: t('devicesPage.serialNumber'),
       sortable: true,
-      render: (device) => device.serialNumber ?? 'No serial',
+      render: (device) => device.serialNumber ?? t('devicesPage.noSerial'),
     },
     {
       id: 'firmwareVersion',
-      label: 'Firmware',
+      label: t('devicesPage.firmwareVersion'),
       sortable: true,
-      render: (device) => device.firmwareVersion ?? 'Unknown',
+      render: (device) => device.firmwareVersion ?? t('devicesPage.unknown'),
     },
     {
       id: 'lastSeenAt',
-      label: 'Last seen',
+      label: t('devicesPage.lastSeen'),
       sortable: true,
       render: (device) => formatDateTime(device.lastSeenAt),
     },
     {
       id: 'isActive',
-      label: 'Status',
+      label: t('devicesPage.status'),
       sortable: true,
-      render: (device) => <StatusBadge label={device.isActive ? 'Active' : 'Inactive'} variant={device.isActive ? 'success' : 'neutral'} />,
+      render: (device) => (
+        <StatusBadge
+          label={device.isActive ? t('records.active') : t('records.inactive')}
+          variant={device.isActive ? 'success' : 'neutral'}
+        />
+      ),
     },
     {
       id: 'hasSecretConfigured',
-      label: 'Secret',
+      label: t('devicesPage.secret'),
       align: 'center',
-      render: (device) => <StatusBadge label={device.hasSecretConfigured ? 'Configured' : 'Missing'} variant={device.hasSecretConfigured ? 'info' : 'warning'} />,
+      render: (device) => (
+        <StatusBadge
+          label={device.hasSecretConfigured ? t('devicesPage.configured') : t('devicesPage.missing')}
+          variant={device.hasSecretConfigured ? 'info' : 'warning'}
+        />
+      ),
     },
-  ]), []);
+  ]), [locale, t]);
 
   function handleApplyFilters() {
     setAppliedFilters(draftFilters);
@@ -219,12 +234,12 @@ export function DevicesPage() {
   return (
     <div className="module-page records-page">
       <RecordsPageHeader
-        title="Devices"
-        subtitle="Live device inventory with installation context, firmware and operability."
+        title={t('devicesPage.title')}
+        subtitle={t('devicesPage.subtitle')}
         actions={(
           <button className="primary-button" type="button" onClick={() => navigate('/devices/new')}>
             <Plus size={16} />
-            <span>New</span>
+            <span>{t('records.new')}</span>
           </button>
         )}
       />
@@ -235,36 +250,36 @@ export function DevicesPage() {
         onToggle={() => setIsFilterBarOpen((current) => !current)}
         actions={(
           <>
-            <button className="secondary-button" type="button" onClick={handleClearFilters}>Clean all</button>
-            <button className="primary-button" type="button" onClick={handleApplyFilters}>Apply</button>
+            <button className="secondary-button" type="button" onClick={handleClearFilters}>{t('records.clearAll')}</button>
+            <button className="primary-button" type="button" onClick={handleApplyFilters}>{t('records.apply')}</button>
           </>
         )}
       >
         <div className="records-filters-grid">
           <label className="records-field">
-            <span>Device code</span>
+            <span>{t('devicesPage.deviceCode')}</span>
             <input type="text" value={draftFilters.code} onChange={(event) => setDraftFilters((current) => ({ ...current, code: event.target.value }))} />
           </label>
 
           <label className="records-field">
-            <span>Name</span>
+            <span>{t('devicesPage.name')}</span>
             <input type="text" value={draftFilters.name} onChange={(event) => setDraftFilters((current) => ({ ...current, name: event.target.value }))} />
           </label>
 
           <label className="records-field">
-            <span>Serial number</span>
+            <span>{t('devicesPage.serialNumber')}</span>
             <input type="text" value={draftFilters.serialNumber} onChange={(event) => setDraftFilters((current) => ({ ...current, serialNumber: event.target.value }))} />
           </label>
 
           <label className="records-field">
-            <span>Firmware version</span>
+            <span>{t('devicesPage.firmwareVersion')}</span>
             <input type="text" value={draftFilters.firmwareVersion} onChange={(event) => setDraftFilters((current) => ({ ...current, firmwareVersion: event.target.value }))} />
           </label>
 
           <label className="records-field">
-            <span>Installation</span>
+            <span>{t('devicesPage.installation')}</span>
             <select value={draftFilters.installationId} onChange={(event) => setDraftFilters((current) => ({ ...current, installationId: event.target.value }))}>
-              <option value="">All installations</option>
+              <option value="">{t('devicesPage.allInstallations')}</option>
               {(installationsQuery.data ?? []).map((installation) => (
                 <option key={installation.id} value={installation.id}>
                   {installation.name ?? installation.code ?? installation.id}
@@ -274,21 +289,21 @@ export function DevicesPage() {
           </label>
 
           <label className="records-field">
-            <span>Active</span>
+            <span>{t('records.active')}</span>
             <select value={draftFilters.isActive} onChange={(event) => setDraftFilters((current) => ({ ...current, isActive: event.target.value as DeviceFiltersDraft['isActive'] }))}>
-              <option value="all">All</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
+              <option value="all">{t('records.all')}</option>
+              <option value="true">{t('records.active')}</option>
+              <option value="false">{t('records.inactive')}</option>
             </select>
           </label>
 
           <label className="records-field">
-            <span>Created from</span>
+            <span>{t('records.createdFrom')}</span>
             <input type="date" value={draftFilters.createdAtFrom} onChange={(event) => setDraftFilters((current) => ({ ...current, createdAtFrom: event.target.value }))} />
           </label>
 
           <label className="records-field">
-            <span>Created to</span>
+            <span>{t('records.createdTo')}</span>
             <input type="date" value={draftFilters.createdAtTo} onChange={(event) => setDraftFilters((current) => ({ ...current, createdAtTo: event.target.value }))} />
           </label>
         </div>
@@ -297,14 +312,14 @@ export function DevicesPage() {
       <section className="panel-card records-card">
         <div className="records-card__toolbar">
           <div className="records-card__summary">
-            <strong>Device inventory</strong>
-            <p>Operational units, installation assignment and current authentication state.</p>
+            <strong>{t('devicesPage.catalogTitle')}</strong>
+            <p>{t('devicesPage.catalogSubtitle')}</p>
           </div>
         </div>
 
         <DataTable
           columns={columns}
-          emptyState={<EmptyState title="No devices found" description="Try adjusting the filters or clear them to broaden the search." />}
+          emptyState={<EmptyState title={t('devicesPage.emptyTitle')} description={t('devicesPage.emptyDescription')} />}
           getRowKey={(device) => device.id}
           isLoading={devicesQuery.isLoading}
           items={devicesQuery.data?.items ?? []}

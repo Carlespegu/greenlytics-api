@@ -1,5 +1,6 @@
 import { ArrowLeft, CalendarPlus, ChevronRight, ImagePlus, MapPinned, Pencil, SlidersHorizontal, ToggleLeft } from 'lucide-react';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { PlantDetail } from '@/modules/plants/api/plantsApi';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
 import { formatDateTime, resolveToneFromStatus } from '@/modules/plants/components/detail/plantDetailViewModel';
@@ -23,19 +24,20 @@ export function PlantDetailHeader({
   onOpenHistory,
   onOpenCare,
 }: PlantDetailHeaderProps) {
+  const { t } = useI18n();
   const statusTone = resolveToneFromStatus(plant.plantStatusName, plant.isActive);
-  const updatedLabel = formatDateTime(plant.updatedAt ?? plant.createdAt) ?? 'Unknown';
+  const updatedLabel = formatDateTime(plant.updatedAt ?? plant.createdAt) ?? t('records.unknown');
 
   return (
     <section className="panel-card plant-detail-v3__header">
       <div className="plant-detail-v3__breadcrumb-row">
         <button className="secondary-button" type="button" onClick={onBack}>
           <ArrowLeft size={16} />
-          <span>Back to list</span>
+          <span>{t('plantDetail.backToList')}</span>
         </button>
 
         <nav aria-label="Breadcrumb" className="plant-detail-v3__breadcrumbs">
-          <button type="button" onClick={onBack}>Plants</button>
+          <button type="button" onClick={onBack}>{t('plantDetail.breadcrumbRoot')}</button>
           <ChevronRight size={14} />
           <span>{plant.name}</span>
         </nav>
@@ -50,30 +52,30 @@ export function PlantDetailHeader({
           ) : null}
 
           <div className="plant-detail-v3__hero-copy">
-            <div className="plant-detail-v3__eyebrow">Plant detail workspace</div>
+            <div className="plant-detail-v3__eyebrow">{t('plantDetail.workspaceEyebrow')}</div>
             <div className="plant-detail-v3__title-row">
               <div>
                 <h1>{plant.name}</h1>
-                <p>{plant.code} · {plant.installationName ?? 'No installation assigned'}</p>
+                <p>{plant.code} · {plant.installationName ?? t('plantDetail.noInstallationAssigned')}</p>
               </div>
               <div className="plant-detail-v3__badges">
-                <StatusBadge label={plant.plantTypeName ?? 'Unspecified type'} variant="info" />
-                <StatusBadge label={plant.plantStatusName ?? 'Unknown status'} variant={statusTone} />
-                <StatusBadge label={plant.isActive ? 'Active' : 'Inactive'} variant={plant.isActive ? 'success' : 'neutral'} />
+                <StatusBadge label={plant.plantTypeName ?? t('plantDetail.unspecifiedType')} variant="info" />
+                <StatusBadge label={plant.plantStatusName ?? t('plantDetail.unknownStatus')} variant={statusTone} />
+                <StatusBadge label={plant.isActive ? t('records.active') : t('records.inactive')} variant={plant.isActive ? 'success' : 'neutral'} />
               </div>
             </div>
 
             <div className="plant-detail-v3__meta-strip">
               <div>
-                <span>Installation</span>
-                <strong>{plant.installationName ?? plant.installationCode ?? 'Unassigned'}</strong>
+                <span>{t('plantDetail.installation')}</span>
+                <strong>{plant.installationName ?? plant.installationCode ?? t('records.unassigned')}</strong>
               </div>
               <div>
-                <span>Client</span>
-                <strong>{plant.clientName ?? plant.clientCode ?? 'Unknown client'}</strong>
+                <span>{t('plantDetail.client')}</span>
+                <strong>{plant.clientName ?? plant.clientCode ?? t('plantDetail.unknownClient')}</strong>
               </div>
               <div>
-                <span>Updated</span>
+                <span>{t('plantDetail.updated')}</span>
                 <strong>{updatedLabel}</strong>
               </div>
             </div>
@@ -83,27 +85,27 @@ export function PlantDetailHeader({
         <div className="plant-detail-v3__header-actions">
           <button className="secondary-button" disabled title="Edit plant UI is the next step." type="button">
             <Pencil size={16} />
-            <span>Edit plant</span>
+            <span>{t('plantDetail.editPlant')}</span>
           </button>
           <button className="secondary-button" type="button" onClick={onOpenPhotos}>
             <ImagePlus size={16} />
-            <span>Upload photo</span>
+            <span>{t('plantDetail.uploadPhoto')}</span>
           </button>
           <button className="secondary-button" type="button" onClick={onOpenHistory}>
             <CalendarPlus size={16} />
-            <span>Add event</span>
+            <span>{t('plantDetail.addEvent')}</span>
           </button>
           <button className="secondary-button" type="button" onClick={onOpenCare}>
             <SlidersHorizontal size={16} />
-            <span>Add threshold</span>
+            <span>{t('plantDetail.addThreshold')}</span>
           </button>
           <button className="secondary-button" type="button" onClick={onViewInstallation}>
             <MapPinned size={16} />
-            <span>View installation</span>
+            <span>{t('plantDetail.viewInstallation')}</span>
           </button>
           <button className="ghost-button" disabled title="Activate/deactivate hook pending frontend mutation." type="button">
             <ToggleLeft size={16} />
-            <span>{plant.isActive ? 'Deactivate' : 'Activate'}</span>
+            <span>{plant.isActive ? t('plantDetail.deactivate') : t('plantDetail.activate')}</span>
           </button>
         </div>
       </div>

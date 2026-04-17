@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import { sunExposureOptions } from '@/modules/plants/helpers/sunExposure';
 import type { PlantDraft } from '@/modules/plants/types/plant.types';
 
@@ -12,14 +13,6 @@ interface PlantParametersStepProps {
   onFertilizationSeasonsChange: (value: string[]) => void;
 }
 
-const months = ['Gen', 'Feb', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Des'];
-const seasons = [
-  { id: 'winter', label: 'Hivern' },
-  { id: 'spring', label: 'Primavera' },
-  { id: 'summer', label: 'Estiu' },
-  { id: 'autumn', label: 'Tardor' },
-];
-
 export function PlantParametersStep({
   draft,
   floweringMonths,
@@ -28,6 +21,28 @@ export function PlantParametersStep({
   onFloweringMonthsChange,
   onFertilizationSeasonsChange,
 }: PlantParametersStepProps) {
+  const { t } = useI18n();
+  const months = [
+    t('plantCreate.monthJan'),
+    t('plantCreate.monthFeb'),
+    t('plantCreate.monthMar'),
+    t('plantCreate.monthApr'),
+    t('plantCreate.monthMay'),
+    t('plantCreate.monthJun'),
+    t('plantCreate.monthJul'),
+    t('plantCreate.monthAug'),
+    t('plantCreate.monthSep'),
+    t('plantCreate.monthOct'),
+    t('plantCreate.monthNov'),
+    t('plantCreate.monthDec'),
+  ];
+  const seasons = [
+    { id: 'winter', label: t('plantCreate.seasonWinter') },
+    { id: 'spring', label: t('plantCreate.seasonSpring') },
+    { id: 'summer', label: t('plantCreate.seasonSummer') },
+    { id: 'autumn', label: t('plantCreate.seasonAutumn') },
+  ];
+
   function handleLightExposureChange(value: string) {
     const selectedOption = sunExposureOptions.find((option) => option.value === value);
     onChange('lightExposureCode', value);
@@ -37,55 +52,55 @@ export function PlantParametersStep({
   return (
     <section className="plant-create-v2__section">
       <div className="plant-create-v2__section-head">
-        <h4>Necessitats i parametres</h4>
-        <p>Aquests rangs serviran despres per comparar les lectures dels dispositius.</p>
+        <h4>{t('plantCreate.parametersTitle')}</h4>
+        <p>{t('plantCreate.parametersSubtitle')}</p>
       </div>
 
       <div className="plant-create-v2__parameters-layout">
         <div className="plant-create-v2__parameters-main">
           <div className="plant-create-v2__ranges">
             <RangeField
-              label="Humitat sol"
+              label={t('plantCreate.soilMoisture')}
               minValue={draft.soilMoistureMin}
               maxValue={draft.soilMoistureMax}
-              minPlaceholder="Min %"
-              maxPlaceholder="Max %"
+              minPlaceholder={t('plantCreate.minPercent')}
+              maxPlaceholder={t('plantCreate.maxPercent')}
               onMinChange={(value) => onChange('soilMoistureMin', value)}
               onMaxChange={(value) => onChange('soilMoistureMax', value)}
             />
             <RangeField
-              label="Humitat aire"
+              label={t('plantCreate.airHumidity')}
               minValue={draft.airHumidityMin}
               maxValue={draft.airHumidityMax}
-              minPlaceholder="Min %"
-              maxPlaceholder="Max %"
+              minPlaceholder={t('plantCreate.minPercent')}
+              maxPlaceholder={t('plantCreate.maxPercent')}
               onMinChange={(value) => onChange('airHumidityMin', value)}
               onMaxChange={(value) => onChange('airHumidityMax', value)}
             />
             <RangeField
-              label="Temperatura"
+              label={t('plantCreate.temperature')}
               minValue={draft.temperatureMin}
               maxValue={draft.temperatureMax}
-              minPlaceholder="Min C"
-              maxPlaceholder="Max C"
+              minPlaceholder={t('plantCreate.minCelsius')}
+              maxPlaceholder={t('plantCreate.maxCelsius')}
               onMinChange={(value) => onChange('temperatureMin', value)}
               onMaxChange={(value) => onChange('temperatureMax', value)}
             />
             <RangeField
-              label="Llum"
+              label={t('plantCreate.light')}
               minValue={draft.lightMin}
               maxValue={draft.lightMax}
-              minPlaceholder="Min lux"
-              maxPlaceholder="Max lux"
+              minPlaceholder={t('plantCreate.minLux')}
+              maxPlaceholder={t('plantCreate.maxLux')}
               onMinChange={(value) => onChange('lightMin', value)}
               onMaxChange={(value) => onChange('lightMax', value)}
             />
           </div>
 
           <div className="plant-create-v2__form-grid plant-create-v2__form-grid--two">
-            <Field label="Exposicio lum">
+            <Field label={t('plantCreate.lightExposure')}>
               <select value={draft.lightExposureCode} onChange={(event) => handleLightExposureChange(event.target.value)}>
-                <option value="">Seleccionar exposicio</option>
+                <option value="">{t('plantCreate.selectExposure')}</option>
                 {sunExposureOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -93,18 +108,18 @@ export function PlantParametersStep({
                 ))}
               </select>
             </Field>
-            <Field label="Soil type">
-              <input value={draft.soilType} onChange={(event) => onChange('soilType', event.target.value)} placeholder="Organic, drenat, acid..." />
+            <Field label={t('plantDetail.soilType')}>
+              <input value={draft.soilType} onChange={(event) => onChange('soilType', event.target.value)} placeholder={t('plantCreate.soilTypePlaceholder')} />
             </Field>
-            <Field label="Fertilizer">
-              <input value={draft.fertilizer} onChange={(event) => onChange('fertilizer', event.target.value)} placeholder="NPK, organic, liquid..." />
+            <Field label={t('plantCreate.fertilizer')}>
+              <input value={draft.fertilizer} onChange={(event) => onChange('fertilizer', event.target.value)} placeholder={t('plantCreate.fertilizerPlaceholder')} />
             </Field>
           </div>
         </div>
 
         <div className="plant-create-v2__parameters-side">
           <div className="plant-create-v2__selector-card">
-            <strong>Floracio</strong>
+            <strong>{t('plantCreate.flowering')}</strong>
             <div className="plant-create-v2__chip-grid plant-create-v2__chip-grid--months">
               {months.map((month, index) => {
                 const active = floweringMonths.includes(index);
@@ -123,7 +138,7 @@ export function PlantParametersStep({
           </div>
 
           <div className="plant-create-v2__selector-card">
-            <strong>Epoca fertilitzacio</strong>
+            <strong>{t('plantCreate.fertilizationSeason')}</strong>
             <div className="plant-create-v2__chip-grid plant-create-v2__chip-grid--seasons">
               {seasons.map((season) => {
                 const active = fertilizationSeasons.includes(season.id);

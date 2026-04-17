@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import { useActiveClient } from '@/modules/clients/hooks/ActiveClientContext';
 import { installationsApi, type InstallationListItem, type InstallationSearchFiltersInput, type InstallationSortField } from '@/modules/installations/api/installationsApi';
 import { EmptyState } from '@/shared/components/EmptyState';
@@ -73,17 +74,10 @@ function countActiveFilters(filters: InstallationFiltersDraft) {
   ].filter(Boolean).length;
 }
 
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return 'Never';
-  }
-
-  return new Date(value).toLocaleString();
-}
-
 export function InstallationsPage() {
   const navigate = useNavigate();
   const { clientId: activeClientId } = useActiveClient();
+  const { locale, t } = useI18n();
 
   const [isFilterBarOpen, setIsFilterBarOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState<InstallationFiltersDraft>(defaultFilters);
@@ -106,57 +100,73 @@ export function InstallationsPage() {
     enabled: Boolean(activeClientId),
   });
 
+  const formatDateTime = (value: string | null) => {
+    if (!value) {
+      return t('records.never');
+    }
+
+    return new Intl.DateTimeFormat(locale, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(value));
+  };
+
   const columns = useMemo<DataTableColumn<InstallationListItem>[]>(() => ([
     {
       id: 'code',
-      label: 'Code',
+      label: t('installationsPage.code'),
       sortable: true,
       render: (installation) => <span className="records-table__primary">{installation.code}</span>,
     },
     {
       id: 'name',
-      label: 'Name',
+      label: t('installationsPage.name'),
       sortable: true,
       render: (installation) => (
         <div className="records-table__stack">
           <span className="records-table__primary">{installation.name}</span>
-          <span>{installation.description ?? 'No description'}</span>
+          <span>{installation.description ?? t('installationsPage.noDescription')}</span>
         </div>
       ),
     },
     {
       id: 'location',
-      label: 'Location',
+      label: t('installationsPage.location'),
       sortable: true,
-      render: (installation) => installation.location ?? 'Unspecified',
+      render: (installation) => installation.location ?? t('installationsPage.unspecified'),
     },
     {
       id: 'plantsCount',
-      label: 'Plants',
+      label: t('installationsPage.plants'),
       sortable: true,
       align: 'center',
       render: (installation) => String(installation.plantsCount),
     },
     {
       id: 'devicesCount',
-      label: 'Devices',
+      label: t('installationsPage.devices'),
       sortable: true,
       align: 'center',
       render: (installation) => String(installation.devicesCount),
     },
     {
       id: 'isActive',
-      label: 'Status',
+      label: t('installationsPage.status'),
       sortable: true,
-      render: (installation) => <StatusBadge label={installation.isActive ? 'Active' : 'Inactive'} variant={installation.isActive ? 'success' : 'neutral'} />,
+      render: (installation) => (
+        <StatusBadge
+          label={installation.isActive ? t('records.active') : t('records.inactive')}
+          variant={installation.isActive ? 'success' : 'neutral'}
+        />
+      ),
     },
     {
       id: 'updatedAt',
-      label: 'Updated',
+      label: t('installationsPage.updated'),
       sortable: true,
       render: (installation) => formatDateTime(installation.updatedAt ?? installation.createdAt),
     },
-  ]), []);
+  ]), [locale, t]);
 
   function handleApplyFilters() {
     setAppliedFilters(draftFilters);
@@ -184,12 +194,12 @@ export function InstallationsPage() {
   return (
     <div className="module-page records-page">
       <RecordsPageHeader
-        title="Installations"
-        subtitle="Operational locations with counts for plants and devices."
+        title={t('installationsPage.title')}
+        subtitle={t('installationsPage.subtitle')}
         actions={(
           <button className="primary-button" type="button" onClick={() => navigate('/installations/new')}>
             <Plus size={16} />
-            <span>New</span>
+            <span>{t('records.new')}</span>
           </button>
         )}
       />
@@ -200,43 +210,43 @@ export function InstallationsPage() {
         onToggle={() => setIsFilterBarOpen((current) => !current)}
         actions={(
           <>
-            <button className="secondary-button" type="button" onClick={handleClearFilters}>Clean all</button>
-            <button className="primary-button" type="button" onClick={handleApplyFilters}>Apply</button>
+            <button className="secondary-button" type="button" onClick={handleClearFilters}>{t('records.clearAll')}</button>
+            <button className="primary-button" type="button" onClick={handleApplyFilters}>{t('records.apply')}</button>
           </>
         )}
       >
         <div className="records-filters-grid">
           <label className="records-field">
-            <span>Installation code</span>
+            <span>{t('installationsPage.installationCode')}</span>
             <input type="text" value={draftFilters.code} onChange={(event) => setDraftFilters((current) => ({ ...current, code: event.target.value }))} />
           </label>
 
           <label className="records-field">
-            <span>Name</span>
+            <span>{t('installationsPage.name')}</span>
             <input type="text" value={draftFilters.name} onChange={(event) => setDraftFilters((current) => ({ ...current, name: event.target.value }))} />
           </label>
 
           <label className="records-field">
-            <span>Location</span>
+            <span>{t('installationsPage.location')}</span>
             <input type="text" value={draftFilters.location} onChange={(event) => setDraftFilters((current) => ({ ...current, location: event.target.value }))} />
           </label>
 
           <label className="records-field">
-            <span>Active</span>
+            <span>{t('records.active')}</span>
             <select value={draftFilters.isActive} onChange={(event) => setDraftFilters((current) => ({ ...current, isActive: event.target.value as InstallationFiltersDraft['isActive'] }))}>
-              <option value="all">All</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
+              <option value="all">{t('records.all')}</option>
+              <option value="true">{t('records.active')}</option>
+              <option value="false">{t('records.inactive')}</option>
             </select>
           </label>
 
           <label className="records-field">
-            <span>Created from</span>
+            <span>{t('records.createdFrom')}</span>
             <input type="date" value={draftFilters.createdAtFrom} onChange={(event) => setDraftFilters((current) => ({ ...current, createdAtFrom: event.target.value }))} />
           </label>
 
           <label className="records-field">
-            <span>Created to</span>
+            <span>{t('records.createdTo')}</span>
             <input type="date" value={draftFilters.createdAtTo} onChange={(event) => setDraftFilters((current) => ({ ...current, createdAtTo: event.target.value }))} />
           </label>
         </div>
@@ -245,14 +255,14 @@ export function InstallationsPage() {
       <section className="panel-card records-card">
         <div className="records-card__toolbar">
           <div className="records-card__summary">
-            <strong>Installation catalog</strong>
-            <p>Current operational context with location and inventory counts.</p>
+            <strong>{t('installationsPage.catalogTitle')}</strong>
+            <p>{t('installationsPage.catalogSubtitle')}</p>
           </div>
         </div>
 
         <DataTable
           columns={columns}
-          emptyState={<EmptyState title="No installations found" description="Try adjusting the filters or clear them to broaden the search." />}
+          emptyState={<EmptyState title={t('installationsPage.emptyTitle')} description={t('installationsPage.emptyDescription')} />}
           getRowKey={(installation) => installation.id}
           isLoading={installationsQuery.isLoading}
           items={installationsQuery.data?.items ?? []}

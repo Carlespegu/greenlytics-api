@@ -1,6 +1,7 @@
 import { CheckCircle2, LoaderCircle } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import { isApiError } from '@/shared/api/errors';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
 import type { BackendValidationError } from '@/types/api';
@@ -55,20 +56,6 @@ function mapErrorsByField(errors: BackendValidationError[]) {
   }, {});
 }
 
-function getSteps(mode: CreateMode) {
-  return mode === 'manual'
-    ? [
-        { id: 1, label: 'Dades obligatories' },
-        { id: 2, label: 'Fitxa botanica' },
-        { id: 3, label: 'Parametres i validacio' },
-      ]
-    : [
-        { id: 1, label: 'Fotos i IA' },
-        { id: 2, label: 'Revisio proposta' },
-        { id: 3, label: 'Parametres i validacio' },
-      ];
-}
-
 function resolveHealthVariant(healthStatus: string | null) {
   switch ((healthStatus ?? '').toLowerCase()) {
     case 'healthy':
@@ -94,6 +81,7 @@ export function PlantCreateWizard({
   onSubmit,
   open,
 }: Omit<CreatePlantModalProps, 'open'> & { open: boolean }) {
+  const { t } = useI18n();
   const [mode, setMode] = useState<CreateMode>('ai');
   const [step, setStep] = useState(1);
   const [maxReachedStep, setMaxReachedStep] = useState(1);
@@ -109,7 +97,22 @@ export function PlantCreateWizard({
 
   const aiSimulation = usePlantAiSimulation(clientId);
   const { phase: aiPhase, proposal: aiProposal, isRunning: isAiRunning, reset: resetAiSimulation, run: runAiSimulation } = aiSimulation;
-  const steps = useMemo(() => getSteps(mode), [mode]);
+  const steps = useMemo(
+    () => (
+      mode === 'manual'
+        ? [
+            { id: 1, label: t('plantCreate.requiredDataStep') },
+            { id: 2, label: t('plantCreate.botanicalRecordStep') },
+            { id: 3, label: t('plantCreate.parametersValidationStep') },
+          ]
+        : [
+            { id: 1, label: t('plantCreate.photosAndAiStep') },
+            { id: 2, label: t('plantCreate.reviewProposalStep') },
+            { id: 3, label: t('plantCreate.parametersValidationStep') },
+          ]
+    ),
+    [mode, t],
+  );
   const uploadedCount = useMemo(() => Object.values(photosBySlot).filter(Boolean).length, [photosBySlot]);
   const canContinueFromManualStepOne = draft.code.trim().length > 0 && draft.name.trim().length > 0;
   const canContinueFromAiStepOne = uploadedCount === 3 && aiPhase === 'completed';
@@ -187,12 +190,12 @@ export function PlantCreateWizard({
 
     const file = files[0];
     if (!acceptedMimeTypes.has(file.type)) {
-      setFieldErrors((current) => ({ ...current, photos: 'Only JPG, PNG and WEBP photos are allowed.' }));
+      setFieldErrors((current) => ({ ...current, photos: t('plantCreate.invalidPhotoType') }));
       return;
     }
 
     if (file.size > maxPhotoSizeBytes) {
-      setFieldErrors((current) => ({ ...current, photos: 'Each photo must be 5 MB or smaller.' }));
+      setFieldErrors((current) => ({ ...current, photos: t('plantCreate.invalidPhotoSize') }));
       return;
     }
 
@@ -238,7 +241,7 @@ export function PlantCreateWizard({
 
   async function handleSimulateAi() {
     if (uploadedCount !== 3) {
-      setFieldErrors((current) => ({ ...current, photos: 'Upload the 3 required photos before running the AI simulation.' }));
+      setFieldErrors((current) => ({ ...current, photos: t('plantCreate.uploadThreePhotosBeforeAi') }));
       return;
     }
 
@@ -256,7 +259,7 @@ export function PlantCreateWizard({
       } else if (error instanceof Error) {
         setSubmitMessage(error.message);
       } else {
-        setSubmitMessage('No hem pogut completar l analisi amb IA. Torna-ho a provar.');
+        setSubmitMessage(t('plantCreate.aiAnalysisError'));
       }
     }
   }
@@ -266,29 +269,29 @@ export function PlantCreateWizard({
 
     if (step === 1 && mode === 'manual') {
       if (!draft.code.trim()) {
-        errors.code = 'Code is required.';
+        errors.code = t('plantCreate.codeRequired');
       }
 
       if (!draft.name.trim()) {
-        errors.name = 'Name is required.';
+        errors.name = t('plantCreate.nameRequired');
       }
     }
 
     if (step === 1 && mode === 'ai') {
       if (uploadedCount !== 3) {
-        errors.photos = 'Upload the 3 required photos before continuing.';
+        errors.photos = t('plantCreate.uploadThreePhotosBeforeContinue');
       } else if (aiPhase !== 'completed') {
-        errors.photos = 'Run AI analysis before continuing.';
+        errors.photos = t('plantCreate.runAiBeforeContinue');
       }
     }
 
     if (step === 2 && mode === 'ai') {
       if (!draft.code.trim()) {
-        errors.code = 'Code is required.';
+        errors.code = t('plantCreate.codeRequired');
       }
 
       if (!draft.name.trim()) {
-        errors.name = 'Name is required.';
+        errors.name = t('plantCreate.nameRequired');
       }
     }
 
@@ -299,30 +302,30 @@ export function PlantCreateWizard({
   async function handleFinalSave() {
     const errors: Record<string, string> = {};
     if (!draft.code.trim()) {
-      errors.code = 'Code is required.';
+      errors.code = t('plantCreate.codeRequired');
     }
 
     if (!draft.name.trim()) {
-      errors.name = 'Name is required.';
+      errors.name = t('plantCreate.nameRequired');
     }
 
     if (!draft.installationId.trim()) {
-      errors.installationId = 'Installation is required.';
+      errors.installationId = t('plantCreate.installationRequired');
     }
 
     if (mode === 'ai' && uploadedCount !== 3) {
-      errors.photos = 'The 3 photo views are required for the current backend create flow.';
+      errors.photos = t('plantCreate.photosRequiredForBackend');
     }
 
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
-      setSubmitMessage('Completa els camps obligatoris abans de guardar la planta.');
+      setSubmitMessage(t('plantCreate.completeRequiredFields'));
       setStep(uploadedCount !== 3 && mode === 'ai' ? 1 : 2);
       return;
     }
 
     setIsSubmitting(true);
-    setSubmitMessage('Saving plant with the current backend create endpoint...');
+    setSubmitMessage(t('plantCreate.savingPlant'));
 
     try {
       const nextResult = await onSubmit({
@@ -347,7 +350,7 @@ export function PlantCreateWizard({
         setFieldErrors(mapErrorsByField(error.validationErrors));
         setSubmitMessage(error.message);
       } else {
-        setSubmitMessage('The plant could not be created. Please try again.');
+        setSubmitMessage(t('plantCreate.saveFailed'));
       }
     } finally {
       setIsSubmitting(false);
@@ -383,40 +386,40 @@ export function PlantCreateWizard({
             <div className="create-plant-result-card__header">
               <CheckCircle2 color="#4ade80" size={22} />
               <div>
-                <strong>{draft.name || result.analysis.species || 'Plant created'}</strong>
-                <span>La planta s'ha guardat correctament amb el flux actual del backend.</span>
+                <strong>{draft.name || result.analysis.species || t('plantCreate.createdTitleFallback')}</strong>
+                <span>{t('plantCreate.createdSubtitle')}</span>
               </div>
             </div>
 
             <div className="create-plant-result-card__stats">
               <div>
                 <strong>{result.plantId}</strong>
-                <span>Plant ID</span>
+                <span>{t('plantCreate.plantId')}</span>
               </div>
               <div>
                 <strong>{result.photos.length}</strong>
-                <span>Fotos persistides</span>
+                <span>{t('plantCreate.persistedPhotos')}</span>
               </div>
               <div>
                 <strong>{result.analysis.confidence !== null ? `${Math.round(result.analysis.confidence * 100)}%` : 'N/A'}</strong>
-                <span>Confidence backend</span>
+                <span>{t('plantCreate.backendConfidence')}</span>
               </div>
             </div>
 
             <div className="create-plant-review-card">
               <div className="create-plant-review-card__header">
-                <strong>Resum analisi backend</strong>
-                <StatusBadge label={result.analysis.healthStatus ?? 'Unknown'} variant={resolveHealthVariant(result.analysis.healthStatus)} />
+                <strong>{t('plantCreate.analysisSummary')}</strong>
+                <StatusBadge label={result.analysis.healthStatus ?? t('plantCreate.unknown')} variant={resolveHealthVariant(result.analysis.healthStatus)} />
               </div>
-              <span>{result.analysis.species ?? 'Sense especie retornada'}</span>
-              <p className="create-plant-result-card__insights">{result.analysis.insights ?? 'El backend no ha retornat insights addicionals.'}</p>
+              <span>{result.analysis.species ?? t('plantCreate.noSpeciesReturned')}</span>
+              <p className="create-plant-result-card__insights">{result.analysis.insights ?? t('plantCreate.noAdditionalInsights')}</p>
             </div>
           </article>
         </section>
 
         <div className="plant-create-v2__actions">
-          <button className="secondary-button" type="button" onClick={onClose}>Tornar al llistat</button>
-          <a className="primary-button" href={`/plants/${result.plantId}`}>Obrir planta</a>
+          <button className="secondary-button" type="button" onClick={onClose}>{t('plantCreate.backToList')}</button>
+          <a className="primary-button" href={`/plants/${result.plantId}`}>{t('plantCreate.openPlant')}</a>
         </div>
       </div>
     );
@@ -438,7 +441,7 @@ export function PlantCreateWizard({
               onClick={() => handleStepClick(item.id)}
               className={`plant-create-v2__step-card${active ? ' plant-create-v2__step-card--active' : ''}${done ? ' plant-create-v2__step-card--done' : ''}`}
             >
-              <span>Step {item.id}</span>
+              <span>{t('plantCreate.step', { count: item.id })}</span>
               <strong>{item.label}</strong>
             </button>
           );
@@ -463,8 +466,8 @@ export function PlantCreateWizard({
               catalogsLoading={catalogsLoading}
               mode={mode}
               showRequiredOnly
-              title="Dades obligatories"
-              subtitle="En aquest mode nomes cal comencar per Code i Nom."
+              title={t('plantCreate.requiredDataTitle')}
+              subtitle={t('plantCreate.requiredDataSubtitle')}
               onChange={setDraftField}
             />
           ) : null}
@@ -481,8 +484,8 @@ export function PlantCreateWizard({
                 installationsLoading={installationsLoading}
                 catalogsLoading={catalogsLoading}
                 mode={mode}
-                title="Dades comunes"
-                subtitle="Completa la fitxa botanica abans de passar a la validacio final."
+                title={t('plantCreate.commonDataTitle')}
+                subtitle={t('plantCreate.commonDataSubtitle')}
                 onChange={setDraftField}
               />
               <PlantPhotoUploadStep
@@ -537,7 +540,7 @@ export function PlantCreateWizard({
       </div>
 
       <div className="plant-create-v2__actions">
-        <button className="ghost-button" type="button" onClick={onClose} disabled={isSubmitting || isAiRunning}>Cancel·lar</button>
+        <button className="ghost-button" type="button" onClick={onClose} disabled={isSubmitting || isAiRunning}>{t('plantCreate.cancel')}</button>
         {step > 1 ? (
           <button
             className="secondary-button"
@@ -545,7 +548,7 @@ export function PlantCreateWizard({
             onClick={() => setStep((current) => Math.max(1, current - 1))}
             disabled={isSubmitting || isAiRunning}
           >
-            Enrere
+            {t('plantCreate.back')}
           </button>
         ) : null}
         {step < steps.length ? (
@@ -559,7 +562,7 @@ export function PlantCreateWizard({
               (mode === 'manual' ? step === 1 && !canContinueFromManualStepOne : step === 1 && !canContinueFromAiStepOne)
             }
           >
-            Continuar
+            {t('plantCreate.continue')}
           </button>
         ) : (
           <button
@@ -569,7 +572,7 @@ export function PlantCreateWizard({
             disabled={isSubmitting || isAiRunning || !canSaveToBackend}
           >
             {isSubmitting ? <LoaderCircle className="spin" size={16} /> : null}
-            <span>{isSubmitting ? 'Guardant planta...' : 'Guardar'}</span>
+            <span>{isSubmitting ? t('plantCreate.savingPlantButton') : t('plantCreate.save')}</span>
           </button>
         )}
       </div>

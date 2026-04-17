@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { postSearch } from '@/api/search';
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 import { useActiveClient } from '@/modules/clients/hooks/ActiveClientContext';
 import { plantsApi, type PlantListItem, type PlantSearchFiltersInput, type PlantSortField } from '@/modules/plants/api/plantsApi';
@@ -111,6 +112,7 @@ function readPlantField(plant: PlantListItem, fieldKey: string) {
 
 export function PlantsPage() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const { clientId: activeClientId } = useActiveClient();
 
   const [isFilterBarOpen, setIsFilterBarOpen] = useState(false);
@@ -164,18 +166,28 @@ export function PlantsPage() {
       name: (plant) => (
         <div className="records-table__stack">
           <span className="records-table__primary">{plant.name}</span>
-          <span>{plant.description ?? 'No description'}</span>
+          <span>{plant.description ?? t('plantsPage.noDescription')}</span>
         </div>
       ),
-      description: (plant) => plant.description ?? 'No description',
-      installationName: (plant) => plant.installationName ?? 'Unassigned',
-      plantTypeName: (plant) => plant.plantTypeName ?? 'Unspecified',
-      plantStatusName: (plant) => <StatusBadge label={plant.plantStatusName ?? 'Unknown'} variant={resolveStatusVariant(plant.plantStatusName)} />,
-      isActive: (plant) => <StatusBadge label={plant.isActive ? 'Active' : 'Inactive'} variant={plant.isActive ? 'success' : 'neutral'} />,
+      description: (plant) => plant.description ?? t('plantsPage.noDescription'),
+      installationName: (plant) => plant.installationName ?? t('plantsPage.unassigned'),
+      plantTypeName: (plant) => plant.plantTypeName ?? t('plantsPage.unspecified'),
+      plantStatusName: (plant) => (
+        <StatusBadge
+          label={plant.plantStatusName ?? t('plantsPage.unknown')}
+          variant={resolveStatusVariant(plant.plantStatusName)}
+        />
+      ),
+      isActive: (plant) => (
+        <StatusBadge
+          label={plant.isActive ? t('records.active') : t('records.inactive')}
+          variant={plant.isActive ? 'success' : 'neutral'}
+        />
+      ),
       thresholdsCount: (plant) => String(plant.thresholdsCount),
       eventsCount: (plant) => String(plant.eventsCount),
     }),
-    [],
+    [t],
   );
 
   const [selectedColumnKeys, setSelectedColumnKeys] = useLocalStorageState<string[]>(
@@ -200,13 +212,34 @@ export function PlantsPage() {
     return tableFields.filter((field) => field.defaultVisible).map((field) => field.key);
   }, [selectedColumnKeys, tableFields]);
 
+  const translatePlantFieldLabel = (label: string) => {
+    const normalized = label.trim().toLowerCase();
+    const labelMap: Record<string, string> = {
+      code: t('plantsPage.code'),
+      name: t('plantsPage.name'),
+      description: t('plantsPage.description'),
+      installation: t('plantsPage.installation'),
+      'installation name': t('plantsPage.installation'),
+      'plant status': t('plantsPage.plantStatus'),
+      'plant status name': t('plantsPage.plantStatus'),
+      thresholds: t('plantsPage.thresholds'),
+      'thresholds count': t('plantsPage.thresholds'),
+      events: t('plantsPage.events'),
+      'events count': t('plantsPage.events'),
+      active: t('records.active'),
+      'is active': t('records.active'),
+    };
+
+    return labelMap[normalized] ?? label;
+  };
+
   const columns = useMemo<DataTableColumn<PlantListItem>[]>(() => (
     tableFields
       .filter((field) => effectiveSelectedColumnKeys.includes(field.key))
       .sort((left, right) => effectiveSelectedColumnKeys.indexOf(left.key) - effectiveSelectedColumnKeys.indexOf(right.key))
       .map((field) => ({
         id: field.key,
-        label: field.label,
+        label: translatePlantFieldLabel(field.label),
         sortable: field.sortable && (
           field.key === 'code'
           || field.key === 'name'
@@ -257,12 +290,12 @@ export function PlantsPage() {
   return (
     <div className="module-page records-page">
       <RecordsPageHeader
-        title="Plants"
-        subtitle="Client-scoped plant inventory aligned with the new Plants backend contracts."
+        title={t('plantsPage.title')}
+        subtitle={t('plantsPage.subtitle')}
         actions={(
           <button className="primary-button" type="button" onClick={() => navigate('/plants/new')}>
             <Plus size={16} />
-            <span>New</span>
+            <span>{t('records.new')}</span>
           </button>
         )}
       />
@@ -273,14 +306,14 @@ export function PlantsPage() {
         onToggle={() => setIsFilterBarOpen((current) => !current)}
         actions={(
           <>
-            <button className="secondary-button" type="button" onClick={handleClearFilters}>Clean all</button>
-            <button className="primary-button" type="button" onClick={handleApplyFilters}>Apply</button>
+            <button className="secondary-button" type="button" onClick={handleClearFilters}>{t('records.clearAll')}</button>
+            <button className="primary-button" type="button" onClick={handleApplyFilters}>{t('records.apply')}</button>
           </>
         )}
       >
         <div className="records-filters-grid">
           <label className="records-field">
-            <span>Plant code</span>
+            <span>{t('plantsPage.code')}</span>
             <input
               type="text"
               value={draftFilters.code}
@@ -289,7 +322,7 @@ export function PlantsPage() {
           </label>
 
           <label className="records-field">
-            <span>Name</span>
+            <span>{t('plantsPage.name')}</span>
             <input
               type="text"
               value={draftFilters.name}
@@ -298,7 +331,7 @@ export function PlantsPage() {
           </label>
 
           <label className="records-field">
-            <span>Description</span>
+            <span>{t('plantsPage.description')}</span>
             <input
               type="text"
               value={draftFilters.description}
@@ -307,12 +340,12 @@ export function PlantsPage() {
           </label>
 
           <label className="records-field">
-            <span>Installation</span>
+            <span>{t('plantsPage.installation')}</span>
             <select
               value={draftFilters.installationId}
               onChange={(event) => setDraftFilters((current) => ({ ...current, installationId: event.target.value }))}
             >
-              <option value="">All installations</option>
+              <option value="">{t('plantsPage.allInstallations')}</option>
               {(installationsQuery.data ?? []).map((installation) => (
                 <option key={installation.id} value={installation.id}>
                   {installation.name ?? installation.code ?? installation.id}
@@ -322,19 +355,19 @@ export function PlantsPage() {
           </label>
 
           <label className="records-field">
-            <span>Active</span>
+            <span>{t('records.active')}</span>
             <select
               value={draftFilters.isActive}
               onChange={(event) => setDraftFilters((current) => ({ ...current, isActive: event.target.value as PlantFiltersDraft['isActive'] }))}
             >
-              <option value="all">All</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
+              <option value="all">{t('records.all')}</option>
+              <option value="true">{t('records.active')}</option>
+              <option value="false">{t('records.inactive')}</option>
             </select>
           </label>
 
           <label className="records-field">
-            <span>Created from</span>
+            <span>{t('records.createdFrom')}</span>
             <input
               type="date"
               value={draftFilters.createdAtFrom}
@@ -343,7 +376,7 @@ export function PlantsPage() {
           </label>
 
           <label className="records-field">
-            <span>Created to</span>
+            <span>{t('records.createdTo')}</span>
             <input
               type="date"
               value={draftFilters.createdAtTo}
@@ -356,8 +389,8 @@ export function PlantsPage() {
       <section className="panel-card records-card">
         <div className="records-card__toolbar">
           <div className="records-card__summary">
-            <strong>Plants catalog</strong>
-            <p>Sortable rows, client-aware filters and current plant operational context.</p>
+            <strong>{t('plantsPage.catalogTitle')}</strong>
+            <p>{t('plantsPage.catalogSubtitle')}</p>
           </div>
 
           <button
@@ -367,13 +400,13 @@ export function PlantsPage() {
             onClick={() => setIsColumnModalOpen(true)}
           >
             <Columns3 size={16} />
-            <span>Columns</span>
+            <span>{t('records.columns')}</span>
           </button>
         </div>
 
         <DataTable
           columns={columns}
-          emptyState={<EmptyState title="No plants found" description="Try adjusting the filters or clear them to broaden the search." />}
+          emptyState={<EmptyState title={t('plantsPage.emptyTitle')} description={t('plantsPage.emptyDescription')} />}
           getRowKey={(plant) => plant.id}
           isLoading={plantsQuery.isLoading}
           items={plantsQuery.data?.items ?? []}
@@ -398,7 +431,7 @@ export function PlantsPage() {
       </section>
 
       <ColumnSelectorModal
-        fields={tableFields.map((field) => ({ key: field.key, label: field.label }))}
+        fields={tableFields.map((field) => ({ key: field.key, label: translatePlantFieldLabel(field.label) }))}
         open={isColumnModalOpen}
         selectedKeys={effectiveSelectedColumnKeys}
         onClose={(nextSelectedKeys) => {

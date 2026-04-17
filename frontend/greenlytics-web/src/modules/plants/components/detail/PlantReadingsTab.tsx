@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Activity, CalendarRange, RadioTower } from 'lucide-react';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { PlantDetail } from '@/modules/plants/api/plantsApi';
 import type { PlantReadingsMetric } from '@/modules/plants/components/detail/plantDetailViewModel';
 import { EmptyState } from '@/shared/components/EmptyState';
@@ -19,7 +20,12 @@ const rangeOptions = [
 ] as const;
 
 export function PlantReadingsTab({ plant, metrics }: PlantReadingsTabProps) {
+  const { locale, t } = useI18n();
   const [range, setRange] = useState<(typeof rangeOptions)[number]['id']>('7d');
+
+  const formatDateTime = (value: string) => (
+    new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+  );
 
   return (
     <div className="plant-detail-v3__tab-stack">
@@ -28,7 +34,7 @@ export function PlantReadingsTab({ plant, metrics }: PlantReadingsTabProps) {
           <article className="panel-card plant-detail-v3__reading-card" key={metric.id}>
             <div className="plant-detail-v3__reading-card-header">
               <span>{metric.label}</span>
-              <StatusBadge label={metric.tone === 'neutral' ? 'Pending' : 'Tracked'} variant={metric.tone} />
+              <StatusBadge label={metric.tone === 'neutral' ? t('plantDetail.pending') : t('plantDetail.tracked')} variant={metric.tone} />
             </div>
             <strong>{metric.value}</strong>
             <p>{metric.hint}</p>
@@ -38,8 +44,8 @@ export function PlantReadingsTab({ plant, metrics }: PlantReadingsTabProps) {
 
       <section className="panel-card plant-detail-v3__section-card">
         <SectionHeading
-          title="Charts and trends"
-          subtitle="The layout is ready for time-series charts once the plant detail view consumes readings timeseries."
+          title={t('plantDetail.chartsAndTrends')}
+          subtitle={t('plantDetail.chartsAndTrendsSubtitle')}
           action={(
             <div className="plant-detail-v3__range-selector">
               {rangeOptions.map((item) => (
@@ -58,59 +64,56 @@ export function PlantReadingsTab({ plant, metrics }: PlantReadingsTabProps) {
         <div className="plant-detail-v3__chart-placeholder">
           <div>
             <CalendarRange size={18} />
-            <strong>{range} trend window</strong>
+            <strong>{t('plantDetail.trendWindow', { range })}</strong>
           </div>
-          <p>
-            Current backend detail exposes only the latest reading summary for the plant. Connect this section next to
-            readings search and timeseries endpoints to render real charts.
-          </p>
+          <p>{t('plantDetail.chartsPlaceholder')}</p>
         </div>
       </section>
 
       <section className="plant-detail-v3__tab-columns">
         <section className="panel-card plant-detail-v3__section-card">
           <SectionHeading
-            title="Recent readings"
-            subtitle="Latest telemetry available today in plant context."
+            title={t('plantDetail.recentReadings')}
+            subtitle={t('plantDetail.recentReadingsSubtitle')}
           />
           {plant.latestReading ? (
             <div className="plant-detail-v3__simple-table">
               <div className="plant-detail-v3__simple-row">
-                <span>Reading timestamp</span>
-                <strong>{new Intl.DateTimeFormat('ca-ES', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(plant.latestReading.readAt))}</strong>
+                <span>{t('plantDetail.readingTimestamp')}</span>
+                <strong>{formatDateTime(plant.latestReading.readAt)}</strong>
               </div>
               <div className="plant-detail-v3__simple-row">
-                <span>Device</span>
+                <span>{t('plantDetail.device')}</span>
                 <strong>{plant.latestReading.deviceCode}</strong>
               </div>
               <div className="plant-detail-v3__simple-row">
-                <span>Source</span>
-                <strong>{plant.latestReading.source ?? 'Not provided'}</strong>
+                <span>{t('plantDetail.source')}</span>
+                <strong>{plant.latestReading.source ?? t('plantDetail.notProvided')}</strong>
               </div>
             </div>
           ) : (
-            <EmptyState title="No recent readings" description="This plant detail still has no telemetry summary attached." />
+            <EmptyState title={t('plantDetail.noRecentReadings')} description={t('plantDetail.noRecentReadingsDescription')} />
           )}
         </section>
 
         <section className="panel-card plant-detail-v3__section-card">
           <SectionHeading
-            title="Context"
-            subtitle="Operational bridge between the plant and installation/device context."
+            title={t('plantDetail.context')}
+            subtitle={t('plantDetail.contextSubtitle')}
           />
           <div className="plant-detail-v3__context-card-list">
             <article className="plant-detail-v3__context-card">
               <RadioTower size={18} />
               <div>
-                <strong>Device name</strong>
-                <p>{plant.latestReading?.deviceCode ?? 'No device associated through plant detail yet.'}</p>
+                <strong>{t('plantDetail.deviceName')}</strong>
+                <p>{plant.latestReading?.deviceCode ?? t('plantDetail.noDeviceContext')}</p>
               </div>
             </article>
             <article className="plant-detail-v3__context-card">
               <Activity size={18} />
               <div>
-                <strong>Last seen</strong>
-                <p>{plant.latestReading ? new Intl.DateTimeFormat('ca-ES', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(plant.latestReading.readAt)) : 'Pending installation/device context.'}</p>
+                <strong>{t('plantDetail.lastSeen')}</strong>
+                <p>{plant.latestReading ? formatDateTime(plant.latestReading.readAt) : t('plantDetail.pendingDeviceContext')}</p>
               </div>
             </article>
           </div>

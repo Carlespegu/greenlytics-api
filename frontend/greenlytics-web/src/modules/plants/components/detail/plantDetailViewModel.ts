@@ -64,7 +64,9 @@ export interface PlantDetailViewModel {
   readingsMetrics: PlantReadingsMetric[];
 }
 
-export function buildPlantDetailViewModel(plant: PlantDetail): PlantDetailViewModel {
+type TranslateFn = (key: string, vars?: Record<string, string | number>) => string;
+
+export function buildPlantDetailViewModel(plant: PlantDetail, t: TranslateFn, locale: string): PlantDetailViewModel {
   const primaryPhoto = plant.photos.find((photo) => photo.isPrimary) ?? plant.photos[0] ?? null;
   const sortedPhotos = [...plant.photos].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
   const sortedEvents = [...plant.events].sort((left, right) => Date.parse(right.eventDate) - Date.parse(left.eventDate));
@@ -77,19 +79,19 @@ export function buildPlantDetailViewModel(plant: PlantDetail): PlantDetailViewMo
     airHumidity: findThreshold(thresholdSummaries, ['air humidity', 'air_humidity', 'humidity']),
   } satisfies Record<'soilMoisture' | 'temperature' | 'light' | 'airHumidity', PlantThresholdSummary | null>;
 
-  const recommendations = buildRecommendations(plant, thresholdMap);
-  const historyEntries = buildHistoryEntries(sortedEvents, sortedPhotos);
-  const lastReadingLabel = formatDateTime(plant.latestReading?.readAt) ?? 'No readings yet';
-  const lastPhotoLabel = formatDateTime(sortedPhotos[0]?.createdAt) ?? 'No photos yet';
-  const lastEventLabel = formatDateTime(sortedEvents[0]?.eventDate) ?? 'No events yet';
-  const nextCareAction = recommendations[0]?.title ?? 'No immediate action';
+  const recommendations = buildRecommendations(plant, thresholdMap, t);
+  const historyEntries = buildHistoryEntries(sortedEvents, sortedPhotos, t, locale);
+  const lastReadingLabel = formatDateTime(plant.latestReading?.readAt, locale) ?? t('plantDetail.noReadingsLabel');
+  const lastPhotoLabel = formatDateTime(sortedPhotos[0]?.createdAt, locale) ?? t('plantDetail.noPhotosLabel');
+  const lastEventLabel = formatDateTime(sortedEvents[0]?.eventDate, locale) ?? t('plantDetail.noEventsLabel');
+  const nextCareAction = recommendations[0]?.title ?? t('plantDetail.noImmediateAction');
 
   return {
     primaryPhoto,
     photosCount: plant.photos.length,
     eventsCount: plant.events.length,
     thresholdsCount: plant.thresholds.length,
-    updatedLabel: formatDateTime(plant.updatedAt ?? plant.createdAt) ?? 'Unknown',
+    updatedLabel: formatDateTime(plant.updatedAt ?? plant.createdAt, locale) ?? t('records.unknown'),
     lastReadingLabel,
     lastPhotoLabel,
     lastEventLabel,
@@ -97,42 +99,42 @@ export function buildPlantDetailViewModel(plant: PlantDetail): PlantDetailViewMo
     summaryCards: [
       {
         id: 'status',
-        label: 'Current status',
-        value: plant.plantStatusName ?? (plant.isActive ? 'Active' : 'Inactive'),
-        hint: plant.isActive ? 'Operational in current client scope' : 'Visible historically but non-operational',
+        label: t('plantDetail.currentStatusCard'),
+        value: plant.plantStatusName ?? (plant.isActive ? t('records.active') : t('records.inactive')),
+        hint: plant.isActive ? t('plantDetail.currentStatusHintActive') : t('plantDetail.currentStatusHintInactive'),
         tone: resolveToneFromStatus(plant.plantStatusName, plant.isActive),
       },
       {
         id: 'last-reading',
-        label: 'Last reading',
+        label: t('plantDetail.lastReadingCard'),
         value: lastReadingLabel,
-        hint: plant.latestReading?.deviceCode ? `Device ${plant.latestReading.deviceCode}` : 'No telemetry device linked yet',
+        hint: plant.latestReading?.deviceCode ? `${t('plantDetail.device')} ${plant.latestReading.deviceCode}` : t('plantDetail.noTelemetryDevice'),
         tone: plant.latestReading ? 'info' : 'neutral',
       },
       {
         id: 'alerts',
-        label: 'Threshold alerts',
+        label: t('plantDetail.thresholdAlerts'),
         value: String(recommendations.filter((item) => item.tone === 'warning' || item.tone === 'danger').length),
-        hint: 'Derived from thresholds and current operational context',
+        hint: t('plantDetail.thresholdAlertsHint'),
         tone: recommendations.some((item) => item.tone === 'warning' || item.tone === 'danger') ? 'warning' : 'success',
       },
       {
         id: 'next-action',
-        label: 'Pending care',
+        label: t('plantDetail.pendingCare'),
         value: nextCareAction,
-        hint: recommendations[0]?.reason ?? 'No immediate care action inferred',
+        hint: recommendations[0]?.reason ?? t('plantDetail.noImmediateCare'),
         tone: recommendations[0]?.tone ?? 'neutral',
       },
       {
         id: 'photos',
-        label: 'Photos',
+        label: t('plantDetail.photosCard'),
         value: String(plant.photos.length),
         hint: lastPhotoLabel,
         tone: plant.photos.length > 0 ? 'info' : 'neutral',
       },
       {
         id: 'events',
-        label: 'Events',
+        label: t('plantDetail.eventsCard'),
         value: String(plant.events.length),
         hint: lastEventLabel,
         tone: plant.events.length > 0 ? 'info' : 'neutral',
@@ -142,7 +144,7 @@ export function buildPlantDetailViewModel(plant: PlantDetail): PlantDetailViewMo
     thresholdMap,
     recommendations,
     historyEntries,
-    readingsMetrics: buildReadingMetrics(plant, thresholdMap),
+    readingsMetrics: buildReadingMetrics(plant, thresholdMap, t, locale),
   };
 }
 
@@ -168,14 +170,15 @@ function findThreshold(thresholds: PlantThresholdSummary[], tokens: string[]) {
 function buildRecommendations(
   plant: PlantDetail,
   thresholdMap: Record<'soilMoisture' | 'temperature' | 'light' | 'airHumidity', PlantThresholdSummary | null>,
+  t: TranslateFn,
 ): PlantRecommendation[] {
   const recommendations: PlantRecommendation[] = [];
 
   if (!plant.isActive) {
     recommendations.push({
       id: 'inactive-plant',
-      title: 'Review inactive plant',
-      reason: 'This plant is currently marked as inactive and should be reviewed before new operational actions.',
+      title: t('plantDetail.reviewInactivePlant'),
+      reason: t('plantDetail.reviewInactivePlantReason'),
       source: 'manual',
       tone: 'warning',
     });
@@ -184,8 +187,8 @@ function buildRecommendations(
   if (!plant.latestReading) {
     recommendations.push({
       id: 'capture-first-reading',
-      title: 'Capture first reading',
-      reason: 'No telemetry is currently linked to this plant detail, so the operational state cannot be confirmed.',
+      title: t('plantDetail.captureFirstReading'),
+      reason: t('plantDetail.captureFirstReadingReason'),
       source: 'rule-based',
       tone: 'warning',
     });
@@ -194,8 +197,8 @@ function buildRecommendations(
   if (plant.thresholdsCount === 0) {
     recommendations.push({
       id: 'define-thresholds',
-      title: 'Define care thresholds',
-      reason: 'Without thresholds there is no quantitative baseline for humidity, temperature or light follow-up.',
+      title: t('plantDetail.defineCareThresholds'),
+      reason: t('plantDetail.defineCareThresholdsReason'),
       source: 'threshold-based',
       tone: 'warning',
     });
@@ -204,8 +207,8 @@ function buildRecommendations(
   if (!plant.primaryPhotoUrl) {
     recommendations.push({
       id: 'upload-primary-photo',
-      title: 'Upload reference photo',
-      reason: 'A primary photo helps operators validate the latest visual condition before interventions.',
+      title: t('plantDetail.uploadReferencePhoto'),
+      reason: t('plantDetail.uploadReferencePhotoReason'),
       source: 'manual',
       tone: 'info',
     });
@@ -214,8 +217,8 @@ function buildRecommendations(
   if (thresholdMap.soilMoisture && thresholdMap.light && plant.latestReading) {
     recommendations.push({
       id: 'monitor-environment',
-      title: 'Monitor environment trend',
-      reason: 'The plant already has a basic threshold baseline, so the next step is comparing upcoming readings against it.',
+      title: t('plantDetail.monitorEnvironmentTrend'),
+      reason: t('plantDetail.monitorEnvironmentTrendReason'),
       source: 'threshold-based',
       tone: 'success',
     });
@@ -224,8 +227,8 @@ function buildRecommendations(
   if (recommendations.length === 0) {
     recommendations.push({
       id: 'no-action-needed',
-      title: 'No action needed',
-      reason: 'The plant has enough operational context for now and there are no immediate care gaps detected.',
+      title: t('plantDetail.noActionNeeded'),
+      reason: t('plantDetail.noActionNeededReason'),
       source: 'rule-based',
       tone: 'success',
     });
@@ -234,26 +237,26 @@ function buildRecommendations(
   return recommendations;
 }
 
-function buildHistoryEntries(events: PlantEventRecord[], photos: PlantPhotoRecord[]): PlantHistoryEntry[] {
+function buildHistoryEntries(events: PlantEventRecord[], photos: PlantPhotoRecord[], t: TranslateFn, locale: string): PlantHistoryEntry[] {
   const eventEntries = events.map((event) => ({
     id: `event-${event.id}`,
     timestamp: event.eventDate,
-    dateLabel: formatDateTime(event.eventDate) ?? 'Unknown date',
+    dateLabel: formatDateTime(event.eventDate, locale) ?? t('plantDetail.unknownDate'),
     title: event.title,
-    summary: event.notes ?? event.description ?? (event.eventTypeName ?? event.eventTypeCode ?? 'Plant event'),
-    type: event.eventTypeName ?? event.eventTypeCode ?? 'Event',
+    summary: event.notes ?? event.description ?? (event.eventTypeName ?? event.eventTypeCode ?? t('plantDetail.plantEvents')),
+    type: event.eventTypeName ?? event.eventTypeCode ?? t('plantDetail.event'),
     source: 'event' as const,
   }));
 
   const photoEntries = photos.map((photo) => ({
     id: `photo-${photo.id}`,
     timestamp: photo.createdAt,
-    dateLabel: formatDateTime(photo.createdAt) ?? 'Unknown date',
+    dateLabel: formatDateTime(photo.createdAt, locale) ?? t('plantDetail.unknownDate'),
     title: photo.fileName,
     summary: photo.isPrimary
-      ? `Primary ${photo.photoTypeName?.toLowerCase() ?? 'plant'} photo uploaded`
-      : `${photo.photoTypeName ?? 'Plant photo'} uploaded`,
-    type: photo.photoTypeName ?? 'Photo upload',
+      ? `${t('plantDetail.primary')} ${photo.photoTypeName?.toLowerCase() ?? t('plantDetail.photos').toLowerCase()}`
+      : t('plantDetail.photoUploadedSummary', { type: photo.photoTypeName ?? t('plantDetail.photos') }),
+    type: photo.photoTypeName ?? t('plantDetail.photoUpload'),
     source: 'photo' as const,
   }));
 
@@ -264,37 +267,39 @@ function buildHistoryEntries(events: PlantEventRecord[], photos: PlantPhotoRecor
 function buildReadingMetrics(
   plant: PlantDetail,
   thresholdMap: Record<'soilMoisture' | 'temperature' | 'light' | 'airHumidity', PlantThresholdSummary | null>,
+  t: TranslateFn,
+  locale: string,
 ): PlantReadingsMetric[] {
   const lastReadingContext = plant.latestReading
-    ? `Latest reading at ${formatDateTime(plant.latestReading.readAt)}`
-    : 'No reading values available in the current plant detail contract';
+    ? t('plantDetail.latestReadingAt', { value: formatDateTime(plant.latestReading.readAt, locale) ?? t('plantDetail.unknownDate') })
+    : t('plantDetail.noReadingValues');
 
   return [
     {
       id: 'temperature',
-      label: 'Temperature',
-      value: thresholdMap.temperature ? thresholdValueHint(thresholdMap.temperature) : 'Pending telemetry',
+      label: t('plantDetail.temperature'),
+      value: thresholdMap.temperature ? thresholdValueHint(thresholdMap.temperature) : t('plantDetail.pendingTelemetry'),
       hint: lastReadingContext,
       tone: plant.latestReading ? 'info' : 'neutral',
     },
     {
       id: 'air-humidity',
-      label: 'Air humidity',
-      value: thresholdMap.airHumidity ? thresholdValueHint(thresholdMap.airHumidity) : 'Pending telemetry',
+      label: t('plantDetail.airHumidity'),
+      value: thresholdMap.airHumidity ? thresholdValueHint(thresholdMap.airHumidity) : t('plantDetail.pendingTelemetry'),
       hint: lastReadingContext,
       tone: plant.latestReading ? 'info' : 'neutral',
     },
     {
       id: 'soil-moisture',
-      label: 'Soil moisture',
-      value: thresholdMap.soilMoisture ? thresholdValueHint(thresholdMap.soilMoisture) : 'Pending telemetry',
+      label: t('plantDetail.soilMoisture'),
+      value: thresholdMap.soilMoisture ? thresholdValueHint(thresholdMap.soilMoisture) : t('plantDetail.pendingTelemetry'),
       hint: lastReadingContext,
       tone: plant.latestReading ? 'info' : 'neutral',
     },
     {
       id: 'light',
-      label: 'Light',
-      value: thresholdMap.light ? thresholdValueHint(thresholdMap.light) : 'Pending telemetry',
+      label: t('plantDetail.light'),
+      value: thresholdMap.light ? thresholdValueHint(thresholdMap.light) : t('plantDetail.pendingTelemetry'),
       hint: lastReadingContext,
       tone: plant.latestReading ? 'info' : 'neutral',
     },
@@ -308,7 +313,7 @@ function thresholdValueHint(threshold: PlantThresholdSummary) {
   return `${min} - ${max}${unit}`;
 }
 
-export function formatDateTime(value: string | null | undefined) {
+export function formatDateTime(value: string | null | undefined, locale = 'ca') {
   if (!value) {
     return null;
   }
@@ -318,13 +323,13 @@ export function formatDateTime(value: string | null | undefined) {
     return null;
   }
 
-  return new Intl.DateTimeFormat('ca-ES', {
+  return new Intl.DateTimeFormat(resolveIntlLocale(locale), {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date);
 }
 
-export function formatDate(value: string | null | undefined) {
+export function formatDate(value: string | null | undefined, locale = 'ca') {
   if (!value) {
     return null;
   }
@@ -334,9 +339,20 @@ export function formatDate(value: string | null | undefined) {
     return null;
   }
 
-  return new Intl.DateTimeFormat('ca-ES', {
+  return new Intl.DateTimeFormat(resolveIntlLocale(locale), {
     dateStyle: 'medium',
   }).format(date);
+}
+
+function resolveIntlLocale(locale: string) {
+  switch (locale) {
+    case 'es':
+      return 'es-ES';
+    case 'en':
+      return 'en-GB';
+    default:
+      return 'ca-ES';
+  }
 }
 
 export function resolveToneFromStatus(status: string | null | undefined, isActive: boolean): PlantStatusTone {

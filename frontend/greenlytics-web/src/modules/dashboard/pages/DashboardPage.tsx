@@ -27,6 +27,7 @@ import {
   YAxis,
 } from 'recharts';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import { useAuth } from '@/hooks/useAuth';
 import { DashboardPanel } from '@/shared/ui/DashboardPanel';
 import { MetricCard } from '@/shared/ui/MetricCard';
@@ -44,41 +45,41 @@ const moistureTrend = [
 ];
 
 const healthDistribution = [
-  { name: 'Thriving', value: 54, color: '#36d399' },
-  { name: 'Monitor', value: 28, color: '#fbbf24' },
-  { name: 'Critical', value: 18, color: '#fb7185' },
+  { name: 'dashboard.thriving', value: 54, color: '#36d399' },
+  { name: 'dashboard.monitor', value: 28, color: '#fbbf24' },
+  { name: 'dashboard.critical', value: 18, color: '#fb7185' },
 ];
 
 const latestAlerts = [
-  { title: 'Zone B irrigation drift', scope: 'Installation INST-021', time: '6 min ago', severity: 'warning' as const },
-  { title: 'Humidity threshold exceeded', scope: 'Plant PHALAENOPSIS-018', time: '19 min ago', severity: 'danger' as const },
-  { title: 'ESP32 sensor back online', scope: 'Device DEV-044', time: '42 min ago', severity: 'success' as const },
+  { title: 'dashboard.zoneBIrrigationDrift', scope: 'dashboard.installationInst021', time: 'dashboard.sixMinutesAgo', severity: 'warning' as const },
+  { title: 'dashboard.humidityThresholdExceeded', scope: 'dashboard.plantPhalaenopsis018', time: 'dashboard.nineteenMinutesAgo', severity: 'danger' as const },
+  { title: 'dashboard.sensorBackOnline', scope: 'dashboard.deviceDev044', time: 'dashboard.fortyTwoMinutesAgo', severity: 'success' as const },
 ];
 
 const insightCards = [
   {
     icon: <Sparkles size={16} />,
-    title: 'Irrigation opportunity',
-    text: '23 plants are trending below their moisture baseline over the next 3 hours.',
+    title: 'dashboard.irrigationOpportunity',
+    text: 'dashboard.irrigationOpportunityText',
   },
   {
     icon: <Bot size={16} />,
-    title: 'Analysis reuse ready',
-    text: 'Photo chronology and analysis history can now be surfaced together in the next UI phase.',
+    title: 'dashboard.analysisReuseReady',
+    text: 'dashboard.analysisReuseReadyText',
   },
 ];
 
 const deviceStatuses = [
-  { name: 'ESP32 Soil Cluster', state: 'Healthy', coverage: '97% packet success', tone: 'success' as const },
-  { name: 'Greenhouse Mesh', state: 'Watch', coverage: '2 devices degraded', tone: 'warning' as const },
-  { name: 'North Canopy Probe', state: 'Offline', coverage: 'Last seen 2h ago', tone: 'danger' as const },
+  { name: 'ESP32 Soil Cluster', state: 'dashboard.deviceHealthy', coverage: 'dashboard.deviceCoverage1', tone: 'success' as const },
+  { name: 'Greenhouse Mesh', state: 'dashboard.deviceWatch', coverage: 'dashboard.deviceCoverage2', tone: 'warning' as const },
+  { name: 'North Canopy Probe', state: 'dashboard.deviceOffline', coverage: 'dashboard.deviceCoverage3', tone: 'danger' as const },
 ];
 
 const featuredPlantFacts = [
-  { label: 'Species', value: 'Monstera deliciosa' },
-  { label: 'Health score', value: '92 / 100' },
-  { label: 'Last analysis', value: '2 hours ago' },
-  { label: 'Moisture trend', value: 'Stable' },
+  { label: 'dashboard.species', value: 'dashboard.speciesValue' },
+  { label: 'dashboard.healthScoreFact', value: 'dashboard.healthScoreValue' },
+  { label: 'dashboard.lastAnalysis', value: 'dashboard.lastAnalysisValue' },
+  { label: 'dashboard.moistureTrendFact', value: 'dashboard.moistureTrendValue' },
 ];
 
 const defaultWidgetOrder = [
@@ -129,12 +130,17 @@ function moveWidget(order: WidgetId[], activeWidgetId: WidgetId, targetWidgetId:
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [draggedWidgetId, setDraggedWidgetId] = useState<WidgetId | null>(null);
   const [widgetOrder, setWidgetOrder] = useState<WidgetId[]>([...defaultWidgetOrder]);
 
   const storageKey = useMemo(
     () => `greenlytics:dashboard-layout:${user?.userId ?? 'anonymous'}`,
     [user?.userId],
+  );
+  const translatedHealthDistribution = useMemo(
+    () => healthDistribution.map((item) => ({ ...item, translatedName: t(item.name) })),
+    [t],
   );
 
   useEffect(() => {
@@ -162,13 +168,13 @@ export function DashboardPage() {
       span: 'dashboard-widget--metric',
       content: (
         <MetricCard
-          label="Total plants"
+          label={t('dashboard.totalPlants')}
           value="1,284"
           delta="+8.4%"
           trend="up"
           tone="green"
           icon={<Flower2 size={18} />}
-          hint="Vs previous 7 days"
+          hint={t('dashboard.vsPrevious7Days')}
         />
       ),
     },
@@ -176,13 +182,13 @@ export function DashboardPage() {
       span: 'dashboard-widget--metric',
       content: (
         <MetricCard
-          label="Active devices"
+          label={t('dashboard.activeDevices')}
           value="214"
           delta="+3 online"
           trend="up"
           tone="blue"
           icon={<Cpu size={18} />}
-          hint="96.8% network health"
+          hint={t('dashboard.networkHealth')}
         />
       ),
     },
@@ -190,13 +196,13 @@ export function DashboardPage() {
       span: 'dashboard-widget--metric',
       content: (
         <MetricCard
-          label="Open alerts"
+          label={t('dashboard.openAlerts')}
           value="19"
           delta="-4 resolved"
           trend="down"
           tone="amber"
           icon={<ShieldAlert size={18} />}
-          hint="5 require action today"
+          hint={t('dashboard.requireActionToday')}
         />
       ),
     },
@@ -204,24 +210,24 @@ export function DashboardPage() {
       span: 'dashboard-widget--metric',
       content: (
         <MetricCard
-          label="Health score"
+          label={t('dashboard.healthScore')}
           value="87.6"
           delta="+2.1 pts"
           trend="up"
           tone="green"
           icon={<Leaf size={18} />}
-          hint="Fleet weighted average"
+          hint={t('dashboard.fleetWeightedAverage')}
         />
       ),
     },
     moisture: {
       span: 'dashboard-widget--wide dashboard-widget--tall',
       content: (
-        <DashboardPanel title="Soil moisture trend" eyebrow="Telemetry" className="dashboard-panel--chart">
+        <DashboardPanel title={t('dashboard.soilMoistureTrend')} eyebrow={t('dashboard.telemetry')} className="dashboard-panel--chart">
           <SectionHeading
-            title="Daily irrigation stability"
-            subtitle="Placeholder demo data shaped for real /api/readings/timeseries integration later."
-            action={<StatusBadge label="Synced 2 min ago" variant="success" icon={<Wifi size={12} />} />}
+            title={t('dashboard.dailyIrrigationStability')}
+            subtitle={t('dashboard.chartPlaceholder')}
+            action={<StatusBadge label={t('dashboard.syncedRecently')} variant="success" icon={<Wifi size={12} />} />}
           />
           <div className="chart-shell">
             <ResponsiveContainer width="100%" height={280}>
@@ -247,14 +253,14 @@ export function DashboardPage() {
     distribution: {
       span: 'dashboard-widget--medium',
       content: (
-        <DashboardPanel title="Plant health distribution" eyebrow="Portfolio">
-          <SectionHeading title="Current portfolio mix" subtitle="Health bands can map later to analysis and alert aggregation." />
+        <DashboardPanel title={t('dashboard.plantHealthDistribution')} eyebrow={t('dashboard.portfolio')}>
+          <SectionHeading title={t('dashboard.currentPortfolioMix')} subtitle={t('dashboard.healthAggregationHint')} />
           <div className="dashboard-split">
             <div className="donut-shell">
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
-                  <Pie data={healthDistribution} dataKey="value" nameKey="name" innerRadius={62} outerRadius={86} paddingAngle={4}>
-                    {healthDistribution.map((entry) => (
+                  <Pie data={translatedHealthDistribution} dataKey="value" nameKey="translatedName" innerRadius={62} outerRadius={86} paddingAngle={4}>
+                    {translatedHealthDistribution.map((entry) => (
                       <Cell key={entry.name} fill={entry.color} />
                     ))}
                   </Pie>
@@ -263,11 +269,11 @@ export function DashboardPage() {
               </ResponsiveContainer>
             </div>
             <div className="stack-list">
-              {healthDistribution.map((item) => (
+              {translatedHealthDistribution.map((item) => (
                 <div className="stack-list__item" key={item.name}>
                   <div className="stack-list__legend">
                     <span className="stack-list__swatch" style={{ backgroundColor: item.color }} />
-                    <strong>{item.name}</strong>
+                    <strong>{item.translatedName}</strong>
                   </div>
                   <span>{item.value}%</span>
                 </div>
@@ -280,15 +286,15 @@ export function DashboardPage() {
     insights: {
       span: 'dashboard-widget--medium',
       content: (
-        <DashboardPanel title="Smart operational highlights" eyebrow="Insights">
+        <DashboardPanel title={t('dashboard.smartOperationalHighlights')} eyebrow={t('dashboard.insights')}>
           <div className="insight-grid">
             {insightCards.map((insight) => (
               <article className="insight-card" key={insight.title}>
                 <span className="insight-card__icon">{insight.icon}</span>
-                <strong>{insight.title}</strong>
-                <p>{insight.text}</p>
+                <strong>{t(insight.title)}</strong>
+                <p>{t(insight.text)}</p>
                 <button className="ghost-button" type="button">
-                  Review insight <ArrowUpRight size={14} />
+                  {t('dashboard.reviewInsight')} <ArrowUpRight size={14} />
                 </button>
               </article>
             ))}
@@ -299,7 +305,7 @@ export function DashboardPage() {
     latestAlerts: {
       span: 'dashboard-widget--medium',
       content: (
-        <DashboardPanel title="Latest alerts" eyebrow="Attention needed">
+        <DashboardPanel title={t('dashboard.latestAlerts')} eyebrow={t('dashboard.attentionNeeded')}>
           <div className="timeline-list">
             {latestAlerts.map((alert) => (
               <div className="timeline-list__item" key={alert.title}>
@@ -307,12 +313,12 @@ export function DashboardPage() {
                   <CircleAlert size={16} />
                 </div>
                 <div className="timeline-list__content">
-                  <strong>{alert.title}</strong>
-                  <span>{alert.scope}</span>
+                  <strong>{t(alert.title)}</strong>
+                  <span>{t(alert.scope)}</span>
                 </div>
                 <div className="timeline-list__meta">
                   <StatusBadge label={alert.severity} variant={alert.severity} />
-                  <span>{alert.time}</span>
+                  <span>{t(alert.time)}</span>
                 </div>
               </div>
             ))}
@@ -323,24 +329,22 @@ export function DashboardPage() {
     featuredPlant: {
       span: 'dashboard-widget--medium',
       content: (
-        <DashboardPanel title="Featured plant" eyebrow="Spotlight" className="dashboard-panel--spotlight">
+        <DashboardPanel title={t('dashboard.featuredPlant')} eyebrow={t('dashboard.spotlight')} className="dashboard-panel--spotlight">
           <div className="spotlight-card">
             <div className="spotlight-card__visual">
               <div className="spotlight-card__orb" />
               <Droplets size={34} />
             </div>
             <div>
-              <h4>Monstera Canopy 07</h4>
-              <p>
-                Strong health trend with stable moisture, no active alerts and fresh photo analysis available for comparison.
-              </p>
+              <h4>{t('dashboard.featuredPlantName')}</h4>
+              <p>{t('dashboard.featuredPlantText')}</p>
             </div>
           </div>
           <div className="detail-chip-grid">
             {featuredPlantFacts.map((fact) => (
               <div className="detail-chip" key={fact.label}>
-                <span>{fact.label}</span>
-                <strong>{fact.value}</strong>
+                <span>{t(fact.label)}</span>
+                <strong>{t(fact.value)}</strong>
               </div>
             ))}
           </div>
@@ -350,15 +354,15 @@ export function DashboardPage() {
     deviceStatus: {
       span: 'dashboard-widget--medium',
       content: (
-        <DashboardPanel title="Device status" eyebrow="Fleet health">
+        <DashboardPanel title={t('dashboard.deviceStatus')} eyebrow={t('dashboard.fleetHealth')}>
           <div className="device-status-list">
             {deviceStatuses.map((device) => (
               <div className="device-status-list__item" key={device.name}>
                 <div>
                   <strong>{device.name}</strong>
-                  <p>{device.coverage}</p>
+                  <p>{t(device.coverage)}</p>
                 </div>
-                <StatusBadge label={device.state} variant={device.tone} icon={<Activity size={12} />} />
+                <StatusBadge label={t(device.state)} variant={device.tone} icon={<Activity size={12} />} />
               </div>
             ))}
           </div>

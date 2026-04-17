@@ -20,6 +20,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import { postSearch } from '@/api/search';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,8 +42,7 @@ const iconMap = {
   Settings: <Settings size={18} />,
 } as const;
 
-const timeOptions = ['Today', 'Last 7 Days', 'This Month'];
-const languageOptions = ['Català', 'Español', 'English'];
+const timeOptions = ['today', 'last7Days', 'thisMonth'] as const;
 const MIN_CLIENT_SEARCH_LENGTH = 2;
 
 interface InstallationSearchFilters {
@@ -69,13 +69,13 @@ export function AppLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { clientId: activeClientId, clientName: activeClientName, setActiveClient } = useActiveClient();
+  const { locale, locales, setLocale, t } = useI18n();
   const isDashboardRoute = location.pathname === '/dashboard';
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [selectedInstallation, setSelectedInstallation] = useState('');
-  const [selectedTimeRange, setSelectedTimeRange] = useState(timeOptions[1]);
-  const [selectedLanguage, setSelectedLanguage] = useState(languageOptions[0]);
+  const [selectedTimeRange, setSelectedTimeRange] = useState<(typeof timeOptions)[number]>(timeOptions[1]);
   const [isClientSelectorOpen, setIsClientSelectorOpen] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
 
@@ -142,7 +142,10 @@ export function AppLayout() {
   );
 
   const selectedInstallationLabel = installationOptions.find((option) => option.value === selectedInstallation)?.label
-    ?? (installationsQuery.isLoading ? 'Loading installations...' : 'No installations');
+    ?? (installationsQuery.isLoading ? t('layout.installationFallbackLoading') : t('layout.installationFallbackEmpty'));
+
+  const selectedTimeRangeLabel = t(`timeRange.${selectedTimeRange}`);
+  const selectedLanguageLabel = locales.find((option) => option.value === locale)?.label ?? locale;
 
   const userInitials = useMemo(() => {
     if (!user?.username) {
@@ -243,7 +246,7 @@ export function AppLayout() {
 
           <button
             aria-expanded={!isSidebarCollapsed}
-            aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={isSidebarCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
             className="shell-sidebar__toggle"
             type="button"
             onClick={toggleSidebar}
@@ -254,16 +257,16 @@ export function AppLayout() {
 
         <nav className={`shell-sidebar__nav shell-sidebar__nav--expanded${isSidebarCollapsed ? ' shell-sidebar__nav--collapsed' : ''}`} aria-label="Primary navigation">
           {visibleSections.map((section) => (
-            <div className="shell-sidebar__group" key={section.label}>
-              {!isSidebarCollapsed ? <span className="shell-sidebar__group-label">{section.label}</span> : null}
+            <div className="shell-sidebar__group" key={section.labelKey}>
+              {!isSidebarCollapsed ? <span className="shell-sidebar__group-label">{t(section.labelKey)}</span> : null}
               <div className={`shell-sidebar__items shell-sidebar__items--expanded${isSidebarCollapsed ? ' shell-sidebar__items--collapsed' : ''}`}>
                 {section.items.map((item) => (
                   <SidebarNavItem
                     key={item.to}
                     collapsed={isSidebarCollapsed}
                     to={item.to}
-                    label={item.label}
-                    icon={iconMap[item.label as keyof typeof iconMap] ?? <Leaf size={18} />}
+                    label={t(item.labelKey)}
+                    icon={iconMap[item.iconKey as keyof typeof iconMap] ?? <Leaf size={18} />}
                     pathname={location.pathname}
                     isMatch={(pathname) => pathname.startsWith(item.to + '/')}
                   />
@@ -278,17 +281,17 @@ export function AppLayout() {
         <header className={`shell-topbar${isDashboardRoute ? ' shell-topbar--dashboard' : ' shell-topbar--module'}`}>
           {isDashboardRoute ? (
             <div className="shell-topbar__intro">
-              <h1>Dashboard</h1>
-              <p>Plant health, sensors and system status overview</p>
+              <h1>{t('layout.dashboardTitle')}</h1>
+              <p>{t('layout.dashboardSubtitle')}</p>
             </div>
           ) : <div />}
 
           <div className={`shell-topbar__actions${isDashboardRoute ? ' shell-topbar__actions--dashboard' : ' shell-topbar__actions--module'}`}>
             {isDashboardRoute ? (
               <>
-                <label className="topbar-search" aria-label="Search">
+                <label className="topbar-search" aria-label={t('layout.searchAria')}>
                   <Search size={16} />
-                  <input placeholder="Search..." type="search" />
+                  <input placeholder={t('common.search')} type="search" />
                 </label>
 
                 <Dropdown
@@ -331,7 +334,7 @@ export function AppLayout() {
                   triggerClassName="topbar-dropdown__trigger"
                   trigger={() => (
                     <>
-                      <span className="topbar-dropdown__label">{selectedTimeRange}</span>
+                      <span className="topbar-dropdown__label">{selectedTimeRangeLabel}</span>
                       <ChevronDown size={16} />
                     </>
                   )}
@@ -348,7 +351,7 @@ export function AppLayout() {
                             close();
                           }}
                         >
-                          {option}
+                          {t(`timeRange.${option}`)}
                         </button>
                       ))}
                     </div>
@@ -357,7 +360,7 @@ export function AppLayout() {
               </>
             ) : null}
 
-            <button className="topbar-icon-button" type="button" aria-label="Notifications">
+            <button className="topbar-icon-button" type="button" aria-label={t('common.notifications')}>
               <Bell size={18} />
               <span className="topbar-icon-button__dot" />
             </button>
@@ -378,17 +381,17 @@ export function AppLayout() {
             >
               <div role="menu">
                 <div className="topbar-user-dropdown__row">
-                  <span>Name</span>
+                  <span>{t('layout.userName')}</span>
                   <strong>{user?.username ?? '-'}</strong>
                 </div>
                 <div className="topbar-user-dropdown__row">
-                  <span>Rol</span>
+                  <span>{t('layout.role')}</span>
                   <strong>{user?.roleName ?? user?.roleCode ?? '-'}</strong>
                 </div>
 
                 {user?.roleCode === 'ADMIN' ? (
                   <div className="topbar-user-dropdown__field topbar-user-dropdown__field--searchable">
-                    <span>Client</span>
+                    <span>{t('layout.client')}</span>
                     <Dropdown
                       className="topbar-user-select-dropdown"
                       open={isClientSelectorOpen}
@@ -402,17 +405,17 @@ export function AppLayout() {
                       }}
                       trigger={() => (
                         <>
-                          <span className="topbar-dropdown__label">{resolvedClientName ?? 'Select client'}</span>
+                          <span className="topbar-dropdown__label">{resolvedClientName ?? t('common.selectClient')}</span>
                           <ChevronDown size={16} />
                         </>
                       )}
                     >
                       {({ close }) => (
                         <div className="topbar-user-client-dropdown__content" role="menu">
-                          <label className="topbar-user-search" aria-label="Search client">
+                          <label className="topbar-user-search" aria-label={t('common.search')}>
                             <Search size={14} />
                             <input
-                              placeholder="Search client"
+                              placeholder={t('common.search')}
                               type="search"
                               value={clientSearch}
                               onChange={(event) => setClientSearch(event.target.value)}
@@ -422,16 +425,16 @@ export function AppLayout() {
                           <div className="topbar-user-search-results">
                             {debouncedClientSearch.length < MIN_CLIENT_SEARCH_LENGTH ? (
                               <div className="dropdown-menu-item dropdown-menu-item--muted">
-                                Type at least {MIN_CLIENT_SEARCH_LENGTH} characters
+                                {t('common.typeCharacters', { count: MIN_CLIENT_SEARCH_LENGTH })}
                               </div>
                             ) : null}
 
                             {canSearchClients && clientSearchQuery.isLoading ? (
-                              <div className="dropdown-menu-item dropdown-menu-item--muted">Searching clients...</div>
+                              <div className="dropdown-menu-item dropdown-menu-item--muted">{t('common.searchingClients')}</div>
                             ) : null}
 
                             {canSearchClients && !clientSearchQuery.isLoading && clientSearchQuery.data?.length === 0 ? (
-                              <div className="dropdown-menu-item dropdown-menu-item--muted">No clients found</div>
+                              <div className="dropdown-menu-item dropdown-menu-item--muted">{t('common.noClientsFound')}</div>
                             ) : null}
 
                             {canSearchClients ? clientSearchQuery.data?.map((client) => (
@@ -455,37 +458,37 @@ export function AppLayout() {
                   </div>
                 ) : (
                   <div className="topbar-user-dropdown__row">
-                    <span>Client</span>
+                    <span>{t('layout.client')}</span>
                     <strong>{resolvedClientName ?? '-'}</strong>
                   </div>
                 )}
 
                 <div className="topbar-user-dropdown__field">
-                  <span>Select language</span>
+                  <span>{t('common.selectLanguage')}</span>
                   <Dropdown
                     className="topbar-user-select-dropdown"
                     panelClassName="topbar-user-select-dropdown__panel"
                     triggerClassName="topbar-user-select"
                     trigger={() => (
                       <>
-                        <span className="topbar-dropdown__label">{selectedLanguage}</span>
+                        <span className="topbar-dropdown__label">{selectedLanguageLabel}</span>
                         <ChevronDown size={16} />
                       </>
                     )}
                   >
                     {({ close }) => (
                       <div className="dropdown-menu-list" role="menu">
-                        {languageOptions.map((option) => (
+                        {locales.map((option) => (
                           <button
-                            key={option}
-                            className={`dropdown-menu-item${option === selectedLanguage ? ' dropdown-menu-item--active' : ''}`}
+                            key={option.value}
+                            className={`dropdown-menu-item${option.value === locale ? ' dropdown-menu-item--active' : ''}`}
                             type="button"
                             onClick={() => {
-                              setSelectedLanguage(option);
+                              setLocale(option.value);
                               close();
                             }}
                           >
-                            {option}
+                            {option.label}
                           </button>
                         ))}
                       </div>
@@ -495,7 +498,7 @@ export function AppLayout() {
 
                 <button className="topbar-user-dropdown__logout" type="button" onClick={handleLogout}>
                   <LogOut size={16} />
-                  <span>Logout</span>
+                  <span>{t('common.logout')}</span>
                 </button>
               </div>
             </Dropdown>

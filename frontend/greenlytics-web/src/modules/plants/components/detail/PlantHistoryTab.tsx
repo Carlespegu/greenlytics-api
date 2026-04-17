@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { CalendarPlus } from 'lucide-react';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { PlantHistoryEntry } from '@/modules/plants/components/detail/plantDetailViewModel';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { SectionHeading } from '@/shared/ui/SectionHeading';
@@ -12,6 +13,7 @@ interface PlantHistoryTabProps {
 }
 
 export function PlantHistoryTab({ entries }: PlantHistoryTabProps) {
+  const { t } = useI18n();
   const [filter, setFilter] = useState<'all' | 'event' | 'photo'>('all');
 
   const visibleEntries = useMemo(
@@ -23,25 +25,25 @@ export function PlantHistoryTab({ entries }: PlantHistoryTabProps) {
     <div className="plant-detail-v3__tab-stack">
       <section className="panel-card plant-detail-v3__section-card">
         <SectionHeading
-          title="History"
-          subtitle="Chronological activity around the plant, mixing business events and visual history."
+          title={t('plantDetail.historyTitle')}
+          subtitle={t('plantDetail.historySubtitle')}
           action={(
             <div className="plant-detail-v3__history-toolbar">
               <select value={filter} onChange={(event) => setFilter(event.target.value as typeof filter)}>
-                <option value="all">All activity</option>
-                <option value="event">Plant events</option>
-                <option value="photo">Photo uploads</option>
+                <option value="all">{t('plantDetail.allActivity')}</option>
+                <option value="event">{t('plantDetail.plantEvents')}</option>
+                <option value="photo">{t('plantDetail.photoUploads')}</option>
               </select>
               <button className="secondary-button" disabled title="Event form hook pending." type="button">
                 <CalendarPlus size={16} />
-                <span>Add event</span>
+                <span>{t('plantDetail.addEvent')}</span>
               </button>
             </div>
           )}
         />
 
         {visibleEntries.length === 0 ? (
-          <EmptyState title="No history yet" description="No plant events or photo uploads are currently available for the selected filter." />
+          <EmptyState title={t('plantDetail.noHistory')} description={t('plantDetail.noHistoryDescription')} />
         ) : (
           <TimelineList>
             {visibleEntries.map((entry) => (

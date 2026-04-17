@@ -1,3 +1,4 @@
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { PlantDetail } from '@/modules/plants/api/plantsApi';
 import { SectionHeading } from '@/shared/ui/SectionHeading';
 
@@ -16,52 +17,54 @@ export function PlantOverviewTab({
   lastPhotoLabel,
   lastReadingLabel,
 }: PlantOverviewTabProps) {
+  const { t } = useI18n();
+
   return (
     <div className="plant-detail-v3__tab-stack">
       <section className="panel-card plant-detail-v3__section-card">
         <SectionHeading
-          title="General information"
-          subtitle="Operational identity and ownership context for the plant."
+          title={t('plantDetail.generalInformation')}
+          subtitle={t('plantDetail.generalInformationSubtitle')}
         />
         <div className="plant-detail-v3__info-grid">
-          <InfoItem label="Client" value={plant.clientName ?? plant.clientCode ?? 'Unknown client'} />
-          <InfoItem label="Installation" value={plant.installationName ?? plant.installationCode ?? 'Unassigned'} />
-          <InfoItem label="Code" value={plant.code} />
-          <InfoItem label="Name" value={plant.name} />
-          <InfoItem label="Description / notes" value={plant.description ?? 'No notes available yet.'} wide />
-          <InfoItem label="Plant type" value={plant.plantTypeName ?? plant.plantTypeCode ?? 'Not specified'} />
-          <InfoItem label="Plant status" value={plant.plantStatusName ?? plant.plantStatusCode ?? 'Unknown'} />
-          <InfoItem label="Operational state" value={plant.isActive ? 'Active' : 'Inactive'} />
+          <InfoItem label={t('plantDetail.client')} value={plant.clientName ?? plant.clientCode ?? t('plantDetail.unknownClient')} />
+          <InfoItem label={t('plantDetail.installation')} value={plant.installationName ?? plant.installationCode ?? t('records.unassigned')} />
+          <InfoItem label={t('plantsPage.code')} value={plant.code} />
+          <InfoItem label={t('plantsPage.name')} value={plant.name} />
+          <InfoItem label={t('plantDetail.descriptionNotes')} value={plant.description ?? t('plantDetail.noNotesYet')} wide />
+          <InfoItem label={t('plantDetail.plantType')} value={plant.plantTypeName ?? plant.plantTypeCode ?? t('plantDetail.notSpecified')} />
+          <InfoItem label={t('plantDetail.plantStatus')} value={plant.plantStatusName ?? plant.plantStatusCode ?? t('records.unknown')} />
+          <InfoItem label={t('plantDetail.operationalState')} value={plant.isActive ? t('records.active') : t('records.inactive')} />
         </div>
       </section>
 
       <section className="panel-card plant-detail-v3__section-card">
         <SectionHeading
-          title="Botanical / catalog information"
-          subtitle="Current backend detail does not expose the full plant catalog yet, but the layout is ready for it."
+          title={t('plantDetail.botanicalInfo')}
+          subtitle={t('plantDetail.botanicalInfoSubtitle')}
         />
         <div className="plant-detail-v3__info-grid">
-          <InfoItem label="Species" value="Pending catalog enrichment" />
-          <InfoItem label="Family" value="Pending catalog enrichment" />
-          <InfoItem label="Exposure" value="Pending catalog enrichment" />
-          <InfoItem label="Soil type" value="Pending catalog enrichment" />
-          <InfoItem label="Flowering season" value="Pending catalog enrichment" />
-          <InfoItem label="Watering profile" value="Pending catalog enrichment" />
+          <InfoItem label={t('plantDetail.species')} value={t('plantDetail.pendingCatalogEnrichment')} />
+          <InfoItem label={t('plantDetail.family')} value={t('plantDetail.pendingCatalogEnrichment')} />
+          <InfoItem label={t('plantDetail.exposure')} value={t('plantDetail.pendingCatalogEnrichment')} />
+          <InfoItem label={t('plantDetail.soilType')} value={t('plantDetail.pendingCatalogEnrichment')} />
+          <InfoItem label={t('plantDetail.floweringSeason')} value={t('plantDetail.pendingCatalogEnrichment')} />
+          <InfoItem label={t('plantDetail.wateringProfile')} value={t('plantDetail.pendingCatalogEnrichment')} />
         </div>
       </section>
 
       <section className="panel-card plant-detail-v3__section-card">
         <SectionHeading
-          title="Operational summary"
-          subtitle="Fast references to the most recent operational activity around the plant."
+          title={t('plantDetail.operationalSummary')}
+          subtitle={t('plantDetail.operationalSummarySubtitle')}
         />
         <div className="plant-detail-v3__info-grid">
-          <InfoItem label="Thresholds count" value={String(plant.thresholdsCount)} />
-          <InfoItem label="Last event" value={lastEventLabel} />
-          <InfoItem label="Last photo date" value={lastPhotoLabel} />
-          <InfoItem label="Last reading date" value={lastReadingLabel} />
-          <InfoItem label="Created" value={updatedLabel} />
-          <InfoItem label="Updated" value={updatedLabel} />
+          <InfoItem label={t('plantDetail.thresholdsCount')} value={String(plant.thresholdsCount)} />
+          <InfoItem label={t('plantDetail.lastEvent')} value={lastEventLabel} />
+          <InfoItem label={t('plantDetail.lastPhotoDate')} value={lastPhotoLabel} />
+          <InfoItem label={t('plantDetail.lastReadingDate')} value={lastReadingLabel} />
+          <InfoItem label={t('plantDetail.created')} value={updatedLabel} />
+          <InfoItem label={t('plantDetail.updated')} value={updatedLabel} />
         </div>
       </section>
     </div>

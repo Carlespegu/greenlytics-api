@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { OptionItem, PlantDraft } from '@/modules/plants/types/plant.types';
 
 interface PlantBasicDataStepProps {
@@ -33,6 +34,8 @@ export function PlantBasicDataStep({
   subtitle,
   onChange,
 }: PlantBasicDataStepProps) {
+  const { t } = useI18n();
+
   return (
     <section className="plant-create-v2__section">
       <div className="plant-create-v2__section-head">
@@ -41,7 +44,7 @@ export function PlantBasicDataStep({
       </div>
 
       <div className="plant-create-v2__form-grid plant-create-v2__form-grid--two">
-        <Field label="Code" error={fieldErrors.code} required>
+        <Field label={t('plantCreate.code')} error={fieldErrors.code} required>
           <input
             value={draft.code}
             onChange={(event) => onChange('code', event.target.value)}
@@ -49,23 +52,23 @@ export function PlantBasicDataStep({
           />
         </Field>
 
-        <Field label="Name" error={fieldErrors.name} required>
+        <Field label={t('plantCreate.name')} error={fieldErrors.name} required>
           <input
             value={draft.name}
             onChange={(event) => onChange('name', event.target.value)}
-            placeholder="Plant name"
+            placeholder={t('plantCreate.plantNamePlaceholder')}
           />
         </Field>
 
         {!showRequiredOnly ? (
           <>
-            <Field label="Installation" error={fieldErrors.installationId}>
+            <Field label={t('plantCreate.installation')} error={fieldErrors.installationId}>
               <select
                 value={draft.installationId}
                 onChange={(event) => onChange('installationId', event.target.value)}
                 disabled={installationsLoading}
               >
-                <option value="">Seleccionar installacio</option>
+                <option value="">{installationsLoading ? t('plantCreate.loadingInstallations') : t('plantCreate.selectInstallation')}</option>
                 {installations.map((installation) => (
                   <option key={installation.id} value={installation.id}>
                     {installation.name ?? installation.code ?? installation.id}
@@ -74,29 +77,29 @@ export function PlantBasicDataStep({
               </select>
             </Field>
 
-            <Field label="Scientific name" error={fieldErrors.scientificName}>
+            <Field label={t('plantCreate.scientificName')} error={fieldErrors.scientificName}>
               <input
                 value={draft.scientificName}
                 onChange={(event) => onChange('scientificName', event.target.value)}
-                placeholder="Spathiphyllum"
+                placeholder={t('plantCreate.scientificNamePlaceholder')}
               />
             </Field>
 
-            <Field label="Common name" error={fieldErrors.commonName}>
+            <Field label={t('plantCreate.commonName')} error={fieldErrors.commonName}>
               <input
                 value={draft.commonName}
                 onChange={(event) => onChange('commonName', event.target.value)}
-                placeholder={mode === 'ai' ? 'Proposta editable del backend' : 'Nom popular de la planta'}
+                placeholder={mode === 'ai' ? t('plantCreate.backendProposalPlaceholder') : t('plantCreate.commonNamePlaceholder')}
               />
             </Field>
 
-            <Field label="Plant type" error={fieldErrors.plantTypeId}>
+            <Field label={t('plantCreate.plantType')} error={fieldErrors.plantTypeId}>
               <select
                 value={draft.plantTypeId}
                 onChange={(event) => onChange('plantTypeId', event.target.value)}
                 disabled={catalogsLoading}
               >
-                <option value="">{catalogsLoading ? 'Carregant tipologies...' : 'Seleccionar tipus de planta'}</option>
+                <option value="">{catalogsLoading ? t('plantCreate.loadingTypes') : t('plantCreate.selectPlantType')}</option>
                 {plantTypes.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.name ?? option.code ?? option.id}
@@ -105,13 +108,13 @@ export function PlantBasicDataStep({
               </select>
             </Field>
 
-            <Field label="Planting type" error={fieldErrors.plantingTypeId}>
+            <Field label={t('plantCreate.plantingType')} error={fieldErrors.plantingTypeId}>
               <select
                 value={draft.plantingTypeId}
                 onChange={(event) => onChange('plantingTypeId', event.target.value)}
                 disabled={catalogsLoading}
               >
-                <option value="">{catalogsLoading ? 'Carregant tipologies...' : 'Seleccionar tipus de plantacio'}</option>
+                <option value="">{catalogsLoading ? t('plantCreate.loadingTypes') : t('plantCreate.selectPlantingType')}</option>
                 {plantingTypes.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.name ?? option.code ?? option.id}
@@ -120,13 +123,13 @@ export function PlantBasicDataStep({
               </select>
             </Field>
 
-            <Field label="Location type" error={fieldErrors.locationTypeId}>
+            <Field label={t('plantCreate.locationType')} error={fieldErrors.locationTypeId}>
               <select
                 value={draft.locationTypeId}
                 onChange={(event) => onChange('locationTypeId', event.target.value)}
                 disabled={catalogsLoading}
               >
-                <option value="">{catalogsLoading ? 'Carregant tipologies...' : 'Seleccionar tipus d ubicacio'}</option>
+                <option value="">{catalogsLoading ? t('plantCreate.loadingTypes') : t('plantCreate.selectLocationType')}</option>
                 {locationTypes.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.name ?? option.code ?? option.id}
@@ -139,11 +142,11 @@ export function PlantBasicDataStep({
       </div>
 
       {!showRequiredOnly ? (
-        <Field label="Notes">
+        <Field label={t('plantCreate.notes')}>
           <textarea
             value={draft.notes}
             onChange={(event) => onChange('notes', event.target.value)}
-            placeholder="Observacions visibles, estat general o incidencies..."
+            placeholder={t('plantCreate.notesPlaceholder')}
           />
         </Field>
       ) : null}

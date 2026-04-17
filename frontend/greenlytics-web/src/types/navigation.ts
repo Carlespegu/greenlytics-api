@@ -1,12 +1,13 @@
-﻿import type { AppRole } from '@/types/auth';
+import type { AppRole } from '@/types/auth';
 
 export interface NavigationItem {
-  label: string;
+  labelKey: string;
+  iconKey: string;
   to: string;
   roles: AppRole[];
 }
 
 export interface NavigationSection {
-  label: string;
+  labelKey: string;
   items: NavigationItem[];
 }

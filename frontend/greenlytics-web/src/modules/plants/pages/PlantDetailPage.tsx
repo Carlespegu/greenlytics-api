@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import { useActiveClient } from '@/modules/clients/hooks/ActiveClientContext';
 import { plantsApi } from '@/modules/plants/api/plantsApi';
 import { PlantCareTab } from '@/modules/plants/components/detail/PlantCareTab';
@@ -18,22 +19,15 @@ import { EmptyState } from '@/shared/components/EmptyState';
 import { LoadingScreen } from '@/shared/ui/LoadingScreen';
 import { Tabs } from '@/shared/ui/Tabs';
 
-const tabItems = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'care', label: 'Care' },
-  { id: 'photos', label: 'Photos' },
-  { id: 'readings', label: 'Readings' },
-  { id: 'recommendations', label: 'Recommendations' },
-  { id: 'history', label: 'History' },
-] as const;
-
-type DetailTabId = (typeof tabItems)[number]['id'];
+const tabIds = ['overview', 'care', 'photos', 'readings', 'recommendations', 'history'] as const;
+type DetailTabId = (typeof tabIds)[number];
 
 export function PlantDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { plantId } = useParams();
   const { clientId: activeClientId } = useActiveClient();
+  const { locale, t } = useI18n();
   const [activeTab, setActiveTab] = useState<DetailTabId>('overview');
 
   const plantDetailQuery = useQuery({
@@ -45,7 +39,11 @@ export function PlantDetailPage() {
   });
 
   const plant = plantDetailQuery.data;
-  const viewModel = useMemo(() => (plant ? buildPlantDetailViewModel(plant) : null), [plant]);
+  const viewModel = useMemo(() => (plant ? buildPlantDetailViewModel(plant, t, locale) : null), [plant, t, locale]);
+  const tabItems = useMemo(
+    () => tabIds.map((id) => ({ id, label: t(`plantDetail.${id}`) })),
+    [t],
+  );
 
   function handleBackToList() {
     if ((location.state as { fromPlantsList?: boolean } | null)?.fromPlantsList) {
@@ -63,7 +61,7 @@ export function PlantDetailPage() {
   if (!plant || !viewModel) {
     return (
       <div className="module-page plant-detail-v3">
-        <EmptyState title="Plant not found" description="The requested plant detail is not available in the current client scope." />
+        <EmptyState title={t('plantDetail.notFoundTitle')} description={t('plantDetail.notFoundDescription')} />
       </div>
     );
   }

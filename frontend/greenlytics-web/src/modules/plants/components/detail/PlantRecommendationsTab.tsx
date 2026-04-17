@@ -1,5 +1,6 @@
 import { Bot, Sparkles, TriangleAlert } from 'lucide-react';
 
+import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { PlantRecommendation } from '@/modules/plants/components/detail/plantDetailViewModel';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { SectionHeading } from '@/shared/ui/SectionHeading';
@@ -9,23 +10,24 @@ interface PlantRecommendationsTabProps {
   recommendations: PlantRecommendation[];
 }
 
-const sourceMeta = {
-  'threshold-based': { label: 'Threshold-based', icon: <TriangleAlert size={15} /> },
-  manual: { label: 'Manual', icon: <Sparkles size={15} /> },
-  'rule-based': { label: 'Rule-based', icon: <Sparkles size={15} /> },
-  'ai-generated': { label: 'AI-generated', icon: <Bot size={15} /> },
-} as const;
-
 export function PlantRecommendationsTab({ recommendations }: PlantRecommendationsTabProps) {
+  const { t } = useI18n();
+  const sourceMeta = {
+    'threshold-based': { label: t('plantDetail.sourceThresholdBased'), icon: <TriangleAlert size={15} /> },
+    manual: { label: t('plantDetail.sourceManual'), icon: <Sparkles size={15} /> },
+    'rule-based': { label: t('plantDetail.sourceRuleBased'), icon: <Sparkles size={15} /> },
+    'ai-generated': { label: t('plantDetail.sourceAiGenerated'), icon: <Bot size={15} /> },
+  } as const;
+
   return (
     <div className="plant-detail-v3__tab-stack">
       <section className="panel-card plant-detail-v3__section-card">
         <SectionHeading
-          title="Current recommendations"
-          subtitle="Operational actions derived from the current plant detail, ready to evolve as backend logic grows."
+          title={t('plantDetail.currentRecommendations')}
+          subtitle={t('plantDetail.currentRecommendationsSubtitle')}
         />
         {recommendations.length === 0 ? (
-          <EmptyState title="No recommendations" description="No rule-based or manual recommendations are available yet." />
+          <EmptyState title={t('plantDetail.noRecommendations')} description={t('plantDetail.noRecommendationsDescription')} />
         ) : (
           <div className="plant-detail-v3__recommendation-list">
             {recommendations.map((recommendation) => {
@@ -41,7 +43,7 @@ export function PlantRecommendationsTab({ recommendations }: PlantRecommendation
                     <StatusBadge label={source.label} variant={recommendation.tone} icon={source.icon} />
                   </div>
                   <div className="plant-detail-v3__recommendation-meta">
-                    <span>Reason / evidence</span>
+                    <span>{t('plantDetail.reasonEvidence')}</span>
                     <strong>{recommendation.reason}</strong>
                   </div>
                 </article>
