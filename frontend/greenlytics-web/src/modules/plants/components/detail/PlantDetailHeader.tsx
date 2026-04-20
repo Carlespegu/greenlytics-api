@@ -59,10 +59,6 @@ export function PlantDetailHeader({ plant, headerPhoto, onBack, children }: Plan
               <span className="plant-detail-v3__eyebrow">{t('plantDetail.plantIdentityEyebrow')}</span>
               <h1>{plant.name}</h1>
             </div>
-            <div className="plant-detail-v3__identity-strip">
-              <span>{t('plantDetail.plantCodeLabel')}</span>
-              <strong>{plant.code}</strong>
-            </div>
           </div>
         </div>
 
