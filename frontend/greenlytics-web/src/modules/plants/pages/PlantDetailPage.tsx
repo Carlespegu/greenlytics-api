@@ -122,15 +122,15 @@ export function PlantDetailPage() {
         headerPhoto={viewModel.headerPhoto}
         plant={plant}
         onBack={handleBackToList}
-      />
+      >
+        <section className="plant-detail-v3__widgets">
+          <PlantLatestVsIdealWidget metrics={viewModel.latestVsIdealMetrics} />
+          <PlantReadingTrendWidget series={viewModel.trendSeries} />
+        </section>
+      </PlantDetailHeader>
 
       <section className="panel-card plant-detail-v3__tabs-card plant-detail-v3__tabs-card--nav">
         <Tabs activeTab={activeTab} items={[...tabItems]} onChange={(tab) => setActiveTab(tab as DetailTabId)} />
-      </section>
-
-      <section className="plant-detail-v3__widgets">
-        <PlantLatestVsIdealWidget metrics={viewModel.latestVsIdealMetrics} />
-        <PlantReadingTrendWidget series={viewModel.trendSeries} />
       </section>
 
       <main className="plant-detail-v3__content">
