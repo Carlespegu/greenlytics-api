@@ -1,5 +1,6 @@
 import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { PlantDetail } from '@/modules/plants/api/plantsApi';
+import { formatDateTime } from '@/modules/plants/components/detail/plantDetailViewModel';
 import { SectionHeading } from '@/shared/ui/SectionHeading';
 
 interface PlantOverviewTabProps {
@@ -17,7 +18,8 @@ export function PlantOverviewTab({
   lastPhotoLabel,
   lastReadingLabel,
 }: PlantOverviewTabProps) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
+  const createdLabel = formatDateTime(plant.createdAt, locale) ?? t('records.unknown');
 
   return (
     <div className="plant-detail-v3__tab-stack">
@@ -63,7 +65,7 @@ export function PlantOverviewTab({
           <InfoItem label={t('plantDetail.lastEvent')} value={lastEventLabel} />
           <InfoItem label={t('plantDetail.lastPhotoDate')} value={lastPhotoLabel} />
           <InfoItem label={t('plantDetail.lastReadingDate')} value={lastReadingLabel} />
-          <InfoItem label={t('plantDetail.created')} value={updatedLabel} />
+          <InfoItem label={t('plantDetail.created')} value={createdLabel} />
           <InfoItem label={t('plantDetail.updated')} value={updatedLabel} />
         </div>
       </section>

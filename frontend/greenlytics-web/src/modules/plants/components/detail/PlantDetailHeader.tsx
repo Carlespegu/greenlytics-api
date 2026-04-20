@@ -1,35 +1,24 @@
-import { ArrowLeft, CalendarPlus, ChevronRight, ImagePlus, MapPinned, Pencil, SlidersHorizontal, ToggleLeft } from 'lucide-react';
+import { ArrowLeft, ChevronRight, ImageOff } from 'lucide-react';
 
 import { useI18n } from '@/app/i18n/LanguageProvider';
-import type { PlantDetail } from '@/modules/plants/api/plantsApi';
-import { StatusBadge } from '@/shared/ui/StatusBadge';
-import { formatDateTime, resolveToneFromStatus } from '@/modules/plants/components/detail/plantDetailViewModel';
+import type { PlantDetail, PlantPhotoRecord } from '@/modules/plants/api/plantsApi';
 
 interface PlantDetailHeaderProps {
   plant: PlantDetail;
-  primaryPhotoUrl: string | null;
+  headerPhoto: PlantPhotoRecord | null;
   onBack: () => void;
-  onViewInstallation: () => void;
-  onOpenPhotos: () => void;
-  onOpenHistory: () => void;
-  onOpenCare: () => void;
 }
 
-export function PlantDetailHeader({
-  plant,
-  primaryPhotoUrl,
-  onBack,
-  onViewInstallation,
-  onOpenPhotos,
-  onOpenHistory,
-  onOpenCare,
-}: PlantDetailHeaderProps) {
+export function PlantDetailHeader({ plant, headerPhoto, onBack }: PlantDetailHeaderProps) {
   const { t } = useI18n();
-  const statusTone = resolveToneFromStatus(plant.plantStatusName, plant.isActive);
-  const updatedLabel = formatDateTime(plant.updatedAt ?? plant.createdAt) ?? t('records.unknown');
+  const initials = plant.name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((chunk) => chunk[0]?.toUpperCase() ?? '')
+    .join('');
 
   return (
-    <section className="panel-card plant-detail-v3__header">
+    <section className="panel-card plant-detail-v3__header plant-detail-v3__header--compact">
       <div className="plant-detail-v3__breadcrumb-row">
         <button className="secondary-button" type="button" onClick={onBack}>
           <ArrowLeft size={16} />
@@ -43,70 +32,34 @@ export function PlantDetailHeader({
         </nav>
       </div>
 
-      <div className="plant-detail-v3__header-main">
-        <div className="plant-detail-v3__hero">
-          {primaryPhotoUrl ? (
-            <div className="plant-detail-v3__hero-photo">
-              <img alt={`${plant.name} primary`} src={primaryPhotoUrl} />
+      <div className="plant-detail-v3__hero plant-detail-v3__hero--compact">
+        <div className={`plant-detail-v3__hero-photo${headerPhoto ? '' : ' plant-detail-v3__hero-photo--placeholder'}`}>
+          {headerPhoto ? (
+            <>
+              <img alt={`${plant.name} general`} src={headerPhoto.fileUrl} />
+              <span className="plant-detail-v3__hero-photo-tag">{t('plantDetail.generalPhotoLabel')}</span>
+            </>
+          ) : (
+            <div className="plant-detail-v3__hero-photo-empty">
+              <span className="plant-detail-v3__hero-photo-initials">{initials || plant.code.slice(0, 2).toUpperCase()}</span>
+              <div>
+                <strong>{t('plantDetail.noGeneralPhoto')}</strong>
+                <span>{t('plantDetail.generalPhotoLabel')}</span>
+              </div>
+              <ImageOff size={20} />
             </div>
-          ) : null}
-
-          <div className="plant-detail-v3__hero-copy">
-            <div className="plant-detail-v3__eyebrow">{t('plantDetail.workspaceEyebrow')}</div>
-            <div className="plant-detail-v3__title-row">
-              <div>
-                <h1>{plant.name}</h1>
-                <p>{plant.code} · {plant.installationName ?? t('plantDetail.noInstallationAssigned')}</p>
-              </div>
-              <div className="plant-detail-v3__badges">
-                <StatusBadge label={plant.plantTypeName ?? t('plantDetail.unspecifiedType')} variant="info" />
-                <StatusBadge label={plant.plantStatusName ?? t('plantDetail.unknownStatus')} variant={statusTone} />
-                <StatusBadge label={plant.isActive ? t('records.active') : t('records.inactive')} variant={plant.isActive ? 'success' : 'neutral'} />
-              </div>
-            </div>
-
-            <div className="plant-detail-v3__meta-strip">
-              <div>
-                <span>{t('plantDetail.installation')}</span>
-                <strong>{plant.installationName ?? plant.installationCode ?? t('records.unassigned')}</strong>
-              </div>
-              <div>
-                <span>{t('plantDetail.client')}</span>
-                <strong>{plant.clientName ?? plant.clientCode ?? t('plantDetail.unknownClient')}</strong>
-              </div>
-              <div>
-                <span>{t('plantDetail.updated')}</span>
-                <strong>{updatedLabel}</strong>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
-        <div className="plant-detail-v3__header-actions">
-          <button className="secondary-button" disabled title="Edit plant UI is the next step." type="button">
-            <Pencil size={16} />
-            <span>{t('plantDetail.editPlant')}</span>
-          </button>
-          <button className="secondary-button" type="button" onClick={onOpenPhotos}>
-            <ImagePlus size={16} />
-            <span>{t('plantDetail.uploadPhoto')}</span>
-          </button>
-          <button className="secondary-button" type="button" onClick={onOpenHistory}>
-            <CalendarPlus size={16} />
-            <span>{t('plantDetail.addEvent')}</span>
-          </button>
-          <button className="secondary-button" type="button" onClick={onOpenCare}>
-            <SlidersHorizontal size={16} />
-            <span>{t('plantDetail.addThreshold')}</span>
-          </button>
-          <button className="secondary-button" type="button" onClick={onViewInstallation}>
-            <MapPinned size={16} />
-            <span>{t('plantDetail.viewInstallation')}</span>
-          </button>
-          <button className="ghost-button" disabled title="Activate/deactivate hook pending frontend mutation." type="button">
-            <ToggleLeft size={16} />
-            <span>{plant.isActive ? t('plantDetail.deactivate') : t('plantDetail.activate')}</span>
-          </button>
+        <div className="plant-detail-v3__hero-copy plant-detail-v3__hero-copy--compact">
+          <div className="plant-detail-v3__title-block">
+            <span className="plant-detail-v3__eyebrow">{t('plantDetail.plantIdentityEyebrow')}</span>
+            <h1>{plant.name}</h1>
+          </div>
+          <div className="plant-detail-v3__identity-strip">
+            <span>{t('plantDetail.plantCodeLabel')}</span>
+            <strong>{plant.code}</strong>
+          </div>
         </div>
       </div>
     </section>
