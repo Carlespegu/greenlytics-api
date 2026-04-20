@@ -1,21 +1,32 @@
 import { useMemo, useState } from 'react';
-import { ImagePlus, Star, Trash2 } from 'lucide-react';
+import { CheckCircle2, ImagePlus, ImageUp, Star, Trash2 } from 'lucide-react';
 
 import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { PlantPhotoRecord } from '@/modules/plants/api/plantsApi';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ImageCarouselModal } from '@/shared/ui/ImageCarouselModal';
 import { SectionHeading } from '@/shared/ui/SectionHeading';
+import { StatusBadge } from '@/shared/ui/StatusBadge';
 
 interface PlantPhotosTabProps {
+  plantName: string;
+  primaryPhotoUrl: string | null;
   photos: PlantPhotoRecord[];
 }
 
-export function PlantPhotosTab({ photos }: PlantPhotosTabProps) {
+export function PlantPhotosTab({ plantName, primaryPhotoUrl, photos }: PlantPhotosTabProps) {
   const { locale, t } = useI18n();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const primaryPhoto = photos.find((photo) => photo.isPrimary) ?? photos[0] ?? null;
-  const imageUrls = useMemo(() => photos.map((photo) => photo.fileUrl), [photos]);
+  const sortedPhotos = useMemo(
+    () => [...photos].sort((left, right) => Number(right.isPrimary) - Number(left.isPrimary) || Date.parse(right.createdAt) - Date.parse(left.createdAt)),
+    [photos],
+  );
+  const primaryPhoto = sortedPhotos.find((photo) => photo.isPrimary)
+    ?? sortedPhotos.find((photo) => primaryPhotoUrl && photo.fileUrl === primaryPhotoUrl)
+    ?? sortedPhotos[0]
+    ?? null;
+  const featuredPhotoUrl = primaryPhoto?.fileUrl ?? primaryPhotoUrl ?? null;
+  const imageUrls = useMemo(() => sortedPhotos.map((photo) => photo.fileUrl), [sortedPhotos]);
 
   const formatPhotoDate = (value: string) => (
     new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
@@ -36,12 +47,15 @@ export function PlantPhotosTab({ photos }: PlantPhotosTabProps) {
             )}
           />
 
-          {primaryPhoto ? (
+          {featuredPhotoUrl ? (
             <div className="plant-detail-v3__primary-photo">
-              <img alt={`${primaryPhoto.fileName} primary`} src={primaryPhoto.fileUrl} />
+              <img alt={`${plantName} primary`} src={featuredPhotoUrl} />
               <div className="plant-detail-v3__primary-photo-meta">
-                <strong>{primaryPhoto.photoTypeName ?? primaryPhoto.fileName}</strong>
-                <p>{formatPhotoDate(primaryPhoto.createdAt)}</p>
+                <div>
+                  <strong>{primaryPhoto?.photoTypeName ?? t('plantDetail.generalPhotoLabel')}</strong>
+                  <p>{primaryPhoto ? formatPhotoDate(primaryPhoto.createdAt) : 'Imatge principal disponible'}</p>
+                </div>
+                <StatusBadge label={t('plantDetail.primary')} variant="success" />
               </div>
             </div>
           ) : (
@@ -55,36 +69,62 @@ export function PlantPhotosTab({ photos }: PlantPhotosTabProps) {
             subtitle={t('plantDetail.photoGallerySubtitle')}
           />
 
-          {photos.length === 0 ? (
+          {sortedPhotos.length === 0 ? (
             <EmptyState title={t('plantDetail.noPhotosYet')} description={t('plantDetail.noPhotosDescription')} />
           ) : (
             <div className="plant-detail-v3__photo-grid">
-              {photos.map((photo, index) => (
-                <article className="plant-detail-v3__photo-card" key={photo.id}>
+              {sortedPhotos.map((photo, index) => (
+                <article className={`plant-detail-v3__photo-card${photo.isPrimary ? ' plant-detail-v3__photo-card--primary' : ''}`} key={photo.id}>
                   <button className="plant-detail-v3__photo-card-image" type="button" onClick={() => setActiveIndex(index)}>
                     <img alt={photo.fileName} src={photo.fileUrl} />
                   </button>
                   <div className="plant-detail-v3__photo-card-meta">
+                    <div className="plant-detail-v3__photo-card-copy">
+                      <strong>{photo.photoTypeName ?? t('plantDetail.notSpecified')}</strong>
+                      <p>{photo.fileName}</p>
+                    </div>
+                    <div className="plant-detail-v3__photo-card-badges">
+                      {photo.isPrimary ? <StatusBadge label={t('plantDetail.primary')} variant="success" /> : null}
+                      <StatusBadge label={photo.isActive ? t('records.active') : t('records.inactive')} variant={photo.isActive ? 'success' : 'neutral'} />
+                    </div>
+                  </div>
+                  <dl className="plant-detail-v3__photo-card-details">
                     <div>
-                      <strong>{photo.photoTypeName ?? photo.fileName}</strong>
-                      <p>{formatPhotoDate(photo.createdAt)}</p>
+                      <dt>Tipus de foto</dt>
+                      <dd>{photo.photoTypeName ?? t('plantDetail.notSpecified')}</dd>
                     </div>
-                    <div className="plant-detail-v3__photo-card-actions">
-                      <button className="ghost-button" disabled title="Set primary action hook pending." type="button">
-                        <Star size={15} />
-                        <span>{photo.isPrimary ? t('plantDetail.primary') : t('plantDetail.setPrimary')}</span>
-                      </button>
-                      <button className="ghost-button" disabled title="Delete photo action hook pending." type="button">
-                        <Trash2 size={15} />
-                        <span>{t('plantDetail.delete')}</span>
-                      </button>
+                    <div>
+                      <dt>Data de la foto</dt>
+                      <dd>{formatPhotoDate(photo.createdAt)}</dd>
                     </div>
+                  </dl>
+                  <div className="plant-detail-v3__photo-card-actions">
+                    <button className="ghost-button" disabled title="Set primary action hook pending." type="button">
+                      {photo.isPrimary ? <CheckCircle2 size={15} /> : <Star size={15} />}
+                      <span>{photo.isPrimary ? t('plantDetail.primary') : t('plantDetail.setPrimary')}</span>
+                    </button>
+                    <button className="ghost-button" disabled title="Delete photo action hook pending." type="button">
+                      <Trash2 size={15} />
+                      <span>{t('plantDetail.delete')}</span>
+                    </button>
                   </div>
                 </article>
               ))}
             </div>
           )}
         </section>
+
+        {featuredPhotoUrl && sortedPhotos.length === 0 ? (
+          <section className="panel-card plant-detail-v3__section-card">
+            <div className="plant-detail-v3__context-card">
+              <span className="plant-detail-v3__care-icon"><ImageUp size={18} /></span>
+              <div>
+                <strong>Imatge principal disponible</strong>
+                <p>Hi ha una imatge principal registrada, però la galeria detallada encara no està sincronitzada en aquesta resposta.</p>
+              </div>
+            </div>
+          </section>
+        ) : null}
       </div>
 
       <ImageCarouselModal

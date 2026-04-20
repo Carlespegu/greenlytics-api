@@ -1,144 +1,120 @@
-import type { ReactNode } from 'react';
-import { Droplets, Eye, Flower2, Scissors, Sprout, TestTube2 } from 'lucide-react';
+import { Activity, RadioTower, Ruler } from 'lucide-react';
 
 import { useI18n } from '@/app/i18n/LanguageProvider';
-import type { PlantDetail } from '@/modules/plants/api/plantsApi';
-import type { PlantThresholdSummary } from '@/modules/plants/components/detail/plantDetailViewModel';
+import type { PlantDetail, PlantThresholdRecord } from '@/modules/plants/api/plantsApi';
+import { formatDateTime } from '@/modules/plants/components/detail/plantDetailViewModel';
+import { EmptyState } from '@/shared/components/EmptyState';
 import { SectionHeading } from '@/shared/ui/SectionHeading';
+import { StatusBadge } from '@/shared/ui/StatusBadge';
 
 interface PlantCareTabProps {
   plant: PlantDetail;
-  thresholdMap: Record<'soilMoisture' | 'temperature' | 'light' | 'airHumidity', PlantThresholdSummary | null>;
 }
 
-export function PlantCareTab({ plant, thresholdMap }: PlantCareTabProps) {
-  const { t } = useI18n();
+export function PlantCareTab({ plant }: PlantCareTabProps) {
+  const { locale, t } = useI18n();
+  const latestReadingLabel = plant.latestReading?.readAt
+    ? formatDateTime(plant.latestReading.readAt, locale) ?? t('records.unknown')
+    : 'Encara no hi ha cap lectura recent disponible.';
 
   return (
     <div className="plant-detail-v3__tab-stack">
       <section className="panel-card plant-detail-v3__section-card">
         <SectionHeading
-          title={t('plantDetail.currentCarePlan')}
-          subtitle={t('plantDetail.currentCarePlanSubtitle')}
+          title="Base de cures"
+          subtitle="Resum del marc de referència actual de la planta segons els llindars definits."
         />
-        <div className="plant-detail-v3__care-grid">
-          <CareCard
-            icon={<Droplets size={18} />}
-            title={t('plantDetail.wateringRecommendation')}
-            value={thresholdMap.soilMoisture ? describeThreshold(thresholdMap.soilMoisture, t) : t('plantDetail.defineSoilMoistureThreshold')}
-          />
-          <CareCard
-            icon={<Eye size={18} />}
-            title={t('plantDetail.lightRecommendation')}
-            value={thresholdMap.light ? describeThreshold(thresholdMap.light, t) : t('plantDetail.noLightRangeConfigured')}
-          />
-          <CareCard
-            icon={<Sprout size={18} />}
-            title={t('plantDetail.temperatureComfortRange')}
-            value={thresholdMap.temperature ? describeThreshold(thresholdMap.temperature, t) : t('plantDetail.noTemperatureRangeConfigured')}
-          />
-          <CareCard
-            icon={<Flower2 size={18} />}
-            title={t('plantDetail.humidityComfortRange')}
-            value={thresholdMap.airHumidity ? describeThreshold(thresholdMap.airHumidity, t) : t('plantDetail.noHumidityRangeConfigured')}
-          />
-          <CareCard
-            icon={<TestTube2 size={18} />}
-            title={t('plantDetail.operatorNotes')}
-            value={plant.description ?? t('plantDetail.noNotesYet')}
-            wide
-          />
+        <div className="plant-detail-v3__context-card-list">
+          <article className="plant-detail-v3__context-card">
+            <span className="plant-detail-v3__care-icon"><Ruler size={18} /></span>
+            <div>
+              <strong>{t('plantDetail.thresholdsCount')}</strong>
+              <p>{`${plant.thresholdsCount} llindars definits actualment`}</p>
+            </div>
+          </article>
+          <article className="plant-detail-v3__context-card">
+            <span className="plant-detail-v3__care-icon"><Activity size={18} /></span>
+            <div>
+              <strong>{t('plantDetail.latestReading')}</strong>
+              <p>{latestReadingLabel}</p>
+            </div>
+          </article>
+          {plant.latestReading?.source ? (
+            <article className="plant-detail-v3__context-card">
+              <span className="plant-detail-v3__care-icon"><RadioTower size={18} /></span>
+              <div>
+                <strong>{t('plantDetail.source')}</strong>
+                <p>{plant.latestReading.source}</p>
+              </div>
+            </article>
+          ) : null}
         </div>
       </section>
 
       <section className="panel-card plant-detail-v3__section-card">
         <SectionHeading
-          title={t('plantDetail.thresholdsSummary')}
-          subtitle={t('plantDetail.thresholdsSummarySubtitle')}
+          title="Valors ideals per a la planta"
+          subtitle="Cada llindar defineix el rang òptim de cura d’aquesta planta."
         />
-        <div className="plant-detail-v3__care-grid">
-          <ThresholdCard label={t('plantDetail.soilMoisture')} threshold={thresholdMap.soilMoisture} noThresholdLabel={t('plantDetail.noThresholdConfigured')} />
-          <ThresholdCard label={t('plantDetail.temperature')} threshold={thresholdMap.temperature} noThresholdLabel={t('plantDetail.noThresholdConfigured')} />
-          <ThresholdCard label={t('plantDetail.light')} threshold={thresholdMap.light} noThresholdLabel={t('plantDetail.noThresholdConfigured')} />
-          <ThresholdCard label={t('plantDetail.airHumidity')} threshold={thresholdMap.airHumidity} noThresholdLabel={t('plantDetail.noThresholdConfigured')} />
-        </div>
-      </section>
 
-      <section className="panel-card plant-detail-v3__section-card">
-        <SectionHeading
-          title={t('plantDetail.careActions')}
-          subtitle={t('plantDetail.careActionsSubtitle')}
-        />
-        <div className="plant-detail-v3__action-grid">
-          <FutureAction label={t('plantDetail.registerWatering')} icon={<Droplets size={16} />} />
-          <FutureAction label={t('plantDetail.registerPruning')} icon={<Scissors size={16} />} />
-          <FutureAction label={t('plantDetail.registerFertilization')} icon={<TestTube2 size={16} />} />
-          <FutureAction label={t('plantDetail.registerTransplant')} icon={<Sprout size={16} />} />
-          <FutureAction label={t('plantDetail.addManualObservation')} icon={<Eye size={16} />} />
-        </div>
+        {plant.thresholds.length === 0 ? (
+          <EmptyState
+            title="Encara no hi ha valors ideals definits"
+            description="Aquesta planta encara no té llindars configurats, així que no hi ha una línia base de cures disponible."
+          />
+        ) : (
+          <div className="plant-detail-v3__care-grid">
+            {plant.thresholds.map((threshold) => (
+              <CareThresholdCard key={threshold.id} threshold={threshold} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
 }
 
-function CareCard({ icon, title, value, wide = false }: { icon: ReactNode; title: string; value: string; wide?: boolean }) {
+function CareThresholdCard({ threshold }: { threshold: PlantThresholdRecord }) {
+  const { t } = useI18n();
+  const readingTypeLabel = threshold.readingTypeName ?? t('plantDetail.notSpecified');
+  const unitTypeLabel = threshold.unitTypeName ?? t('plantDetail.notSpecified');
+
   return (
-    <article className={`plant-detail-v3__care-card${wide ? ' plant-detail-v3__care-card--wide' : ''}`}>
+    <article className="plant-detail-v3__care-card plant-detail-v3__care-threshold-card">
       <div className="plant-detail-v3__care-card-header">
-        <span className="plant-detail-v3__care-icon">{icon}</span>
-        <strong>{title}</strong>
+        <div>
+          <strong>{readingTypeLabel}</strong>
+          <p>{unitTypeLabel}</p>
+        </div>
+        <StatusBadge label={threshold.isActive ? t('records.active') : t('records.inactive')} variant={threshold.isActive ? 'success' : 'neutral'} />
       </div>
-      <p>{value}</p>
+
+      <dl className="plant-detail-v3__care-threshold-values">
+        <div>
+          <dt>Mínim</dt>
+          <dd>{formatNumericValue(threshold.minValue, unitTypeLabel, t)}</dd>
+        </div>
+        <div>
+          <dt>Màxim</dt>
+          <dd>{formatNumericValue(threshold.maxValue, unitTypeLabel, t)}</dd>
+        </div>
+        <div>
+          <dt>Òptim</dt>
+          <dd>{formatNumericValue(threshold.optimalValue, unitTypeLabel, t)}</dd>
+        </div>
+      </dl>
     </article>
   );
 }
 
-function ThresholdCard({
-  label,
-  threshold,
-  noThresholdLabel,
-}: {
-  label: string;
-  threshold: PlantThresholdSummary | null;
-  noThresholdLabel: string;
-}) {
-  const { t } = useI18n();
+function formatNumericValue(
+  value: number | null,
+  unitLabel: string,
+  t: (key: string) => string,
+) {
+  if (value === null || value === undefined) {
+    return t('records.unknown');
+  }
 
-  return (
-    <article className="plant-detail-v3__threshold-card">
-      <span>{label}</span>
-      {threshold ? (
-        <strong>
-          {t('plantDetail.thresholdRangeSummary', {
-            min: threshold.min ?? '-',
-            optimal: threshold.optimal ?? '-',
-            max: threshold.max ?? '-',
-            unit: threshold.unit ? ` ${threshold.unit}` : '',
-          })}
-        </strong>
-      ) : (
-        <strong>{noThresholdLabel}</strong>
-      )}
-    </article>
-  );
-}
-
-function FutureAction({ label, icon }: { label: string; icon: ReactNode }) {
-  const { t } = useI18n();
-
-  return (
-    <button className="secondary-button plant-detail-v3__future-action" disabled title={t('plantDetail.futureActionPending')} type="button">
-      {icon}
-      <span>{label}</span>
-    </button>
-  );
-}
-
-function describeThreshold(threshold: PlantThresholdSummary, t: (key: string, vars?: Record<string, string | number>) => string) {
-  return t('plantDetail.thresholdDescription', {
-    min: threshold.min ?? '-',
-    max: threshold.max ?? '-',
-    optimal: threshold.optimal ?? '-',
-    unit: threshold.unit ? ` ${threshold.unit}` : '',
-  });
+  return `${value}${unitLabel && unitLabel !== t('plantDetail.notSpecified') ? ` ${unitLabel}` : ''}`;
 }

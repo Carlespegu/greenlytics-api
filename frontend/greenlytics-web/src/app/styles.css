@@ -1923,9 +1923,33 @@ img { display: block; max-width: 100%; }
   display: grid;
   gap: 10px;
 }
+.plant-detail-v3__care-threshold-card {
+  align-content: start;
+}
 .plant-detail-v3__care-card-header,
 .plant-detail-v3__aside-head {
   align-items: center;
+}
+.plant-detail-v3__care-threshold-values,
+.plant-detail-v3__photo-card-details {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+.plant-detail-v3__care-threshold-values div,
+.plant-detail-v3__photo-card-details div {
+  display: grid;
+  gap: 4px;
+}
+.plant-detail-v3__care-threshold-values dt,
+.plant-detail-v3__photo-card-details dt {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+}
+.plant-detail-v3__care-threshold-values dd,
+.plant-detail-v3__photo-card-details dd {
+  margin: 0;
+  line-height: 1.35;
 }
 .plant-detail-v3__action-grid {
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1945,8 +1969,10 @@ img { display: block; max-width: 100%; }
   border-radius: 24px;
 }
 .plant-detail-v3__primary-photo-meta {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 .plant-detail-v3__photo-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1958,6 +1984,10 @@ img { display: block; max-width: 100%; }
   border-radius: 22px;
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(148, 163, 184, 0.08);
+}
+.plant-detail-v3__photo-card--primary {
+  border-color: rgba(34, 197, 94, 0.22);
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.1) inset;
 }
 .plant-detail-v3__photo-card-image {
   border: 0;
@@ -1974,6 +2004,15 @@ img { display: block; max-width: 100%; }
 .plant-detail-v3__photo-card-meta {
   display: grid;
   gap: 10px;
+}
+.plant-detail-v3__photo-card-copy {
+  display: grid;
+  gap: 4px;
+}
+.plant-detail-v3__photo-card-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .plant-detail-v3__photo-card-actions {
   flex-wrap: wrap;

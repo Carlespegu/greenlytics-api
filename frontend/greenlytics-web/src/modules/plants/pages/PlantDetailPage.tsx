@@ -137,16 +137,13 @@ export function PlantDetailPage() {
         {activeTab === 'basic-data' ? (
           <PlantOverviewTab
             plant={plant}
-            lastEventLabel={viewModel.lastEventLabel}
-            lastPhotoLabel={viewModel.lastPhotoLabel}
-            lastReadingLabel={viewModel.lastReadingLabel}
             updatedLabel={viewModel.updatedLabel}
           />
         ) : null}
 
         {activeTab === 'history' ? <PlantHistoryTab entries={viewModel.historyEntries} /> : null}
-        {activeTab === 'photos' ? <PlantPhotosTab photos={plant.photos} /> : null}
-        {activeTab === 'care' ? <PlantCareTab plant={plant} thresholdMap={viewModel.thresholdMap} /> : null}
+        {activeTab === 'photos' ? <PlantPhotosTab photos={plant.photos} plantName={plant.name} primaryPhotoUrl={plant.primaryPhotoUrl} /> : null}
+        {activeTab === 'care' ? <PlantCareTab plant={plant} /> : null}
         {activeTab === 'alerts' ? <PlantAlertsTab recommendations={viewModel.recommendations} /> : null}
         {activeTab === 'installations' ? (
           <PlantInstallationsTab

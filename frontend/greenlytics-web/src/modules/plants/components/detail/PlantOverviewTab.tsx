@@ -6,65 +6,54 @@ import { SectionHeading } from '@/shared/ui/SectionHeading';
 interface PlantOverviewTabProps {
   plant: PlantDetail;
   updatedLabel: string;
-  lastEventLabel: string;
-  lastPhotoLabel: string;
-  lastReadingLabel: string;
 }
 
 export function PlantOverviewTab({
   plant,
   updatedLabel,
-  lastEventLabel,
-  lastPhotoLabel,
-  lastReadingLabel,
 }: PlantOverviewTabProps) {
   const { locale, t } = useI18n();
   const createdLabel = formatDateTime(plant.createdAt, locale) ?? t('records.unknown');
+  const statusLabel = plant.plantStatusName ?? t('plantDetail.notSpecified');
+  const descriptionLabel = plant.description ?? t('plantDetail.notSpecified');
+  const clientLabel = plant.clientName ?? t('plantDetail.notSpecified');
+  const installationLabel = plant.installationName ?? t('records.unassigned');
+  const plantTypeLabel = plant.plantTypeName ?? t('plantDetail.notSpecified');
+  const operationalStateLabel = plant.isActive ? t('records.active') : t('records.inactive');
 
   return (
     <div className="plant-detail-v3__tab-stack">
       <section className="panel-card plant-detail-v3__section-card">
         <SectionHeading
           title={t('plantDetail.generalInformation')}
-          subtitle={t('plantDetail.generalInformationSubtitle')}
+          subtitle="Informació essencial i llegible de la planta."
         />
         <div className="plant-detail-v3__info-grid">
-          <InfoItem label={t('plantDetail.client')} value={plant.clientName ?? plant.clientCode ?? t('plantDetail.unknownClient')} />
-          <InfoItem label={t('plantDetail.installation')} value={plant.installationName ?? plant.installationCode ?? t('records.unassigned')} />
-          <InfoItem label={t('plantsPage.code')} value={plant.code} />
           <InfoItem label={t('plantsPage.name')} value={plant.name} />
-          <InfoItem label={t('plantDetail.descriptionNotes')} value={plant.description ?? t('plantDetail.noNotesYet')} wide />
-          <InfoItem label={t('plantDetail.plantType')} value={plant.plantTypeName ?? plant.plantTypeCode ?? t('plantDetail.notSpecified')} />
-          <InfoItem label={t('plantDetail.plantStatus')} value={plant.plantStatusName ?? plant.plantStatusCode ?? t('records.unknown')} />
-          <InfoItem label={t('plantDetail.operationalState')} value={plant.isActive ? t('records.active') : t('records.inactive')} />
+          <InfoItem label={t('plantDetail.descriptionNotes')} value={descriptionLabel} wide />
+          <InfoItem label={t('plantDetail.operationalState')} value={operationalStateLabel} />
+          <InfoItem label={t('plantDetail.plantStatus')} value={statusLabel} />
         </div>
       </section>
 
       <section className="panel-card plant-detail-v3__section-card">
         <SectionHeading
-          title={t('plantDetail.botanicalInfo')}
-          subtitle={t('plantDetail.botanicalInfoSubtitle')}
+          title={t('plantDetail.context')}
+          subtitle="Relació de la planta amb el client, la instal·lació i la seva tipologia."
         />
         <div className="plant-detail-v3__info-grid">
-          <InfoItem label={t('plantDetail.species')} value={t('plantDetail.pendingCatalogEnrichment')} />
-          <InfoItem label={t('plantDetail.family')} value={t('plantDetail.pendingCatalogEnrichment')} />
-          <InfoItem label={t('plantDetail.exposure')} value={t('plantDetail.pendingCatalogEnrichment')} />
-          <InfoItem label={t('plantDetail.soilType')} value={t('plantDetail.pendingCatalogEnrichment')} />
-          <InfoItem label={t('plantDetail.floweringSeason')} value={t('plantDetail.pendingCatalogEnrichment')} />
-          <InfoItem label={t('plantDetail.wateringProfile')} value={t('plantDetail.pendingCatalogEnrichment')} />
+          <InfoItem label={t('plantDetail.client')} value={clientLabel} />
+          <InfoItem label={t('plantDetail.installation')} value={installationLabel} />
+          <InfoItem label={t('plantDetail.plantType')} value={plantTypeLabel} />
         </div>
       </section>
 
       <section className="panel-card plant-detail-v3__section-card">
         <SectionHeading
-          title={t('plantDetail.operationalSummary')}
-          subtitle={t('plantDetail.operationalSummarySubtitle')}
+          title="Metadades"
+          subtitle="Traçabilitat bàsica de creació i actualització."
         />
         <div className="plant-detail-v3__info-grid">
-          <InfoItem label={t('plantDetail.thresholdsCount')} value={String(plant.thresholdsCount)} />
-          <InfoItem label={t('plantDetail.lastEvent')} value={lastEventLabel} />
-          <InfoItem label={t('plantDetail.lastPhotoDate')} value={lastPhotoLabel} />
-          <InfoItem label={t('plantDetail.lastReadingDate')} value={lastReadingLabel} />
           <InfoItem label={t('plantDetail.created')} value={createdLabel} />
           <InfoItem label={t('plantDetail.updated')} value={updatedLabel} />
         </div>
