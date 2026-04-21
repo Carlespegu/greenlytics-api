@@ -76,6 +76,10 @@ export type CreatePlantSubmitInput = {
   commonName?: string;
   scientificName?: string;
   notes?: string;
+  lightExposureCode?: string;
+  lightExposureLabel?: string;
+  soilType?: string;
+  fertilizer?: string;
   photos?: File[];
   leafImage?: File;
   trunkImage?: File;
@@ -88,6 +92,8 @@ export type CreatePlantSubmitInput = {
   temperatureMax?: string;
   lightMin?: string;
   lightMax?: string;
+  floweringMonths?: number[];
+  fertilizationSeasons?: string[];
 };
 
 export type CreatePlantModalProps = {

@@ -143,6 +143,12 @@ export interface PlantDetail {
   plantStatusId: string | null;
   plantStatusCode: string | null;
   plantStatusName: string | null;
+  lightExposureCode: string | null;
+  lightExposureLabel: string | null;
+  soilType: string | null;
+  fertilizer: string | null;
+  floweringMonths: number[];
+  fertilizationSeasons: string[];
   isActive: boolean;
   primaryPhotoUrl: string | null;
   thresholdsCount: number;
@@ -164,6 +170,28 @@ export interface CreatePlantInput {
   description?: string;
   plantTypeId?: string;
   plantStatusId?: string;
+  lightExposureCode?: string;
+  lightExposureLabel?: string;
+  soilType?: string;
+  fertilizer?: string;
+  floweringMonths?: number[];
+  fertilizationSeasons?: string[];
+  isActive?: boolean;
+}
+
+export interface UpdatePlantInput {
+  installationId?: string;
+  code?: string;
+  name?: string;
+  description?: string;
+  plantTypeId?: string;
+  plantStatusId?: string;
+  lightExposureCode?: string;
+  lightExposureLabel?: string;
+  soilType?: string;
+  fertilizer?: string;
+  floweringMonths?: number[];
+  fertilizationSeasons?: string[];
   isActive?: boolean;
 }
 
@@ -202,6 +230,7 @@ export const plantsApi = {
   getById: (clientId: string, plantId: string) => httpClient.get<PlantDetail>(`/api/clients/${clientId}/plants/${plantId}`),
   search: (request: PlantSearchRequest) => postSearch<PlantListItem, PlantSearchFiltersInput, PlantSortField>('/api/plants/search', request),
   create: (clientId: string, input: CreatePlantInput) => httpClient.post<PlantDetail>(`/api/clients/${clientId}/plants`, input),
+  update: (clientId: string, plantId: string, input: UpdatePlantInput) => httpClient.put<PlantDetail>(`/api/clients/${clientId}/plants/${plantId}`, input),
   createThreshold: (clientId: string, plantId: string, input: CreatePlantThresholdInput) => (
     httpClient.post<PlantThresholdRecord>(`/api/clients/${clientId}/plants/${plantId}/thresholds`, input)
   ),

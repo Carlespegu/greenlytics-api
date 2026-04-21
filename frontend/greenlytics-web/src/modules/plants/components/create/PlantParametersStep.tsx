@@ -9,6 +9,7 @@ interface PlantParametersStepProps {
   floweringMonths: number[];
   fertilizationSeasons: string[];
   auxiliaryFieldsDisabled?: boolean;
+  seasonSelectorsDisabled?: boolean;
   onChange: <K extends keyof PlantDraft>(field: K, value: PlantDraft[K]) => void;
   onFloweringMonthsChange: (value: number[]) => void;
   onFertilizationSeasonsChange: (value: string[]) => void;
@@ -19,6 +20,7 @@ export function PlantParametersStep({
   floweringMonths,
   fertilizationSeasons,
   auxiliaryFieldsDisabled = false,
+  seasonSelectorsDisabled = auxiliaryFieldsDisabled,
   onChange,
   onFloweringMonthsChange,
   onFertilizationSeasonsChange,
@@ -133,7 +135,7 @@ export function PlantParametersStep({
                   <button
                     key={month}
                     type="button"
-                    disabled={auxiliaryFieldsDisabled}
+                    disabled={seasonSelectorsDisabled}
                     className={`plant-create-v2__chip${active ? ' plant-create-v2__chip--green' : ''}`}
                     onClick={() => onFloweringMonthsChange(toggleMonth(floweringMonths, index))}
                   >
@@ -153,7 +155,7 @@ export function PlantParametersStep({
                   <button
                     key={season.id}
                     type="button"
-                    disabled={auxiliaryFieldsDisabled}
+                    disabled={seasonSelectorsDisabled}
                     className={`plant-create-v2__chip${active ? ' plant-create-v2__chip--amber' : ''}`}
                     onClick={() => onFertilizationSeasonsChange(toggleSeason(fertilizationSeasons, season.id))}
                   >

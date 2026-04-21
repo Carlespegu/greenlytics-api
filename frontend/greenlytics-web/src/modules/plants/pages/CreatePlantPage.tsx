@@ -81,6 +81,12 @@ export function CreatePlantPage() {
         name: input.name,
         description: input.notes?.trim() || input.commonName?.trim() || input.scientificName?.trim() || undefined,
         plantTypeId: input.plantTypeId || undefined,
+        lightExposureCode: input.lightExposureCode || undefined,
+        lightExposureLabel: input.lightExposureLabel || undefined,
+        soilType: input.soilType?.trim() || undefined,
+        fertilizer: input.fertilizer?.trim() || undefined,
+        floweringMonths: input.floweringMonths,
+        fertilizationSeasons: input.fertilizationSeasons,
         isActive: true,
       });
 

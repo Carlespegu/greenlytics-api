@@ -47,6 +47,8 @@ export function PlantCareTab({ plant }: PlantCareTabProps) {
 
   useEffect(() => {
     setDraft(buildDraftFromPlant(plant));
+    setFloweringMonths(plant.floweringMonths ?? []);
+    setFertilizationSeasons(plant.fertilizationSeasons ?? []);
     setMessage(null);
   }, [plant]);
 
@@ -108,6 +110,15 @@ export function PlantCareTab({ plant }: PlantCareTabProps) {
           await plantsApi.createThreshold(plant.clientId, plant.id, payload);
         }
       }
+
+      await plantsApi.update(plant.clientId, plant.id, {
+        lightExposureCode: draft.lightExposureCode || undefined,
+        lightExposureLabel: draft.lightExposureLabel || undefined,
+        soilType: draft.soilType.trim() || undefined,
+        fertilizer: draft.fertilizer.trim() || undefined,
+        floweringMonths,
+        fertilizationSeasons,
+      });
     },
     onSuccess: async () => {
       setMessage('Paràmetres guardats correctament.');
@@ -150,7 +161,7 @@ export function PlantCareTab({ plant }: PlantCareTabProps) {
           <article className="plant-detail-v3__context-card">
             <div>
               <strong>Persistència actual</strong>
-              <p>Els rangs de llindars es guarden al backend. La resta de camps queden preparats fins que el domini de planta els exposi.</p>
+              <p>Els llindars, l’exposició lumínica, el tipus de sòl, el fertilitzant, la floració i la temporada de fertilització es guarden al backend.</p>
             </div>
           </article>
         </div>
@@ -168,7 +179,6 @@ export function PlantCareTab({ plant }: PlantCareTabProps) {
           draft={draft}
           floweringMonths={floweringMonths}
           fertilizationSeasons={fertilizationSeasons}
-          auxiliaryFieldsDisabled
           onChange={setDraftField}
           onFloweringMonthsChange={setFloweringMonths}
           onFertilizationSeasonsChange={setFertilizationSeasons}
@@ -191,7 +201,13 @@ export function PlantCareTab({ plant }: PlantCareTabProps) {
 }
 
 function buildDraftFromPlant(plant: PlantDetail): PlantDraft {
-  const nextDraft = { ...emptyDraft };
+  const nextDraft = {
+    ...emptyDraft,
+    lightExposureCode: plant.lightExposureCode ?? '',
+    lightExposureLabel: plant.lightExposureLabel ?? '',
+    soilType: plant.soilType ?? '',
+    fertilizer: plant.fertilizer ?? '',
+  };
 
   for (const metric of parameterMetricDefinitions) {
     const threshold = findThresholdByMetric(plant.thresholds, metric);
