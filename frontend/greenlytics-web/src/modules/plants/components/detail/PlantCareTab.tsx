@@ -7,7 +7,6 @@ import { PlantParametersStep } from '@/modules/plants/components/create/PlantPar
 import { findOptionByTokens, findThresholdByMetric, parameterMetricDefinitions } from '@/modules/plants/helpers/parameterMetrics';
 import type { OptionItem, PlantDraft } from '@/modules/plants/types/plant.types';
 import { typesApi } from '@/modules/types/api/typesApi';
-import { EmptyState } from '@/shared/components/EmptyState';
 import { SectionHeading } from '@/shared/ui/SectionHeading';
 
 interface PlantCareTabProps {
@@ -135,7 +134,7 @@ export function PlantCareTab({ plant }: PlantCareTabProps) {
 
   return (
     <div className="plant-detail-v3__tab-stack">
-      <section className="panel-card plant-detail-v3__section-card">
+      <section className="plant-detail-v3__parameters-summary">
         <SectionHeading
           title="Paràmetres de la planta"
           subtitle="Mateix esquema operatiu que al pas d’alta: edita els rangs que sí tenen backend i deixa preparada la resta de context agronòmic."
@@ -157,12 +156,12 @@ export function PlantCareTab({ plant }: PlantCareTabProps) {
         </div>
       </section>
 
-      <section className="panel-card plant-detail-v3__section-card plant-detail-v3__parameters-panel">
+      <section className="plant-detail-v3__parameters-panel">
         {plant.thresholds.length === 0 && !readingTypesQuery.isLoading ? (
-          <EmptyState
-            title="Encara no hi ha paràmetres definits"
-            description="Configura els primers rangs ideals perquè la planta tingui una línia base comparable amb les lectures."
-          />
+          <div className="plant-detail-v3__inline-empty">
+            <strong>Encara no hi ha paràmetres definits</strong>
+            <p>Configura els primers rangs ideals perquè la planta tingui una línia base comparable amb les lectures.</p>
+          </div>
         ) : null}
 
         <PlantParametersStep
