@@ -422,10 +422,12 @@ public sealed class CreatePlantRequest
     public string? Description { get; set; }
     public Guid? PlantTypeId { get; set; }
     public Guid? PlantStatusId { get; set; }
+    public int[]? FloweringMonths { get; set; }
+    public string[]? FertilizationSeasons { get; set; }
     public bool? IsActive { get; set; }
 
     public CreatePlantCommand ToCommand(Guid clientId)
-        => new(clientId, InstallationId, Code, Name, Description, PlantTypeId, PlantStatusId, IsActive);
+        => new(clientId, InstallationId, Code, Name, Description, PlantTypeId, PlantStatusId, FloweringMonths, FertilizationSeasons, IsActive);
 }
 
 public sealed class UpdatePlantRequest
@@ -436,10 +438,12 @@ public sealed class UpdatePlantRequest
     public string? Description { get; set; }
     public Guid? PlantTypeId { get; set; }
     public Guid? PlantStatusId { get; set; }
+    public int[]? FloweringMonths { get; set; }
+    public string[]? FertilizationSeasons { get; set; }
     public bool? IsActive { get; set; }
 
     public UpdatePlantCommand ToCommand(Guid clientId, Guid plantId)
-        => new(clientId, plantId, InstallationId, Code, Name, Description, PlantTypeId, PlantStatusId, IsActive);
+        => new(clientId, plantId, InstallationId, Code, Name, Description, PlantTypeId, PlantStatusId, FloweringMonths, FertilizationSeasons, IsActive);
 }
 
 public sealed class AnalyzePlantPhotosRequest

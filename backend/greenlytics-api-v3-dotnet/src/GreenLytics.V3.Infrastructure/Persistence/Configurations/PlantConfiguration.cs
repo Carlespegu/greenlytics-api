@@ -18,6 +18,8 @@ public sealed class PlantConfiguration : IEntityTypeConfiguration<Plant>
         builder.Property(x => x.Description).HasColumnName("description");
         builder.Property(x => x.PlantTypeId).HasColumnName("plant_type_id");
         builder.Property(x => x.PlantStatusId).HasColumnName("plant_status_id");
+        builder.Property(x => x.FloweringMonths).HasColumnName("flowering_months");
+        builder.Property(x => x.FertilizationSeasons).HasColumnName("fertilization_seasons");
         builder.Property(x => x.IsActive).HasColumnName("is_active");
         builder.Property(x => x.CreatedAt).HasColumnName("created_at");
         builder.Property(x => x.CreatedByUserId).HasColumnName("created_by_user_id");

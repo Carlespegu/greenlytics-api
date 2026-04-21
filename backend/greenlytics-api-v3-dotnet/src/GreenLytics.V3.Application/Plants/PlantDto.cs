@@ -105,6 +105,8 @@ public sealed record PlantDetailDto(
     Guid? PlantStatusId,
     string? PlantStatusCode,
     string? PlantStatusName,
+    IReadOnlyList<int> FloweringMonths,
+    IReadOnlyList<string> FertilizationSeasons,
     bool IsActive,
     string? PrimaryPhotoUrl,
     int ThresholdsCount,

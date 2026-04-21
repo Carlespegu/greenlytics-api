@@ -59,6 +59,16 @@ public sealed class UpdatePlantHandler
             validated.Plant.PlantStatusId = validated.PlantStatusId;
         }
 
+        if (command.FloweringMonths is not null)
+        {
+            validated.Plant.FloweringMonths = (validated.FloweringMonths ?? Array.Empty<int>()).ToArray();
+        }
+
+        if (command.FertilizationSeasons is not null)
+        {
+            validated.Plant.FertilizationSeasons = (validated.FertilizationSeasons ?? Array.Empty<string>()).ToArray();
+        }
+
         if (validated.IsActive.HasValue)
         {
             validated.Plant.IsActive = validated.IsActive.Value;

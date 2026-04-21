@@ -29,6 +29,8 @@ public sealed record CreatePlantCommand(
     string? Description,
     Guid? PlantTypeId,
     Guid? PlantStatusId,
+    IReadOnlyList<int>? FloweringMonths,
+    IReadOnlyList<string>? FertilizationSeasons,
     bool? IsActive
 );
 
@@ -41,6 +43,8 @@ public sealed record UpdatePlantCommand(
     string? Description,
     Guid? PlantTypeId,
     Guid? PlantStatusId,
+    IReadOnlyList<int>? FloweringMonths,
+    IReadOnlyList<string>? FertilizationSeasons,
     bool? IsActive
 );
 

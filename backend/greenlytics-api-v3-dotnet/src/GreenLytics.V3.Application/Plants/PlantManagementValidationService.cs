@@ -64,6 +64,8 @@ public sealed class PlantManagementValidationService
             description,
             plantType?.Id,
             plantStatus?.Id,
+            NormalizeFloweringMonths(command.FloweringMonths),
+            NormalizeFertilizationSeasons(command.FertilizationSeasons),
             command.IsActive ?? true);
     }
 
@@ -112,6 +114,8 @@ public sealed class PlantManagementValidationService
             description,
             command.PlantTypeId.HasValue ? plantType?.Id : null,
             command.PlantStatusId.HasValue ? plantStatus?.Id : null,
+            command.FloweringMonths is null ? null : NormalizeFloweringMonths(command.FloweringMonths),
+            command.FertilizationSeasons is null ? null : NormalizeFertilizationSeasons(command.FertilizationSeasons),
             command.IsActive);
     }
 
@@ -547,6 +551,61 @@ public sealed class PlantManagementValidationService
 
         return normalized;
     }
+
+    private static IReadOnlyList<int> NormalizeFloweringMonths(IReadOnlyList<int>? months)
+    {
+        if (months is null || months.Count == 0)
+        {
+            return Array.Empty<int>();
+        }
+
+        var normalized = months
+            .Where(month => month >= 0 && month <= 11)
+            .Distinct()
+            .OrderBy(month => month)
+            .ToArray();
+
+        if (normalized.Length != months.Count)
+        {
+            throw RequestValidationException.BadRequest(
+                "Flowering months contain invalid values.",
+                RequestValidationException.Field("floweringMonths", "invalid_range", "Flowering months must be between 0 and 11."));
+        }
+
+        return normalized;
+    }
+
+    private static IReadOnlyList<string> NormalizeFertilizationSeasons(IReadOnlyList<string>? seasons)
+    {
+        if (seasons is null || seasons.Count == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "winter",
+            "spring",
+            "summer",
+            "autumn",
+        };
+
+        var normalized = seasons
+            .Where(season => !string.IsNullOrWhiteSpace(season))
+            .Select(season => season.Trim().ToLowerInvariant())
+            .Distinct()
+            .OrderBy(season => season)
+            .ToArray();
+
+        if (normalized.Length != seasons.Count || normalized.Any(season => !allowed.Contains(season)))
+        {
+            throw RequestValidationException.BadRequest(
+                "Fertilization seasons contain invalid values.",
+                RequestValidationException.Field("fertilizationSeasons", "invalid_value", "Fertilization seasons must be winter, spring, summer or autumn."));
+        }
+
+        return normalized;
+    }
 }
 
 public sealed record ValidatedPlantScope(Plant Plant);
@@ -560,6 +619,8 @@ public sealed record ValidatedCreatePlantRequest(
     string? Description,
     Guid? PlantTypeId,
     Guid? PlantStatusId,
+    IReadOnlyList<int> FloweringMonths,
+    IReadOnlyList<string> FertilizationSeasons,
     bool IsActive
 );
 
@@ -571,6 +632,8 @@ public sealed record ValidatedUpdatePlantRequest(
     string? Description,
     Guid? PlantTypeId,
     Guid? PlantStatusId,
+    IReadOnlyList<int>? FloweringMonths,
+    IReadOnlyList<string>? FertilizationSeasons,
     bool? IsActive
 );
 

@@ -40,6 +40,8 @@ public sealed class CreatePlantHandler
             Description = validated.Description,
             PlantTypeId = validated.PlantTypeId,
             PlantStatusId = validated.PlantStatusId,
+            FloweringMonths = validated.FloweringMonths.ToArray(),
+            FertilizationSeasons = validated.FertilizationSeasons.ToArray(),
             IsActive = validated.IsActive,
             CreatedAt = now,
             CreatedByUserId = _currentUser.UserId
