@@ -422,12 +422,16 @@ public sealed class CreatePlantRequest
     public string? Description { get; set; }
     public Guid? PlantTypeId { get; set; }
     public Guid? PlantStatusId { get; set; }
+    public string? LightExposureCode { get; set; }
+    public string? LightExposureLabel { get; set; }
+    public string? SoilType { get; set; }
+    public string? Fertilizer { get; set; }
     public int[]? FloweringMonths { get; set; }
     public string[]? FertilizationSeasons { get; set; }
     public bool? IsActive { get; set; }
 
     public CreatePlantCommand ToCommand(Guid clientId)
-        => new(clientId, InstallationId, Code, Name, Description, PlantTypeId, PlantStatusId, FloweringMonths, FertilizationSeasons, IsActive);
+        => new(clientId, InstallationId, Code, Name, Description, PlantTypeId, PlantStatusId, LightExposureCode, LightExposureLabel, SoilType, Fertilizer, FloweringMonths, FertilizationSeasons, IsActive);
 }
 
 public sealed class UpdatePlantRequest
@@ -438,12 +442,16 @@ public sealed class UpdatePlantRequest
     public string? Description { get; set; }
     public Guid? PlantTypeId { get; set; }
     public Guid? PlantStatusId { get; set; }
+    public string? LightExposureCode { get; set; }
+    public string? LightExposureLabel { get; set; }
+    public string? SoilType { get; set; }
+    public string? Fertilizer { get; set; }
     public int[]? FloweringMonths { get; set; }
     public string[]? FertilizationSeasons { get; set; }
     public bool? IsActive { get; set; }
 
     public UpdatePlantCommand ToCommand(Guid clientId, Guid plantId)
-        => new(clientId, plantId, InstallationId, Code, Name, Description, PlantTypeId, PlantStatusId, FloweringMonths, FertilizationSeasons, IsActive);
+        => new(clientId, plantId, InstallationId, Code, Name, Description, PlantTypeId, PlantStatusId, LightExposureCode, LightExposureLabel, SoilType, Fertilizer, FloweringMonths, FertilizationSeasons, IsActive);
 }
 
 public sealed class AnalyzePlantPhotosRequest

@@ -59,6 +59,26 @@ public sealed class UpdatePlantHandler
             validated.Plant.PlantStatusId = validated.PlantStatusId;
         }
 
+        if (command.LightExposureCode is not null)
+        {
+            validated.Plant.LightExposureCode = validated.LightExposureCode;
+        }
+
+        if (command.LightExposureLabel is not null)
+        {
+            validated.Plant.LightExposureLabel = validated.LightExposureLabel;
+        }
+
+        if (command.SoilType is not null)
+        {
+            validated.Plant.SoilType = validated.SoilType;
+        }
+
+        if (command.Fertilizer is not null)
+        {
+            validated.Plant.Fertilizer = validated.Fertilizer;
+        }
+
         if (command.FloweringMonths is not null)
         {
             validated.Plant.FloweringMonths = (validated.FloweringMonths ?? Array.Empty<int>()).ToArray();

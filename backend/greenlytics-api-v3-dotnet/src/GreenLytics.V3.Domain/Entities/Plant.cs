@@ -11,6 +11,10 @@ public sealed class Plant : BaseAuditableEntity
     public string? Description { get; set; }
     public Guid? PlantTypeId { get; set; }
     public Guid? PlantStatusId { get; set; }
+    public string? LightExposureCode { get; set; }
+    public string? LightExposureLabel { get; set; }
+    public string? SoilType { get; set; }
+    public string? Fertilizer { get; set; }
     public int[] FloweringMonths { get; set; } = Array.Empty<int>();
     public string[] FertilizationSeasons { get; set; } = Array.Empty<string>();
     public bool IsActive { get; set; } = true;

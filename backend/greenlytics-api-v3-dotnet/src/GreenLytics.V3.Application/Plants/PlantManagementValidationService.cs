@@ -64,6 +64,10 @@ public sealed class PlantManagementValidationService
             description,
             plantType?.Id,
             plantStatus?.Id,
+            NormalizeOptional(command.LightExposureCode, "lightExposureCode", 100),
+            NormalizeOptional(command.LightExposureLabel, "lightExposureLabel", 250),
+            NormalizeOptional(command.SoilType, "soilType", 500),
+            NormalizeOptional(command.Fertilizer, "fertilizer", 500),
             NormalizeFloweringMonths(command.FloweringMonths),
             NormalizeFertilizationSeasons(command.FertilizationSeasons),
             command.IsActive ?? true);
@@ -114,6 +118,10 @@ public sealed class PlantManagementValidationService
             description,
             command.PlantTypeId.HasValue ? plantType?.Id : null,
             command.PlantStatusId.HasValue ? plantStatus?.Id : null,
+            command.LightExposureCode is null ? null : NormalizeOptional(command.LightExposureCode, "lightExposureCode", 100),
+            command.LightExposureLabel is null ? null : NormalizeOptional(command.LightExposureLabel, "lightExposureLabel", 250),
+            command.SoilType is null ? null : NormalizeOptional(command.SoilType, "soilType", 500),
+            command.Fertilizer is null ? null : NormalizeOptional(command.Fertilizer, "fertilizer", 500),
             command.FloweringMonths is null ? null : NormalizeFloweringMonths(command.FloweringMonths),
             command.FertilizationSeasons is null ? null : NormalizeFertilizationSeasons(command.FertilizationSeasons),
             command.IsActive);
@@ -619,6 +627,10 @@ public sealed record ValidatedCreatePlantRequest(
     string? Description,
     Guid? PlantTypeId,
     Guid? PlantStatusId,
+    string? LightExposureCode,
+    string? LightExposureLabel,
+    string? SoilType,
+    string? Fertilizer,
     IReadOnlyList<int> FloweringMonths,
     IReadOnlyList<string> FertilizationSeasons,
     bool IsActive
@@ -632,6 +644,10 @@ public sealed record ValidatedUpdatePlantRequest(
     string? Description,
     Guid? PlantTypeId,
     Guid? PlantStatusId,
+    string? LightExposureCode,
+    string? LightExposureLabel,
+    string? SoilType,
+    string? Fertilizer,
     IReadOnlyList<int>? FloweringMonths,
     IReadOnlyList<string>? FertilizationSeasons,
     bool? IsActive
