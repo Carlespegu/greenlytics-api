@@ -264,7 +264,7 @@ export const messages = {
     },
     plantDetail: {
       overview: 'Vista general',
-      care: 'Cures',
+      care: 'Paràmetres',
       photos: 'Fotos',
       readings: 'Lectures',
       recommendations: 'Recomanacions',
@@ -879,7 +879,7 @@ export const messages = {
     },
     plantDetail: {
       overview: 'Resumen',
-      care: 'Cuidados',
+      care: 'Parámetros',
       photos: 'Fotos',
       readings: 'Lecturas',
       recommendations: 'Recomendaciones',
@@ -1494,7 +1494,7 @@ export const messages = {
     },
     plantDetail: {
       overview: 'Overview',
-      care: 'Care',
+      care: 'Parameters',
       photos: 'Photos',
       readings: 'Readings',
       recommendations: 'Recommendations',

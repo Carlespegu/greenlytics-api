@@ -80,6 +80,14 @@ export type CreatePlantSubmitInput = {
   leafImage?: File;
   trunkImage?: File;
   generalImage?: File;
+  soilMoistureMin?: string;
+  soilMoistureMax?: string;
+  airHumidityMin?: string;
+  airHumidityMax?: string;
+  temperatureMin?: string;
+  temperatureMax?: string;
+  lightMin?: string;
+  lightMax?: string;
 };
 
 export type CreatePlantModalProps = {

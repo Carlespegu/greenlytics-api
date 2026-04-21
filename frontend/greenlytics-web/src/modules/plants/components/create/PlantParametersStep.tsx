@@ -8,6 +8,7 @@ interface PlantParametersStepProps {
   draft: PlantDraft;
   floweringMonths: number[];
   fertilizationSeasons: string[];
+  auxiliaryFieldsDisabled?: boolean;
   onChange: <K extends keyof PlantDraft>(field: K, value: PlantDraft[K]) => void;
   onFloweringMonthsChange: (value: number[]) => void;
   onFertilizationSeasonsChange: (value: string[]) => void;
@@ -17,6 +18,7 @@ export function PlantParametersStep({
   draft,
   floweringMonths,
   fertilizationSeasons,
+  auxiliaryFieldsDisabled = false,
   onChange,
   onFloweringMonthsChange,
   onFertilizationSeasonsChange,
@@ -65,6 +67,7 @@ export function PlantParametersStep({
               maxValue={draft.soilMoistureMax}
               minPlaceholder={t('plantCreate.minPercent')}
               maxPlaceholder={t('plantCreate.maxPercent')}
+              disabled={false}
               onMinChange={(value) => onChange('soilMoistureMin', value)}
               onMaxChange={(value) => onChange('soilMoistureMax', value)}
             />
@@ -74,6 +77,7 @@ export function PlantParametersStep({
               maxValue={draft.airHumidityMax}
               minPlaceholder={t('plantCreate.minPercent')}
               maxPlaceholder={t('plantCreate.maxPercent')}
+              disabled={false}
               onMinChange={(value) => onChange('airHumidityMin', value)}
               onMaxChange={(value) => onChange('airHumidityMax', value)}
             />
@@ -83,6 +87,7 @@ export function PlantParametersStep({
               maxValue={draft.temperatureMax}
               minPlaceholder={t('plantCreate.minCelsius')}
               maxPlaceholder={t('plantCreate.maxCelsius')}
+              disabled={false}
               onMinChange={(value) => onChange('temperatureMin', value)}
               onMaxChange={(value) => onChange('temperatureMax', value)}
             />
@@ -92,6 +97,7 @@ export function PlantParametersStep({
               maxValue={draft.lightMax}
               minPlaceholder={t('plantCreate.minLux')}
               maxPlaceholder={t('plantCreate.maxLux')}
+              disabled={false}
               onMinChange={(value) => onChange('lightMin', value)}
               onMaxChange={(value) => onChange('lightMax', value)}
             />
@@ -99,7 +105,7 @@ export function PlantParametersStep({
 
           <div className="plant-create-v2__form-grid plant-create-v2__form-grid--two">
             <Field label={t('plantCreate.lightExposure')}>
-              <select value={draft.lightExposureCode} onChange={(event) => handleLightExposureChange(event.target.value)}>
+              <select value={draft.lightExposureCode} onChange={(event) => handleLightExposureChange(event.target.value)} disabled={auxiliaryFieldsDisabled}>
                 <option value="">{t('plantCreate.selectExposure')}</option>
                 {sunExposureOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -109,10 +115,10 @@ export function PlantParametersStep({
               </select>
             </Field>
             <Field label={t('plantDetail.soilType')}>
-              <input value={draft.soilType} onChange={(event) => onChange('soilType', event.target.value)} placeholder={t('plantCreate.soilTypePlaceholder')} />
+              <input value={draft.soilType} onChange={(event) => onChange('soilType', event.target.value)} placeholder={t('plantCreate.soilTypePlaceholder')} disabled={auxiliaryFieldsDisabled} />
             </Field>
             <Field label={t('plantCreate.fertilizer')}>
-              <input value={draft.fertilizer} onChange={(event) => onChange('fertilizer', event.target.value)} placeholder={t('plantCreate.fertilizerPlaceholder')} />
+              <input value={draft.fertilizer} onChange={(event) => onChange('fertilizer', event.target.value)} placeholder={t('plantCreate.fertilizerPlaceholder')} disabled={auxiliaryFieldsDisabled} />
             </Field>
           </div>
         </div>
@@ -127,6 +133,7 @@ export function PlantParametersStep({
                   <button
                     key={month}
                     type="button"
+                    disabled={auxiliaryFieldsDisabled}
                     className={`plant-create-v2__chip${active ? ' plant-create-v2__chip--green' : ''}`}
                     onClick={() => onFloweringMonthsChange(toggleMonth(floweringMonths, index))}
                   >
@@ -146,6 +153,7 @@ export function PlantParametersStep({
                   <button
                     key={season.id}
                     type="button"
+                    disabled={auxiliaryFieldsDisabled}
                     className={`plant-create-v2__chip${active ? ' plant-create-v2__chip--amber' : ''}`}
                     onClick={() => onFertilizationSeasonsChange(toggleSeason(fertilizationSeasons, season.id))}
                   >
@@ -167,17 +175,18 @@ type RangeFieldProps = {
   maxValue: string;
   minPlaceholder: string;
   maxPlaceholder: string;
+  disabled: boolean;
   onMinChange: (value: string) => void;
   onMaxChange: (value: string) => void;
 };
 
-function RangeField({ label, minValue, maxValue, minPlaceholder, maxPlaceholder, onMinChange, onMaxChange }: RangeFieldProps) {
+function RangeField({ label, minValue, maxValue, minPlaceholder, maxPlaceholder, disabled, onMinChange, onMaxChange }: RangeFieldProps) {
   return (
     <div className="plant-create-v2__range-field">
       <span>{label}</span>
       <div className="plant-create-v2__range-grid">
-        <input value={minValue} onChange={(event) => onMinChange(event.target.value)} placeholder={minPlaceholder} />
-        <input value={maxValue} onChange={(event) => onMaxChange(event.target.value)} placeholder={maxPlaceholder} />
+        <input value={minValue} onChange={(event) => onMinChange(event.target.value)} placeholder={minPlaceholder} disabled={disabled} />
+        <input value={maxValue} onChange={(event) => onMaxChange(event.target.value)} placeholder={maxPlaceholder} disabled={disabled} />
       </div>
     </div>
   );

@@ -12,31 +12,75 @@ import {
 
 import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { PlantTrendSeries } from '@/modules/plants/components/detail/plantDetailViewModel';
+import type { TypeOption } from '@/modules/types/api/typesApi';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { SectionHeading } from '@/shared/ui/SectionHeading';
 
 interface PlantReadingTrendWidgetProps {
+  readingTypeOptions?: TypeOption[];
   series: PlantTrendSeries[];
 }
 
-export function PlantReadingTrendWidget({ series }: PlantReadingTrendWidgetProps) {
+type SelectableTrendSeries = {
+  id: string;
+  label: string;
+  series: PlantTrendSeries;
+};
+
+const EMPTY_SERIES: Omit<PlantTrendSeries, 'id' | 'label'> = {
+  unit: '',
+  idealMin: null,
+  idealMax: null,
+  idealOptimal: null,
+  points: [],
+};
+
+export function PlantReadingTrendWidget({ readingTypeOptions = [], series }: PlantReadingTrendWidgetProps) {
   const { t } = useI18n();
   const [selectedId, setSelectedId] = useState<string>('');
 
+  const selectableSeries = useMemo<SelectableTrendSeries[]>(() => {
+    if (readingTypeOptions.length === 0) {
+      return series.map((item) => ({
+        id: item.id,
+        label: item.label,
+        series: item,
+      }));
+    }
+
+    return readingTypeOptions.map((option) => {
+      const matchedSeries = series.find((item) => item.id === option.id);
+
+      return {
+        id: option.id,
+        label: option.name,
+        series: matchedSeries ?? {
+          id: option.id,
+          label: option.name,
+          ...EMPTY_SERIES,
+        },
+      };
+    });
+  }, [readingTypeOptions, series]);
+
   useEffect(() => {
-    if (!series.length) {
+    if (!selectableSeries.length) {
       setSelectedId('');
       return;
     }
 
-    if (!selectedId || !series.some((item) => item.id === selectedId)) {
-      setSelectedId(series[0].id);
+    if (!selectedId || !selectableSeries.some((item) => item.id === selectedId)) {
+      const preferredSeries = selectableSeries.find((item) => item.series.points.length > 0) ?? selectableSeries[0];
+      setSelectedId(preferredSeries.id);
     }
-  }, [selectedId, series]);
+  }, [selectableSeries, selectedId]);
 
   const selectedSeries = useMemo(
-    () => series.find((item) => item.id === selectedId) ?? series[0] ?? null,
-    [selectedId, series],
+    () => selectableSeries.find((item) => item.id === selectedId)?.series
+      ?? selectableSeries.find((item) => item.series.points.length > 0)?.series
+      ?? selectableSeries[0]?.series
+      ?? null,
+    [selectableSeries, selectedId],
   );
 
   return (
@@ -48,7 +92,7 @@ export function PlantReadingTrendWidget({ series }: PlantReadingTrendWidgetProps
           <label className="plant-detail-v3__trend-selector">
             <span>{t('plantDetail.selectReadingType')}</span>
             <select value={selectedSeries?.id ?? ''} onChange={(event) => setSelectedId(event.target.value)}>
-              {series.map((item) => (
+              {selectableSeries.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.label}
                 </option>

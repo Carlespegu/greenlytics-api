@@ -7,7 +7,9 @@ import { useI18n } from '@/app/i18n/LanguageProvider';
 import { useActiveClient } from '@/modules/clients/hooks/ActiveClientContext';
 import { plantsApi, type CreatePlantWithPhotosResult } from '@/modules/plants/api/plantsApi';
 import { PlantCreateWizard } from '@/modules/plants/components/create/PlantCreateWizard';
+import { findOptionByTokens, parameterMetricDefinitions } from '@/modules/plants/helpers/parameterMetrics';
 import type { CreatePlantSubmitInput, OptionItem } from '@/modules/plants/types/plant.types';
+import { typesApi } from '@/modules/types/api/typesApi';
 import { isApiError } from '@/shared/api/errors';
 import { RecordsPageHeader } from '@/shared/ui/data-grid/RecordsPageHeader';
 
@@ -33,6 +35,36 @@ export function CreatePlantPage() {
     refetchOnWindowFocus: false,
   });
 
+  const plantTypesQuery = useQuery({
+    queryKey: ['plant-type-options'],
+    queryFn: async () => {
+      const response = await typesApi.getOptions('PlantType');
+      return response.map((option) => ({ id: option.id, code: option.code, name: option.name } satisfies OptionItem));
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const readingTypesQuery = useQuery({
+    queryKey: ['reading-type-options'],
+    queryFn: async () => {
+      const response = await typesApi.getOptions('ReadingType');
+      return response.map((option) => ({ id: option.id, code: option.code, name: option.name } satisfies OptionItem));
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const unitTypesQuery = useQuery({
+    queryKey: ['unit-type-options'],
+    queryFn: async () => {
+      const response = await typesApi.getOptions('UnitType');
+      return response.map((option) => ({ id: option.id, code: option.code, name: option.name } satisfies OptionItem));
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
   const createPlantMutation = useMutation({
     mutationFn: async (input: CreatePlantSubmitInput): Promise<CreatePlantWithPhotosResult> => {
       if (!activeClientId) {
@@ -51,6 +83,43 @@ export function CreatePlantPage() {
         plantTypeId: input.plantTypeId || undefined,
         isActive: true,
       });
+
+      const readingTypes = readingTypesQuery.data ?? [];
+      const unitTypes = unitTypesQuery.data ?? [];
+      const thresholdRequests = parameterMetricDefinitions
+        .map((metric) => {
+          const readingType = findOptionByTokens(readingTypes, metric.readingTokens);
+          if (!readingType) {
+            return null;
+          }
+
+          const minRaw = input[metric.minField];
+          const maxRaw = input[metric.maxField];
+          const minValue = parseOptionalNumber(minRaw);
+          const maxValue = parseOptionalNumber(maxRaw);
+          const optimalValue = minValue !== null && maxValue !== null
+            ? Number(((minValue + maxValue) / 2).toFixed(2))
+            : null;
+          const unitType = findOptionByTokens(unitTypes, metric.unitTokens);
+
+          if (minValue === null && maxValue === null && optimalValue === null) {
+            return null;
+          }
+
+          return {
+            readingTypeId: readingType.id,
+            unitTypeId: unitType?.id,
+            minValue,
+            maxValue,
+            optimalValue,
+            isActive: true,
+          };
+        })
+        .filter((request): request is NonNullable<typeof request> => Boolean(request));
+
+      for (const thresholdRequest of thresholdRequests) {
+        await plantsApi.createThreshold(activeClientId, detail.id, thresholdRequest);
+      }
 
       return {
         plantId: detail.id,
@@ -102,14 +171,23 @@ export function CreatePlantPage() {
           clientId={activeClientId}
           installations={installationsQuery.data ?? []}
           installationsLoading={installationsQuery.isLoading}
-          plantTypes={[]}
+          plantTypes={plantTypesQuery.data ?? []}
           plantingTypes={[]}
           locationTypes={[]}
-          catalogsLoading={false}
+          catalogsLoading={plantTypesQuery.isLoading}
           onClose={() => navigate('/plants/search')}
           onSubmit={handleSubmit}
         />
       </section>
     </div>
   );
+}
+
+function parseOptionalNumber(value: string | undefined) {
+  if (!value?.trim()) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }

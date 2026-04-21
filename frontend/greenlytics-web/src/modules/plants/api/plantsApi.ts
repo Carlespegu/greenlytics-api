@@ -167,6 +167,24 @@ export interface CreatePlantInput {
   isActive?: boolean;
 }
 
+export interface CreatePlantThresholdInput {
+  readingTypeId: string;
+  unitTypeId?: string;
+  minValue?: number | null;
+  maxValue?: number | null;
+  optimalValue?: number | null;
+  isActive?: boolean;
+}
+
+export interface UpdatePlantThresholdInput {
+  readingTypeId?: string;
+  unitTypeId?: string;
+  minValue?: number | null;
+  maxValue?: number | null;
+  optimalValue?: number | null;
+  isActive?: boolean;
+}
+
 export interface CreatePlantWithPhotosResult {
   plantId: string;
   analysis: {
@@ -184,6 +202,12 @@ export const plantsApi = {
   getById: (clientId: string, plantId: string) => httpClient.get<PlantDetail>(`/api/clients/${clientId}/plants/${plantId}`),
   search: (request: PlantSearchRequest) => postSearch<PlantListItem, PlantSearchFiltersInput, PlantSortField>('/api/plants/search', request),
   create: (clientId: string, input: CreatePlantInput) => httpClient.post<PlantDetail>(`/api/clients/${clientId}/plants`, input),
+  createThreshold: (clientId: string, plantId: string, input: CreatePlantThresholdInput) => (
+    httpClient.post<PlantThresholdRecord>(`/api/clients/${clientId}/plants/${plantId}/thresholds`, input)
+  ),
+  updateThreshold: (clientId: string, plantId: string, thresholdId: string, input: UpdatePlantThresholdInput) => (
+    httpClient.put<PlantThresholdRecord>(`/api/clients/${clientId}/plants/${plantId}/thresholds/${thresholdId}`, input)
+  ),
   analyzePhotos: async (input: AnalyzePlantPhotosInput): Promise<AnalyzePlantPhotosResult> => {
     const formData = new FormData();
 

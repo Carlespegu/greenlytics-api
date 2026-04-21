@@ -14,15 +14,17 @@ import { PlantInstallationsTab } from '@/modules/plants/components/detail/PlantI
 import { PlantLatestVsIdealWidget } from '@/modules/plants/components/detail/PlantLatestVsIdealWidget';
 import { PlantOverviewTab } from '@/modules/plants/components/detail/PlantOverviewTab';
 import { PlantPhotosTab } from '@/modules/plants/components/detail/PlantPhotosTab';
+import { PlantReadingsTab } from '@/modules/plants/components/detail/PlantReadingsTab';
 import type { PlantReadingSample } from '@/modules/plants/components/detail/plantDetailViewModel';
 import { buildPlantDetailViewModel } from '@/modules/plants/components/detail/plantDetailViewModel';
 import { PlantReadingTrendWidget } from '@/modules/plants/components/detail/PlantReadingTrendWidget';
+import { typesApi } from '@/modules/types/api/typesApi';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { LoadingScreen } from '@/shared/ui/LoadingScreen';
 import { Tabs } from '@/shared/ui/Tabs';
 import type { SearchRequest } from '@/types/api';
 
-const tabIds = ['basic-data', 'history', 'photos', 'care', 'alerts', 'installations'] as const;
+const tabIds = ['basic-data', 'history', 'photos', 'care', 'readings', 'alerts', 'installations'] as const;
 type DetailTabId = (typeof tabIds)[number];
 
 type ReadingSearchFiltersInput = {
@@ -85,6 +87,13 @@ export function PlantDetailPage() {
     refetchOnWindowFocus: false,
   });
 
+  const readingTypesQuery = useQuery({
+    queryKey: ['reading-type-options'],
+    queryFn: () => typesApi.getOptions('ReadingType'),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+
   const plant = plantDetailQuery.data;
   const viewModel = useMemo(
     () => (plant ? buildPlantDetailViewModel(plant, readingsQuery.data?.items ?? [], t, locale) : null),
@@ -125,7 +134,10 @@ export function PlantDetailPage() {
       >
         <section className="plant-detail-v3__widgets">
           <PlantLatestVsIdealWidget metrics={viewModel.latestVsIdealMetrics} />
-          <PlantReadingTrendWidget series={viewModel.trendSeries} />
+          <PlantReadingTrendWidget
+            readingTypeOptions={readingTypesQuery.data ?? []}
+            series={viewModel.trendSeries}
+          />
         </section>
       </PlantDetailHeader>
 
@@ -144,6 +156,7 @@ export function PlantDetailPage() {
         {activeTab === 'history' ? <PlantHistoryTab entries={viewModel.historyEntries} /> : null}
         {activeTab === 'photos' ? <PlantPhotosTab photos={plant.photos} plantName={plant.name} primaryPhotoUrl={plant.primaryPhotoUrl} /> : null}
         {activeTab === 'care' ? <PlantCareTab plant={plant} /> : null}
+        {activeTab === 'readings' ? <PlantReadingsTab plant={plant} metrics={viewModel.readingsMetrics} /> : null}
         {activeTab === 'alerts' ? <PlantAlertsTab recommendations={viewModel.recommendations} /> : null}
         {activeTab === 'installations' ? (
           <PlantInstallationsTab
