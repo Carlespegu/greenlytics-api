@@ -2906,6 +2906,7 @@ body {
 .plant-create-v2__field input,
 .plant-create-v2__field select,
 .plant-create-v2__field textarea,
+.plant-create-v2__range-grid input,
 textarea {
   background: var(--theme-inputBackground);
   border: 1px solid var(--theme-inputBorder);
@@ -2929,6 +2930,7 @@ textarea::placeholder {
 .plant-create-v2__field input:focus,
 .plant-create-v2__field select:focus,
 .plant-create-v2__field textarea:focus,
+.plant-create-v2__range-grid input:focus,
 textarea:focus {
   outline: none;
   border-color: var(--theme-inputFocus);
@@ -3099,21 +3101,38 @@ textarea:focus {
 .plant-detail-v3__header,
 .plant-detail-v3__tabs-card,
 .plant-create-v2__section,
-.plant-create-v2__season-panel {
+.plant-create-v2__season-panel,
+.plant-create-v2__selector-card {
   background: var(--theme-surface);
   border-color: var(--theme-border);
 }
 
-.plant-create-v2__season-button {
+.plant-create-v2__field > span,
+.plant-create-v2__range-field > span,
+.plant-create-v2__selector-card strong {
+  color: var(--theme-textSecondary);
+}
+
+.plant-create-v2__season-button,
+.plant-create-v2__chip {
   background: var(--theme-surfaceSecondary);
   border-color: var(--theme-border);
   color: var(--theme-textSecondary);
 }
 
-.plant-create-v2__season-button--selected {
+.plant-create-v2__season-button--selected,
+.plant-create-v2__chip--green,
+.plant-create-v2__chip--amber {
   background: var(--theme-primarySoft);
   border-color: var(--theme-primaryGlow);
   color: var(--theme-primaryHover);
+}
+
+.plant-create-v2__chip:hover,
+.plant-create-v2__chip:focus-visible {
+  background: var(--theme-hover);
+  border-color: var(--theme-primaryGlow);
+  outline: none;
 }
 
 .recharts-cartesian-grid line,
