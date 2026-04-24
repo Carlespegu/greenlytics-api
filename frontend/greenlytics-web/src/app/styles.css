@@ -3146,3 +3146,154 @@ textarea:focus {
   border: 1px solid var(--theme-border) !important;
   box-shadow: var(--theme-shadowSm);
 }
+
+.dashboard-widget__handle {
+  color: var(--theme-textMuted);
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+  box-shadow: var(--theme-shadowSm);
+}
+
+.dashboard-hero,
+.dashboard-panel {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+}
+
+.dashboard-hero::after {
+  background: radial-gradient(circle, var(--theme-primaryGlow), transparent 70%);
+}
+
+.records-page {
+  background:
+    radial-gradient(circle at top right, var(--theme-primarySoft), transparent 26%),
+    linear-gradient(180deg, var(--theme-surfaceSecondary), var(--theme-backgroundTertiary));
+  box-shadow: none;
+}
+
+.records-page-header h1,
+.records-page-header h2,
+.plant-detail-v3__title-block h1,
+.plant-detail-v3__comparison-head strong,
+.plant-detail-v3__comparison-meta strong,
+.plant-detail-v3__trend-meta strong,
+.plant-detail-v3__hero-photo-empty strong {
+  color: var(--theme-textPrimary);
+}
+
+.records-page-header p,
+.records-card__summary p,
+.plant-detail-v3__comparison-head span,
+.plant-detail-v3__comparison-meta span,
+.plant-detail-v3__trend-meta span,
+.plant-detail-v3__hero-photo-empty,
+.plant-detail-v3__hero-photo-empty span {
+  color: var(--theme-textSecondary);
+}
+
+.records-filter-bar__count {
+  color: var(--theme-primaryHover);
+  background: var(--theme-primarySoft);
+  border-color: var(--theme-primaryGlow);
+}
+
+.records-filter-bar__content {
+  background: var(--theme-surfaceSecondary);
+  border: 1px solid var(--theme-border);
+  box-shadow: var(--theme-shadowSm);
+}
+
+.records-field span,
+.records-pagination__field span,
+.records-table__head {
+  color: var(--theme-textMuted);
+}
+
+.records-field input,
+.records-field select,
+.records-field textarea,
+.records-pagination__field select {
+  background: var(--theme-inputBackground);
+  border-color: var(--theme-inputBorder);
+  color: var(--theme-textPrimary);
+  box-shadow: none;
+}
+
+.records-field input:focus,
+.records-field select:focus,
+.records-field textarea:focus,
+.records-pagination__field select:focus,
+.records-table__sort:focus-visible,
+.records-column-trigger:focus-visible,
+.column-modal__item:focus-visible,
+.column-modal__reorder button:focus-visible,
+.records-pagination__buttons button:focus-visible {
+  outline: none;
+  border-color: var(--theme-inputFocus);
+  box-shadow: 0 0 0 4px var(--theme-primarySoft);
+}
+
+.records-field__error {
+  color: var(--theme-danger);
+}
+
+.records-table {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+  box-shadow: none;
+}
+
+.records-table table {
+  background: var(--theme-surface);
+}
+
+.records-table__head,
+.records-table__cell {
+  border-bottom-color: var(--theme-border);
+}
+
+.records-table__head {
+  background: var(--theme-tableHeader);
+}
+
+.records-table__row--interactive:hover {
+  background: var(--theme-tableRowHover);
+}
+
+.plant-detail-v3__hero-photo-tag {
+  background: color-mix(in srgb, var(--theme-surface) 82%, transparent);
+  color: var(--theme-textPrimary);
+  border-color: var(--theme-border);
+}
+
+.plant-detail-v3__hero-photo--placeholder {
+  background:
+    radial-gradient(circle at top, var(--theme-glowAmbientRight), transparent 58%),
+    var(--theme-surfaceSecondary);
+}
+
+.plant-detail-v3__hero-photo-initials {
+  background: var(--theme-primarySoft);
+  color: var(--theme-primaryHover);
+}
+
+.plant-detail-v3__tabs-card--nav,
+.plant-detail-v3__header .plant-detail-v3__widget-card,
+.plant-detail-v3__comparison-card {
+  background: var(--theme-surface);
+  border-color: var(--theme-border);
+  box-shadow: var(--theme-shadowSm);
+}
+
+.plant-detail-v3__comparison-scale {
+  background: var(--theme-surfaceMuted);
+}
+
+.plant-detail-v3__comparison-ideal-band {
+  background: linear-gradient(90deg, var(--theme-primarySoft), var(--theme-primaryGlow));
+}
+
+.plant-detail-v3__comparison-optimal-line {
+  background: var(--theme-primary);
+  box-shadow: 0 0 0 2px var(--theme-primarySoft);
+}

@@ -45,9 +45,9 @@ const moistureTrend = [
 ];
 
 const healthDistribution = [
-  { name: 'dashboard.thriving', value: 54, color: '#36d399' },
-  { name: 'dashboard.monitor', value: 28, color: '#fbbf24' },
-  { name: 'dashboard.critical', value: 18, color: '#fb7185' },
+  { name: 'dashboard.thriving', value: 54, color: 'var(--theme-success)' },
+  { name: 'dashboard.monitor', value: 28, color: 'var(--theme-warning)' },
+  { name: 'dashboard.critical', value: 18, color: 'var(--theme-danger)' },
 ];
 
 const latestAlerts = [
@@ -234,16 +234,16 @@ export function DashboardPage() {
               <AreaChart data={moistureTrend}>
                 <defs>
                   <linearGradient id="moistureFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#36d399" stopOpacity={0.45} />
-                    <stop offset="95%" stopColor="#36d399" stopOpacity={0.02} />
+                    <stop offset="5%" stopColor="var(--theme-primary)" stopOpacity={0.32} />
+                    <stop offset="95%" stopColor="var(--theme-primary)" stopOpacity={0.04} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#8fa4a0', fontSize: 12 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fill: '#8fa4a0', fontSize: 12 }} width={34} />
-                <Tooltip contentStyle={{ background: '#09151f', border: '1px solid rgba(148,163,184,0.14)', borderRadius: 16 }} />
-                <Area type="monotone" dataKey="target" stroke="#5eead4" strokeDasharray="6 6" fill="none" />
-                <Area type="monotone" dataKey="moisture" stroke="#36d399" strokeWidth={3} fill="url(#moistureFill)" />
+                <CartesianGrid stroke="var(--theme-chartGrid)" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: 'var(--theme-textMuted)', fontSize: 12 }} />
+                <YAxis tickLine={false} axisLine={false} tick={{ fill: 'var(--theme-textMuted)', fontSize: 12 }} width={34} />
+                <Tooltip contentStyle={{ background: 'var(--theme-surface)', border: '1px solid var(--theme-border)', borderRadius: 16, boxShadow: 'var(--theme-shadowSm)' }} />
+                <Area type="monotone" dataKey="target" stroke="var(--theme-accent)" strokeDasharray="6 6" fill="none" />
+                <Area type="monotone" dataKey="moisture" stroke="var(--theme-primary)" strokeWidth={3} fill="url(#moistureFill)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -264,7 +264,7 @@ export function DashboardPage() {
                       <Cell key={entry.name} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ background: '#09151f', border: '1px solid rgba(148,163,184,0.14)', borderRadius: 16 }} />
+                  <Tooltip contentStyle={{ background: 'var(--theme-surface)', border: '1px solid var(--theme-border)', borderRadius: 16, boxShadow: 'var(--theme-shadowSm)' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
