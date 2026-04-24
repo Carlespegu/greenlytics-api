@@ -2456,9 +2456,9 @@ img { display: block; max-width: 100%; }
 .plant-detail-v3__trend-selector select {
   min-height: 42px;
   border-radius: 14px;
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  background: #142742;
-  color: var(--text);
+  border: 1px solid var(--theme-inputBorder);
+  background: var(--theme-inputBackground);
+  color: var(--theme-textPrimary);
   padding: 0 12px;
 }
 .plant-detail-v3__trend-chart-shell {
@@ -2933,15 +2933,31 @@ body {
 .search-toolbar select,
 .records-filters-grid input,
 .records-filters-grid select,
+.records-field select,
+.records-pagination__field select,
 .plant-create-v2__field input,
 .plant-create-v2__field select,
 .plant-create-v2__field textarea,
 .plant-create-v2__range-grid input,
+.plant-detail-v3__trend-selector select,
+.plant-detail-v3__history-toolbar select,
 textarea {
   background: var(--theme-inputBackground);
   border: 1px solid var(--theme-inputBorder);
   color: var(--theme-textPrimary);
   box-shadow: none;
+}
+
+.form-field select option,
+.search-toolbar select option,
+.records-filters-grid select option,
+.records-field select option,
+.records-pagination__field select option,
+.plant-create-v2__field select option,
+.plant-detail-v3__trend-selector select option,
+.plant-detail-v3__history-toolbar select option {
+  background: var(--theme-surface);
+  color: var(--theme-textPrimary);
 }
 
 .form-field input::placeholder,
@@ -2957,10 +2973,14 @@ textarea::placeholder {
 .search-toolbar select:focus,
 .records-filters-grid input:focus,
 .records-filters-grid select:focus,
+.records-field select:focus,
+.records-pagination__field select:focus,
 .plant-create-v2__field input:focus,
 .plant-create-v2__field select:focus,
 .plant-create-v2__field textarea:focus,
 .plant-create-v2__range-grid input:focus,
+.plant-detail-v3__trend-selector select:focus,
+.plant-detail-v3__history-toolbar select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--theme-inputFocus);
