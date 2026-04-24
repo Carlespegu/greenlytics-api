@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import {
   CartesianGrid,
   Line,
@@ -14,6 +15,7 @@ import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { PlantTrendSeries } from '@/modules/plants/components/detail/plantDetailViewModel';
 import type { TypeOption } from '@/modules/types/api/typesApi';
 import { EmptyState } from '@/shared/components/EmptyState';
+import { Dropdown } from '@/shared/ui/Dropdown';
 import { SectionHeading } from '@/shared/ui/SectionHeading';
 
 interface PlantReadingTrendWidgetProps {
@@ -82,6 +84,10 @@ export function PlantReadingTrendWidget({ readingTypeOptions = [], series }: Pla
       ?? null,
     [selectableSeries, selectedId],
   );
+  const selectedOptionLabel = useMemo(
+    () => selectableSeries.find((item) => item.id === (selectedSeries?.id ?? ''))?.label ?? t('plantDetail.selectReadingType'),
+    [selectableSeries, selectedSeries?.id, t],
+  );
 
   return (
     <section className="panel-card plant-detail-v3__widget-card">
@@ -91,13 +97,41 @@ export function PlantReadingTrendWidget({ readingTypeOptions = [], series }: Pla
         action={(
           <label className="plant-detail-v3__trend-selector">
             <span>{t('plantDetail.selectReadingType')}</span>
-            <select value={selectedSeries?.id ?? ''} onChange={(event) => setSelectedId(event.target.value)}>
-              {selectableSeries.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+            <Dropdown
+              className="plant-detail-v3__trend-select-dropdown"
+              panelClassName="plant-detail-v3__trend-select-panel"
+              triggerClassName="plant-detail-v3__trend-select-trigger"
+              trigger={() => (
+                <>
+                  <span className="plant-detail-v3__trend-select-value">{selectedOptionLabel}</span>
+                  <ChevronDown size={16} />
+                </>
+              )}
+            >
+              {({ close }) => (
+                <div className="plant-detail-v3__trend-select-list" role="listbox">
+                  {selectableSeries.map((item) => {
+                    const isActive = item.id === (selectedSeries?.id ?? '');
+
+                    return (
+                      <button
+                        key={item.id}
+                        aria-selected={isActive}
+                        className={`plant-detail-v3__trend-select-item${isActive ? ' plant-detail-v3__trend-select-item--active' : ''}`}
+                        role="option"
+                        type="button"
+                        onClick={() => {
+                          setSelectedId(item.id);
+                          close();
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </Dropdown>
           </label>
         )}
       />
