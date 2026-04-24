@@ -63,8 +63,8 @@ export const themes: Record<ThemeName, ThemeDefinition> = {
     colors: {
       primary: '#22c55e',
       primaryHover: '#16a34a',
-      primarySoft: 'rgba(34, 197, 94, 0.12)',
-      primaryGlow: 'rgba(34, 197, 94, 0.2)',
+      primarySoft: 'rgba(33, 184, 88, 0.12)',
+      primaryGlow: 'rgba(33, 184, 88, 0.2)',
       secondary: '#0f172a',
       accent: '#0284c7',
       success: '#16a34a',
