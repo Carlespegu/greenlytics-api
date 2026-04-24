@@ -802,6 +802,23 @@ img { display: block; max-width: 100%; }
   padding: 0 14px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
+
+.plant-detail-v3__trend-selector select,
+.plant-detail-v3__history-toolbar select {
+  min-height: 42px;
+  border-radius: 14px;
+  border: 1px solid var(--theme-inputBorder);
+  background: var(--theme-inputBackground);
+  color: var(--theme-textPrimary);
+  padding: 0 12px;
+  box-shadow: none;
+}
+
+.plant-detail-v3__trend-selector select option,
+.plant-detail-v3__history-toolbar select option {
+  background: var(--theme-surface);
+  color: var(--theme-textPrimary);
+}
 .records-field textarea {
   min-height: 120px;
   padding: 14px;
@@ -811,6 +828,8 @@ img { display: block; max-width: 100%; }
 .records-field select:focus,
 .records-field textarea:focus,
 .records-pagination__field select:focus,
+.plant-detail-v3__trend-selector select:focus,
+.plant-detail-v3__history-toolbar select:focus,
 .records-table__sort:focus-visible,
 .records-column-trigger:focus-visible,
 .column-modal__item:focus-visible,
@@ -3192,6 +3211,10 @@ textarea:focus {
   color: var(--theme-textPrimary);
 }
 
+.plant-detail-v3__trend-selector span {
+  color: var(--theme-textSecondary);
+}
+
 .records-page-header p,
 .records-card__summary p,
 .plant-detail-v3__comparison-head span,
@@ -3200,6 +3223,20 @@ textarea:focus {
 .plant-detail-v3__hero-photo-empty,
 .plant-detail-v3__hero-photo-empty span {
   color: var(--theme-textSecondary);
+}
+
+.records-filter-bar {
+  border: 1px solid var(--theme-border);
+  border-radius: 24px;
+  overflow: hidden;
+  position: relative;
+  background: var(--theme-surface);
+  box-shadow: var(--theme-shadowMd);
+}
+
+.records-filter-bar--open {
+  border-color: var(--theme-borderStrong);
+  box-shadow: var(--theme-shadowMd);
 }
 
 .records-filter-bar__count {
@@ -3238,6 +3275,18 @@ textarea:focus {
   background: var(--theme-surfaceSecondary);
   border: 1px solid var(--theme-border);
   box-shadow: var(--theme-shadowSm);
+}
+
+.records-filter-bar__panel {
+  padding: 0 12px 12px;
+  background: transparent;
+}
+
+.records-filter-bar__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .records-field span,
