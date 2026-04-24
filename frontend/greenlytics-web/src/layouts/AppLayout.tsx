@@ -9,11 +9,13 @@ import {
   Gauge,
   Leaf,
   LogOut,
+  Moon,
   Radar,
   Search,
   Settings,
   ShieldCheck,
   Sprout,
+  Sun,
   Users,
   Waves,
 } from 'lucide-react';
@@ -21,6 +23,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useI18n } from '@/app/i18n/LanguageProvider';
+import { useTheme } from '@/app/theme/ThemeProvider';
 import { postSearch } from '@/api/search';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useAuth } from '@/hooks/useAuth';
@@ -70,6 +73,7 @@ export function AppLayout() {
   const { user, logout } = useAuth();
   const { clientId: activeClientId, clientName: activeClientName, setActiveClient } = useActiveClient();
   const { locale, locales, setLocale, t } = useI18n();
+  const { theme, themes, setTheme } = useTheme();
   const isDashboardRoute = location.pathname === '/dashboard';
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -146,6 +150,7 @@ export function AppLayout() {
 
   const selectedTimeRangeLabel = t(`timeRange.${selectedTimeRange}`);
   const selectedLanguageLabel = locales.find((option) => option.value === locale)?.label ?? locale;
+  const selectedThemeLabel = theme === 'light' ? t('common.lightTheme') : t('common.darkTheme');
 
   const userInitials = useMemo(() => {
     if (!user?.username) {
@@ -489,6 +494,43 @@ export function AppLayout() {
                             }}
                           >
                             {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </Dropdown>
+                </div>
+
+                <div className="topbar-user-dropdown__field">
+                  <span>{t('common.selectTheme')}</span>
+                  <Dropdown
+                    className="topbar-user-select-dropdown"
+                    panelClassName="topbar-user-select-dropdown__panel"
+                    triggerClassName="topbar-user-select"
+                    trigger={() => (
+                      <>
+                        <span className="topbar-user-select__icon">
+                          {theme === 'light' ? <Sun size={14} /> : <Moon size={14} />}
+                        </span>
+                        <span className="topbar-dropdown__label">{selectedThemeLabel}</span>
+                        <ChevronDown size={16} />
+                      </>
+                    )}
+                  >
+                    {({ close }) => (
+                      <div className="dropdown-menu-list" role="menu">
+                        {themes.map((option) => (
+                          <button
+                            key={option.value}
+                            className={`dropdown-menu-item${option.value === theme ? ' dropdown-menu-item--active' : ''}`}
+                            type="button"
+                            onClick={() => {
+                              setTheme(option.value);
+                              close();
+                            }}
+                          >
+                            {option.value === 'light' ? <Sun size={14} /> : <Moon size={14} />}
+                            <span>{option.value === 'light' ? t('common.lightTheme') : t('common.darkTheme')}</span>
                           </button>
                         ))}
                       </div>
