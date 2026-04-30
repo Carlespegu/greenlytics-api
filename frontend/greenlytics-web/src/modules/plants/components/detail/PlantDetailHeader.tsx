@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { ArrowLeft, ChevronRight, ImageOff } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { ArrowLeft, ChevronDown, ChevronUp, ImageOff } from 'lucide-react';
 
 import { useI18n } from '@/app/i18n/LanguageProvider';
 import type { PlantDetail, PlantPhotoRecord } from '@/modules/plants/api/plantsApi';
@@ -13,6 +13,7 @@ interface PlantDetailHeaderProps {
 
 export function PlantDetailHeader({ plant, headerPhoto, onBack, children }: PlantDetailHeaderProps) {
   const { t } = useI18n();
+  const [collapsed, setCollapsed] = useState(false);
   const initials = plant.name
     .split(/\s+/)
     .slice(0, 2)
@@ -20,18 +21,24 @@ export function PlantDetailHeader({ plant, headerPhoto, onBack, children }: Plan
     .join('');
 
   return (
-    <section className="panel-card plant-detail-v3__header plant-detail-v3__header--compact">
+    <section
+      className={`panel-card plant-detail-v3__header plant-detail-v3__header--compact${collapsed ? ' plant-detail-v3__header--collapsed' : ''}`}
+    >
       <div className="plant-detail-v3__breadcrumb-row">
         <button className="secondary-button" type="button" onClick={onBack}>
           <ArrowLeft size={16} />
           <span>{t('plantDetail.backToList')}</span>
         </button>
 
-        <nav aria-label="Breadcrumb" className="plant-detail-v3__breadcrumbs">
-          <button type="button" onClick={onBack}>{t('plantDetail.breadcrumbRoot')}</button>
-          <ChevronRight size={14} />
-          <span>{plant.name}</span>
-        </nav>
+        <button
+          aria-expanded={!collapsed}
+          className="plant-detail-v3__collapse-toggle"
+          type="button"
+          onClick={() => setCollapsed((current) => !current)}
+        >
+          <span>{collapsed ? t('plantDetail.expandHeader') : t('plantDetail.collapseHeader')}</span>
+          {collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+        </button>
       </div>
 
       <div className="plant-detail-v3__header-body">
