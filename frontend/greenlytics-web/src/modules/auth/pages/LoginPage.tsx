@@ -1,7 +1,7 @@
 ﻿import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { useI18n } from '@/app/i18n/LanguageProvider';
 import { useAuth } from '@/hooks/useAuth';
@@ -61,6 +61,9 @@ export function LoginPage() {
             <label htmlFor="password">{t('auth.password')}</label>
             <input id="password" type="password" autoComplete="current-password" {...register('password')} />
             {errors.password ? <span className="field-error">{errors.password.message}</span> : null}
+          </div>
+          <div className="auth-form-meta">
+            <Link className="auth-inline-link" to="/forgot-password">{t('auth.forgotPasswordLink')}</Link>
           </div>
           {errors.root?.server?.message ? <div className="global-error">{errors.root.server.message}</div> : null}
           {globalMessage ? <div className="global-error">{globalMessage}</div> : null}

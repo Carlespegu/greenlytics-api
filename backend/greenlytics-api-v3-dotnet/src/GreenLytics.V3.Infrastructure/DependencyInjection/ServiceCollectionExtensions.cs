@@ -33,6 +33,7 @@ public static class ServiceCollectionExtensions
         services.Configure<SupabaseAuthenticationOptions>(configuration.GetSection(SupabaseAuthenticationOptions.SectionName));
         services.Configure<RefreshTokenOptions>(configuration.GetSection(RefreshTokenOptions.SectionName));
         services.Configure<SessionOptions>(configuration.GetSection(SessionOptions.SectionName));
+        services.Configure<PasswordRecoveryOptions>(configuration.GetSection(PasswordRecoveryOptions.SectionName));
         services.Configure<OpenAiOptions>(configuration.GetSection(OpenAiOptions.SectionName));
 
         services.AddDbContext<GreenLyticsDbContext>(options => options.UseNpgsql(connectionString));
@@ -119,6 +120,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<SetUserActiveStatusHandler>();
         services.AddScoped<ResendUserInviteHandler>();
         services.AddScoped<LoginHandler>();
+        services.AddScoped<ForgotPasswordHandler>();
+        services.AddScoped<ResetPasswordHandler>();
         services.AddScoped<RefreshTokenHandler>();
         services.AddScoped<LogoutHandler>();
         services.AddScoped<GetCurrentUserHandler>();

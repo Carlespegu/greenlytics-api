@@ -57,6 +57,43 @@ public sealed class SupabaseAuthGateway : ISupabaseAuthGateway
         return payload.ToTokens();
     }
 
+    public async Task SendPasswordRecoveryEmailAsync(string email, string? redirectTo = null, CancellationToken cancellationToken = default)
+    {
+        var path = string.IsNullOrWhiteSpace(redirectTo)
+            ? "recover"
+            : $"recover?redirect_to={Uri.EscapeDataString(redirectTo)}";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, path);
+        request.Content = JsonContent.Create(new
+        {
+            email,
+        });
+
+        var response = await SendAsync(request, cancellationToken);
+        response.Dispose();
+    }
+
+    public async Task UpdatePasswordAsync(string accessToken, string newPassword, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Put, "user");
+        request.Headers.Add("apikey", _options.ApiKey);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Content = JsonContent.Create(new
+        {
+            password = newPassword,
+        });
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        if (response.IsSuccessStatusCode)
+        {
+            response.Dispose();
+            return;
+        }
+
+        var detail = await response.Content.ReadAsStringAsync(cancellationToken);
+        throw new UnauthorizedAccessException($"Supabase password update failed with status {(int)response.StatusCode}: {detail}");
+    }
+
     public async Task<SupabaseProvisionedUser> CreateUserWithPasswordAsync(SupabaseAdminCreateUserRequest request, CancellationToken cancellationToken = default)
     {
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, "admin/users");

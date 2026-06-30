@@ -12,6 +12,7 @@ MapLegacySetting("Authentication:Supabase:ServiceRoleKey", "SUPABASE_SERVICE_ROL
 MapLegacySetting("Supabase:Url", "SUPABASE_URL");
 MapLegacySetting("Supabase:ServiceRoleKey", "SUPABASE_SERVICE_ROLE_KEY");
 MapLegacySetting("Supabase:Bucket", "SUPABASE_STORAGE_BUCKET");
+MapLegacySetting("Authentication:PasswordRecovery:FrontendBaseUrl", "FRONTEND_BASE_URL");
 MapLegacySetting("OpenAI:ApiKey", "OPENAI_API_KEY");
 MapLegacySetting("OpenAI:Model", "OPENAI_MODEL");
 
@@ -27,7 +28,7 @@ if (int.TryParse(renderPort, out var port) && port > 0)
 }
 
 builder.Services
-    .AddPublicApi(builder.Configuration)
+    .AddPublicApi(builder.Configuration, builder.Environment)
     .AddGreenLyticsInfrastructure(builder.Configuration);
 
 var app = builder.Build();

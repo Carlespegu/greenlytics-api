@@ -8,7 +8,7 @@ namespace GreenLytics.V3.Api.Configuration;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddPublicApi(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddPublicApi(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
     {
         services.Configure<SupabaseAuthenticationOptions>(configuration.GetSection(SupabaseAuthenticationOptions.SectionName));
         services.AddControllers();
@@ -66,7 +66,9 @@ public static class ServiceCollectionExtensions
                 var supabaseOptions = configuration.GetSection(SupabaseAuthenticationOptions.SectionName).Get<SupabaseAuthenticationOptions>()
                     ?? throw new InvalidOperationException("Authentication:Supabase configuration is missing.");
 
-                options.RequireHttpsMetadata = supabaseOptions.RequireHttpsMetadata;
+                options.RequireHttpsMetadata = environment.IsDevelopment()
+                    ? false
+                    : supabaseOptions.RequireHttpsMetadata;
                 options.MetadataAddress = supabaseOptions.OpenIdConfigurationUrl;
                 options.MapInboundClaims = false;
                 options.EventsType = typeof(SupabaseJwtBearerEvents);

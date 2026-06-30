@@ -1,6 +1,7 @@
 using GreenLytics.V3.Application.Abstractions;
 using GreenLytics.V3.Application.Auth;
 using GreenLytics.V3.Shared.Contracts;
+using GreenLytics.V3.Shared.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,6 +12,8 @@ namespace GreenLytics.V3.Api.Controllers;
 public sealed class AuthController : ControllerBase
 {
     private readonly LoginHandler _loginHandler;
+    private readonly ForgotPasswordHandler _forgotPasswordHandler;
+    private readonly ResetPasswordHandler _resetPasswordHandler;
     private readonly RefreshTokenHandler _refreshTokenHandler;
     private readonly LogoutHandler _logoutHandler;
     private readonly GetCurrentUserHandler _getCurrentUserHandler;
@@ -18,16 +21,64 @@ public sealed class AuthController : ControllerBase
 
     public AuthController(
         LoginHandler loginHandler,
+        ForgotPasswordHandler forgotPasswordHandler,
+        ResetPasswordHandler resetPasswordHandler,
         RefreshTokenHandler refreshTokenHandler,
         LogoutHandler logoutHandler,
         GetCurrentUserHandler getCurrentUserHandler,
         ICurrentUser currentUser)
     {
         _loginHandler = loginHandler;
+        _forgotPasswordHandler = forgotPasswordHandler;
+        _resetPasswordHandler = resetPasswordHandler;
         _refreshTokenHandler = refreshTokenHandler;
         _logoutHandler = logoutHandler;
         _getCurrentUserHandler = getCurrentUserHandler;
         _currentUser = currentUser;
+    }
+
+    /// <summary>
+    /// Inicia el flux de recuperacio de password enviant un enllac per correu.
+    /// </summary>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiEnvelope<object>>> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _forgotPasswordHandler.HandleAsync(new ForgotPasswordCommand(request.Email, request.RedirectUrl), cancellationToken);
+            return Ok(new ApiEnvelope<object>(true, null, "If the account exists, a recovery link has been sent."));
+        }
+        catch (RequestValidationException validationException)
+        {
+            return StatusCode(
+                validationException.StatusCode,
+                new ApiEnvelope<object>(false, null, validationException.Message, validationException.ErrorCode, validationException.Errors));
+        }
+    }
+
+    /// <summary>
+    /// Defineix una nova password a partir d un token de recuperacio valid.
+    /// </summary>
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiEnvelope<object>>> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _resetPasswordHandler.HandleAsync(new ResetPasswordCommand(request.AccessToken, request.NewPassword), cancellationToken);
+            return Ok(new ApiEnvelope<object>(true, null, "Password updated successfully."));
+        }
+        catch (RequestValidationException validationException)
+        {
+            return StatusCode(
+                validationException.StatusCode,
+                new ApiEnvelope<object>(false, null, validationException.Message, validationException.ErrorCode, validationException.Errors));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new ApiEnvelope<object>(false, null, ex.Message));
+        }
     }
 
     /// <summary>
@@ -126,4 +177,16 @@ public sealed class LoginRequest
 public sealed class RefreshRequest
 {
     public string RefreshToken { get; set; } = string.Empty;
+}
+
+public sealed class ForgotPasswordRequest
+{
+    public string Email { get; set; } = string.Empty;
+    public string? RedirectUrl { get; set; }
+}
+
+public sealed class ResetPasswordRequest
+{
+    public string AccessToken { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
 }

@@ -2947,6 +2947,50 @@ body {
   color: var(--theme-primary);
 }
 
+.auth-form-meta {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.auth-inline-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--theme-primaryHover);
+  font-weight: 600;
+  transition: color 160ms ease, opacity 160ms ease;
+}
+
+.auth-inline-link:hover,
+.auth-inline-link:focus-visible {
+  color: var(--theme-primary);
+  opacity: 0.9;
+  outline: none;
+}
+
+.auth-inline-link--back {
+  color: var(--theme-textSecondary);
+}
+
+.auth-success {
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid var(--theme-borderStrong);
+  background: var(--theme-primarySoft);
+  color: var(--theme-textPrimary);
+}
+
+.auth-success strong {
+  font-size: 1rem;
+}
+
+.auth-success p {
+  margin: 0;
+  color: var(--theme-textSecondary);
+}
+
 .form-field input,
 .form-field select,
 .search-toolbar input,

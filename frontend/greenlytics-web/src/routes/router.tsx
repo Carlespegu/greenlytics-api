@@ -1,8 +1,10 @@
 ﻿import { createBrowserRouter, Navigate, useParams } from 'react-router-dom';
 
 import { ProtectedRoute } from '@/modules/auth/components/ProtectedRoute';
+import { ForgotPasswordPage } from '@/modules/auth/pages/ForgotPasswordPage';
 import { AlertsPage } from '@/modules/alerts/pages/AlertsPage';
 import { LoginPage } from '@/modules/auth/pages/LoginPage';
+import { ResetPasswordPage } from '@/modules/auth/pages/ResetPasswordPage';
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage';
 import { DevicesPage } from '@/modules/devices/pages/DevicesPage';
 import { InstallationsPage } from '@/modules/installations/pages/InstallationsPage';
@@ -34,6 +36,8 @@ function DetailRoute(props: { title: string; description: string; paramName: str
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { path: '/forgot-password', element: <ForgotPasswordPage /> },
+  { path: '/reset-password', element: <ResetPasswordPage /> },
   {
     path: '/',
     element: <ProtectedRoute><AppLayout /></ProtectedRoute>,
