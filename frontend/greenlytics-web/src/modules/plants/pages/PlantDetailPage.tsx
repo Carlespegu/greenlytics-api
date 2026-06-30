@@ -18,6 +18,7 @@ import { PlantReadingsTab } from '@/modules/plants/components/detail/PlantReadin
 import type { PlantReadingSample } from '@/modules/plants/components/detail/plantDetailViewModel';
 import { buildPlantDetailViewModel } from '@/modules/plants/components/detail/plantDetailViewModel';
 import { PlantReadingTrendWidget } from '@/modules/plants/components/detail/PlantReadingTrendWidget';
+import { mapReadingSearchResponse, type ReadingSearchApiItem } from '@/modules/readings/api/readingsApi';
 import { typesApi } from '@/modules/types/api/typesApi';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { LoadingScreen } from '@/shared/ui/LoadingScreen';
@@ -34,7 +35,7 @@ type ReadingSearchFiltersInput = {
   dateTo?: string;
 };
 
-type ReadingSortField = 'recordedAt';
+type ReadingSortField = 'readAt';
 
 function buildReadingsRequest(clientId: string, installationId: string): SearchRequest<ReadingSearchFiltersInput, ReadingSortField> {
   const today = new Date();
@@ -54,7 +55,7 @@ function buildReadingsRequest(clientId: string, installationId: string): SearchR
       pageSize: 250,
     },
     sort: {
-      field: 'recordedAt',
+      field: 'readAt',
       direction: 'desc',
     },
   };
@@ -79,10 +80,18 @@ export function PlantDetailPage() {
   const readingsQuery = useQuery({
     queryKey: ['plant-detail-readings', activeClientId, plantDetailQuery.data?.installationId],
     enabled: Boolean(activeClientId && plantDetailQuery.data?.installationId),
-    queryFn: () => postSearch<PlantReadingSample, ReadingSearchFiltersInput, ReadingSortField>(
-      '/api/readings/search',
-      buildReadingsRequest(activeClientId!, plantDetailQuery.data!.installationId),
-    ),
+    queryFn: async () => {
+      const response = await postSearch<ReadingSearchApiItem, ReadingSearchFiltersInput, ReadingSortField>(
+        '/api/readings/search',
+        buildReadingsRequest(activeClientId!, plantDetailQuery.data!.installationId),
+      );
+
+      const mapped = mapReadingSearchResponse(response);
+      return {
+        ...mapped,
+        items: mapped.items as PlantReadingSample[],
+      };
+    },
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });

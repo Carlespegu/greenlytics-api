@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { postSearch } from '@/api/search';
 import { useI18n } from '@/app/i18n/LanguageProvider';
 import { useActiveClient } from '@/modules/clients/hooks/ActiveClientContext';
+import { mapReadingSearchResponse, type ReadingListItem, type ReadingSearchApiItem } from '@/modules/readings/api/readingsApi';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { DataTable, type DataTableColumn } from '@/shared/ui/data-grid/DataTable';
 import { FilterBar } from '@/shared/ui/data-grid/FilterBar';
@@ -32,22 +33,7 @@ type ReadingSearchFiltersInput = {
   valueMax?: number;
 };
 
-type ReadingSortField = 'recordedAt' | 'device' | 'readingType' | 'value';
-
-type ReadingListItem = {
-  id: string;
-  recordedAt?: string | null;
-  device?: string | null;
-  deviceCode?: string | null;
-  deviceName?: string | null;
-  readingType?: string | null;
-  readingTypeName?: string | null;
-  value?: number | string | null;
-  unit?: string | null;
-  unitName?: string | null;
-  installationName?: string | null;
-  source?: string | null;
-};
+type ReadingSortField = 'readAt' | 'value';
 
 type OptionItem = {
   id: string;
@@ -125,7 +111,7 @@ export function ReadingsPage() {
   const [appliedFilters, setAppliedFilters] = useState<ReadingFiltersDraft>(defaultFilters);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [sortField, setSortField] = useState<ReadingSortField>('recordedAt');
+  const [sortField, setSortField] = useState<ReadingSortField>('readAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const readingsRequest = useMemo(
@@ -135,7 +121,9 @@ export function ReadingsPage() {
 
   const readingsQuery = useQuery({
     queryKey: ['readings-search', readingsRequest],
-    queryFn: () => postSearch<ReadingListItem, ReadingSearchFiltersInput, ReadingSortField>('/api/readings/search', readingsRequest),
+    queryFn: async () => mapReadingSearchResponse(
+      await postSearch<ReadingSearchApiItem, ReadingSearchFiltersInput, ReadingSortField>('/api/readings/search', readingsRequest),
+    ),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
@@ -178,24 +166,20 @@ export function ReadingsPage() {
       label: t('readingsPage.recordedAt'),
       align: 'left',
       sortable: true,
-      sortField: 'recordedAt',
+      sortField: 'readAt',
       render: (item) => formatDateTime(item.recordedAt, locale),
     },
     {
       id: 'device',
       label: t('readingsPage.device'),
       align: 'left',
-      sortable: true,
-      sortField: 'device',
-      render: (item) => item.deviceName ?? item.deviceCode ?? item.device ?? t('readingsPage.unknownDevice'),
+      render: (item) => item.deviceName ?? item.deviceCode ?? t('readingsPage.unknownDevice'),
     },
     {
       id: 'readingType',
       label: t('readingsPage.readingType'),
       align: 'left',
-      sortable: true,
-      sortField: 'readingType',
-      render: (item) => item.readingTypeName ?? item.readingType ?? t('records.unspecified'),
+      render: (item) => item.readingTypeSummary ?? item.readingTypeName ?? t('records.unspecified'),
     },
     {
       id: 'value',
@@ -203,7 +187,7 @@ export function ReadingsPage() {
       align: 'left',
       sortable: true,
       sortField: 'value',
-      render: (item) => `${item.value ?? '—'}${item.unit ?? item.unitName ? ` ${item.unit ?? item.unitName}` : ''}`,
+      render: (item) => item.value ?? '—',
     },
     {
       id: 'installation',
@@ -238,7 +222,7 @@ export function ReadingsPage() {
       setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortField(normalizedField);
-      setSortDirection(normalizedField === 'recordedAt' ? 'desc' : 'asc');
+      setSortDirection(normalizedField === 'readAt' ? 'desc' : 'asc');
     }
 
     setPage(1);
