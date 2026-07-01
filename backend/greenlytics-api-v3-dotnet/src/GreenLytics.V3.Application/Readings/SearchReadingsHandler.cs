@@ -22,9 +22,10 @@ public sealed class SearchReadingsHandler
 
         var query =
             from reading in _dbContext.Readings.AsNoTracking()
+            where !reading.IsDeleted
             join device in _dbContext.Devices.AsNoTracking() on reading.DeviceId equals device.Id into deviceGroup
             from device in deviceGroup.DefaultIfEmpty()
-            join installation in _dbContext.Installations.AsNoTracking() on reading.InstallationId equals installation.Id into installationGroup
+            join installation in _dbContext.Installations.AsNoTracking() on reading.InstallationId equals (Guid?)installation.Id into installationGroup
             from installation in installationGroup.DefaultIfEmpty()
             select new ReadingHeaderRow(
                 reading.Id,
@@ -56,7 +57,7 @@ public sealed class SearchReadingsHandler
 
         if (validated.InstallationId.HasValue)
         {
-            query = query.Where(x => x.InstallationId == validated.InstallationId.Value);
+            query = query.Where(x => x.InstallationId.HasValue && x.InstallationId.Value == validated.InstallationId.Value);
         }
 
         if (validated.ReadingTypeId.HasValue)
@@ -102,6 +103,11 @@ public sealed class SearchReadingsHandler
             .Skip((validated.Pagination.Page - 1) * validated.Pagination.PageSize)
             .Take(validated.Pagination.PageSize)
             .ToArrayAsync(cancellationToken);
+
+        if (headers.Length == 0)
+        {
+            return SearchRequestValidation.ToPagedResult(Array.Empty<ReadingResponse>(), validated.Pagination, totalItems);
+        }
 
         var readingIds = headers.Select(x => x.ReadingId).ToArray();
         var valueRows = await (

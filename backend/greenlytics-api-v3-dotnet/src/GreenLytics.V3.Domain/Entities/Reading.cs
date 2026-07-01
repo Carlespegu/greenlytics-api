@@ -4,7 +4,7 @@ public sealed class Reading
 {
     public Guid Id { get; set; }
     public Guid ClientId { get; set; }
-    public Guid InstallationId { get; set; }
+    public Guid? InstallationId { get; set; }
     public Guid DeviceId { get; set; }
     public DateTime ReadAt { get; set; }
     public string? Source { get; set; }
