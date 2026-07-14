@@ -40,7 +40,9 @@ public sealed class PlantManagementValidationService
         CurrentUserAuthorization.RequireCanManagePlants(_currentUser);
         await EnsureClientAccessAsync(command.ClientId, "clientId", cancellationToken);
 
-        var installation = await ValidateInstallationAsync(command.InstallationId, command.ClientId, "installationId", cancellationToken);
+        var installation = command.InstallationId.HasValue
+            ? await TryLoadInstallationForCreateAsync(command.InstallationId.Value, command.ClientId, cancellationToken)
+            : null;
         var code = NormalizeRequiredCode(command.Code);
         var name = RequireText(command.Name, "name", "Plant name", 150);
         var description = NormalizeOptional(command.Description, "description", 2000);
@@ -464,6 +466,11 @@ public sealed class PlantManagementValidationService
         return installation;
     }
 
+    private async Task<Installation?> TryLoadInstallationForCreateAsync(Guid installationId, Guid clientId, CancellationToken cancellationToken)
+        => await _dbContext.Installations
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.Id == installationId && x.ClientId == clientId && !x.IsDeleted, cancellationToken);
+
     private async Task<TypeCatalog?> ValidateTypeAsync(Guid? id, string category, string fieldName, string invalidMessage, CancellationToken cancellationToken)
     {
         if (!id.HasValue)
@@ -621,7 +628,7 @@ public sealed record ValidatedPlantAnalysisRequest(Guid ClientId);
 
 public sealed record ValidatedCreatePlantRequest(
     Guid ClientId,
-    Installation Installation,
+    Installation? Installation,
     string Code,
     string Name,
     string? Description,

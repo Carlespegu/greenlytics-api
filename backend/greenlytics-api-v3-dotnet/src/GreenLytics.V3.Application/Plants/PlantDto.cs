@@ -3,7 +3,7 @@ namespace GreenLytics.V3.Application.Plants;
 public sealed record PlantListItemDto(
     Guid Id,
     Guid ClientId,
-    Guid InstallationId,
+    Guid? InstallationId,
     string Code,
     string Name,
     string? Description,
@@ -93,7 +93,7 @@ public sealed record PlantDetailDto(
     Guid ClientId,
     string? ClientCode,
     string? ClientName,
-    Guid InstallationId,
+    Guid? InstallationId,
     string? InstallationCode,
     string? InstallationName,
     string Code,

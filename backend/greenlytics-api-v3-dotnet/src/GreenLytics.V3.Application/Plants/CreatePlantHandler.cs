@@ -34,7 +34,7 @@ public sealed class CreatePlantHandler
         {
             Id = Guid.NewGuid(),
             ClientId = validated.ClientId,
-            InstallationId = validated.Installation.Id,
+            InstallationId = validated.Installation?.Id,
             Code = validated.Code,
             Name = validated.Name,
             Description = validated.Description,

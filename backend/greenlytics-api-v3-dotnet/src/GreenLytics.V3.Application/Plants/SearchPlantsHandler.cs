@@ -25,7 +25,7 @@ public sealed class SearchPlantsHandler
         var query =
             from plant in _dbContext.Plants.AsNoTracking()
             join installation in _dbContext.Installations.AsNoTracking().Where(x => !x.IsDeleted)
-                on plant.InstallationId equals installation.Id into installationGroup
+                on plant.InstallationId equals (Guid?)installation.Id into installationGroup
             from installation in installationGroup.DefaultIfEmpty()
             join plantType in _dbContext.Types.AsNoTracking().Where(x => x.Category == "PlantType" && !x.IsDeleted)
                 on plant.PlantTypeId equals plantType.Id into plantTypeGroup

@@ -12,7 +12,7 @@ public sealed class PlantConfiguration : IEntityTypeConfiguration<Plant>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasColumnName("id");
         builder.Property(x => x.ClientId).HasColumnName("client_id");
-        builder.Property(x => x.InstallationId).HasColumnName("installation_id");
+        builder.Property(x => x.InstallationId).HasColumnName("installation_id").IsRequired(false);
         builder.Property(x => x.Code).HasColumnName("code").HasMaxLength(50);
         builder.Property(x => x.Name).HasColumnName("name").HasMaxLength(150);
         builder.Property(x => x.Description).HasColumnName("description");

@@ -1,4 +1,6 @@
 using GreenLytics.V3.Application.Plants;
+using GreenLytics.V3.Application.Photos;
+using GreenLytics.V3.Application.Abstractions;
 using GreenLytics.V3.Shared.Contracts;
 using GreenLytics.V3.Shared.Exceptions;
 using Microsoft.AspNetCore.Authorization;
@@ -20,6 +22,8 @@ public sealed class PlantsController : ControllerBase
     private readonly DeletePlantHandler _deletePlantHandler;
     private readonly ListPlantPhotosHandler _listPlantPhotosHandler;
     private readonly CreatePlantPhotoHandler _createPlantPhotoHandler;
+    private readonly IPhotoStorageService _photoStorageService;
+    private readonly PhotoRequestValidationService _photoValidationService;
     private readonly SetPlantPhotoPrimaryHandler _setPlantPhotoPrimaryHandler;
     private readonly DeletePlantPhotoHandler _deletePlantPhotoHandler;
     private readonly ListPlantThresholdsHandler _listPlantThresholdsHandler;
@@ -40,6 +44,8 @@ public sealed class PlantsController : ControllerBase
         DeletePlantHandler deletePlantHandler,
         ListPlantPhotosHandler listPlantPhotosHandler,
         CreatePlantPhotoHandler createPlantPhotoHandler,
+        IPhotoStorageService photoStorageService,
+        PhotoRequestValidationService photoValidationService,
         SetPlantPhotoPrimaryHandler setPlantPhotoPrimaryHandler,
         DeletePlantPhotoHandler deletePlantPhotoHandler,
         ListPlantThresholdsHandler listPlantThresholdsHandler,
@@ -59,6 +65,8 @@ public sealed class PlantsController : ControllerBase
         _deletePlantHandler = deletePlantHandler;
         _listPlantPhotosHandler = listPlantPhotosHandler;
         _createPlantPhotoHandler = createPlantPhotoHandler;
+        _photoStorageService = photoStorageService;
+        _photoValidationService = photoValidationService;
         _setPlantPhotoPrimaryHandler = setPlantPhotoPrimaryHandler;
         _deletePlantPhotoHandler = deletePlantPhotoHandler;
         _listPlantThresholdsHandler = listPlantThresholdsHandler;
@@ -109,11 +117,47 @@ public sealed class PlantsController : ControllerBase
     /// Crea una planta nova dins del context d un client.
     /// </summary>
     [HttpPost("clients/{clientId:guid}/plants")]
+    [Consumes("application/json")]
     public async Task<ActionResult<ApiEnvelope<PlantDetailDto>>> Create(Guid clientId, [FromBody] CreatePlantRequest request, CancellationToken cancellationToken)
     {
         try
         {
             var result = await _createPlantHandler.HandleAsync(request.ToCommand(clientId), cancellationToken);
+            return StatusCode(StatusCodes.Status201Created, new ApiEnvelope<PlantDetailDto>(true, result));
+        }
+        catch (Exception exception)
+        {
+            return ToErrorResult<PlantDetailDto>(exception);
+        }
+    }
+
+    /// <summary>
+    /// Crea una planta nova i persisteix les fotos inicials en el seu historial.
+    /// </summary>
+    [HttpPost("clients/{clientId:guid}/plants")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<ApiEnvelope<PlantDetailDto>>> CreateWithPhotos(Guid clientId, [FromForm] CreatePlantWithPhotosRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var created = await _createPlantHandler.HandleAsync(request.ToCommand(clientId), cancellationToken);
+
+            var uploads = await request.ToPhotoUploadsAsync(cancellationToken);
+            foreach (var upload in uploads)
+            {
+                await UploadPlantPhotoAsync(
+                    clientId,
+                    created.Id,
+                    upload.Payload,
+                    upload.PhotoPart,
+                    upload.FileName,
+                    upload.IsPrimary,
+                    upload.PhotoTypeId,
+                    upload.IsActive,
+                    cancellationToken);
+            }
+
+            var result = await _getPlantDetailHandler.HandleAsync(clientId, created.Id, cancellationToken);
             return StatusCode(StatusCodes.Status201Created, new ApiEnvelope<PlantDetailDto>(true, result));
         }
         catch (Exception exception)
@@ -200,11 +244,41 @@ public sealed class PlantsController : ControllerBase
     /// Afegeix una foto a una planta.
     /// </summary>
     [HttpPost("clients/{clientId:guid}/plants/{plantId:guid}/photos")]
+    [Consumes("application/json")]
     public async Task<ActionResult<ApiEnvelope<PlantPhotoDto>>> AddPhoto(Guid clientId, Guid plantId, [FromBody] CreatePlantPhotoRequest request, CancellationToken cancellationToken)
     {
         try
         {
             var result = await _createPlantPhotoHandler.HandleAsync(request.ToCommand(clientId, plantId), cancellationToken);
+            return StatusCode(StatusCodes.Status201Created, new ApiEnvelope<PlantPhotoDto>(true, result));
+        }
+        catch (Exception exception)
+        {
+            return ToErrorResult<PlantPhotoDto>(exception);
+        }
+    }
+
+    /// <summary>
+    /// Puja una foto i l'afegeix a l'historial d'una planta.
+    /// </summary>
+    [HttpPost("clients/{clientId:guid}/plants/{plantId:guid}/photos")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<ApiEnvelope<PlantPhotoDto>>> UploadPhoto(Guid clientId, Guid plantId, [FromForm] UploadPlantPhotoRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payload = await request.ToPayloadAsync(cancellationToken);
+            var result = await UploadPlantPhotoAsync(
+                clientId,
+                plantId,
+                payload,
+                request.PhotoPart,
+                request.FileName,
+                request.IsPrimary,
+                request.PhotoTypeId,
+                request.IsActive,
+                cancellationToken);
+
             return StatusCode(StatusCodes.Status201Created, new ApiEnvelope<PlantPhotoDto>(true, result));
         }
         catch (Exception exception)
@@ -412,11 +486,62 @@ public sealed class PlantsController : ControllerBase
                 StatusCodes.Status500InternalServerError,
                 new ApiEnvelope<T>(false, default, "An unexpected error occurred.", "internal_error"))
         };
+
+    private static string NormalizePhotoPart(string? value)
+    {
+        var normalized = string.IsNullOrWhiteSpace(value) ? "photo" : value.Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "leaf" => "leaf",
+            "stem" => "stem",
+            "trunk" => "trunk",
+            "general" => "general",
+            _ => "photo"
+        };
+    }
+
+    private async Task<PlantPhotoDto> UploadPlantPhotoAsync(
+        Guid clientId,
+        Guid plantId,
+        PlantPhotoPayload payload,
+        string? photoPart,
+        string? fileName,
+        bool isPrimary,
+        Guid? photoTypeId,
+        bool? isActive,
+        CancellationToken cancellationToken)
+    {
+        var validated = _photoValidationService.ValidatePhotos(
+            new Dictionary<string, PlantPhotoPayload>(StringComparer.OrdinalIgnoreCase)
+            {
+                [photoPart ?? "photo"] = payload
+            },
+            requireAllPhotos: true,
+            requireAtLeastOnePhoto: true).Single().Value;
+
+        var extension = Path.GetExtension(validated.FileName);
+        var safePart = NormalizePhotoPart(photoPart);
+        var storagePath = $"clients/{clientId}/plants/{plantId}/{Guid.NewGuid():N}-{safePart}{extension.ToLowerInvariant()}";
+
+        await using var stream = new MemoryStream(validated.Content);
+        var fileUrl = await _photoStorageService.UploadAsync(storagePath, stream, validated.MimeType, cancellationToken);
+
+        return await _createPlantPhotoHandler.HandleAsync(
+            new CreatePlantPhotoCommand(
+                clientId,
+                plantId,
+                photoTypeId,
+                string.IsNullOrWhiteSpace(fileName) ? $"{safePart}-{validated.FileName}" : fileName.Trim(),
+                fileUrl,
+                isPrimary,
+                isActive),
+            cancellationToken);
+    }
 }
 
-public sealed class CreatePlantRequest
+public class CreatePlantRequest
 {
-    public Guid InstallationId { get; set; }
+    public Guid? InstallationId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
@@ -433,6 +558,85 @@ public sealed class CreatePlantRequest
     public CreatePlantCommand ToCommand(Guid clientId)
         => new(clientId, InstallationId, Code, Name, Description, PlantTypeId, PlantStatusId, LightExposureCode, LightExposureLabel, SoilType, Fertilizer, FloweringMonths, FertilizationSeasons, IsActive);
 }
+
+public sealed class CreatePlantWithPhotosRequest : CreatePlantRequest
+{
+    public Guid? LeafPhotoTypeId { get; set; }
+    public Guid? TrunkPhotoTypeId { get; set; }
+    public Guid? StemPhotoTypeId { get; set; }
+    public Guid? GeneralPhotoTypeId { get; set; }
+    public string? LeafFileName { get; set; }
+    public string? TrunkFileName { get; set; }
+    public string? StemFileName { get; set; }
+    public string? GeneralFileName { get; set; }
+    public IFormFile? LeafImage { get; set; }
+    public IFormFile? TrunkImage { get; set; }
+    public IFormFile? StemImage { get; set; }
+    public IFormFile? GeneralImage { get; set; }
+
+    public async Task<IReadOnlyList<CreatePlantPhotoUpload>> ToPhotoUploadsAsync(CancellationToken cancellationToken)
+    {
+        var uploads = new List<CreatePlantPhotoUpload>();
+
+        if (LeafImage is { Length: > 0 })
+        {
+            uploads.Add(new CreatePlantPhotoUpload(
+                "leaf",
+                await ToPayloadAsync(LeafImage, "leaf", cancellationToken),
+                LeafFileName,
+                false,
+                LeafPhotoTypeId,
+                true));
+        }
+
+        var trunkImage = TrunkImage ?? StemImage;
+        if (trunkImage is { Length: > 0 })
+        {
+            var photoPart = TrunkImage is not null ? "trunk" : "stem";
+            uploads.Add(new CreatePlantPhotoUpload(
+                photoPart,
+                await ToPayloadAsync(trunkImage, photoPart, cancellationToken),
+                TrunkImage is not null ? TrunkFileName : StemFileName,
+                false,
+                TrunkImage is not null ? TrunkPhotoTypeId : StemPhotoTypeId,
+                true));
+        }
+
+        if (GeneralImage is { Length: > 0 })
+        {
+            uploads.Add(new CreatePlantPhotoUpload(
+                "general",
+                await ToPayloadAsync(GeneralImage, "general", cancellationToken),
+                GeneralFileName,
+                true,
+                GeneralPhotoTypeId,
+                true));
+        }
+
+        return uploads;
+    }
+
+    private static async Task<PlantPhotoPayload> ToPayloadAsync(IFormFile formFile, string part, CancellationToken cancellationToken)
+    {
+        await using var stream = formFile.OpenReadStream();
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream, cancellationToken);
+
+        return new PlantPhotoPayload(
+            formFile.FileName,
+            string.IsNullOrWhiteSpace(formFile.ContentType) ? "application/octet-stream" : formFile.ContentType,
+            memoryStream.ToArray(),
+            part);
+    }
+}
+
+public sealed record CreatePlantPhotoUpload(
+    string PhotoPart,
+    PlantPhotoPayload Payload,
+    string? FileName,
+    bool IsPrimary,
+    Guid? PhotoTypeId,
+    bool? IsActive);
 
 public sealed class UpdatePlantRequest
 {
@@ -498,6 +702,34 @@ public sealed class CreatePlantPhotoRequest
 
     public CreatePlantPhotoCommand ToCommand(Guid clientId, Guid plantId)
         => new(clientId, plantId, PhotoTypeId, FileName, FileUrl, IsPrimary, IsActive);
+}
+
+public sealed class UploadPlantPhotoRequest
+{
+    public Guid? PhotoTypeId { get; set; }
+    public string? PhotoPart { get; set; }
+    public string? FileName { get; set; }
+    public bool IsPrimary { get; set; }
+    public bool? IsActive { get; set; }
+    public IFormFile? Image { get; set; }
+
+    public async Task<PlantPhotoPayload> ToPayloadAsync(CancellationToken cancellationToken)
+    {
+        if (Image is null || Image.Length == 0)
+        {
+            return PlantPhotoPayload.Empty() with { PhotoPart = PhotoPart };
+        }
+
+        await using var stream = Image.OpenReadStream();
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream, cancellationToken);
+
+        return new PlantPhotoPayload(
+            Image.FileName,
+            string.IsNullOrWhiteSpace(Image.ContentType) ? "application/octet-stream" : Image.ContentType,
+            memoryStream.ToArray(),
+            PhotoPart);
+    }
 }
 
 public sealed class CreatePlantThresholdRequest

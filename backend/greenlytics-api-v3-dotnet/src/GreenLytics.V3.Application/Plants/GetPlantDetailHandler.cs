@@ -26,7 +26,7 @@ public sealed class GetPlantDetailHandler
                 on item.ClientId equals client.Id into clientGroup
             from client in clientGroup.DefaultIfEmpty()
             join installation in _dbContext.Installations.AsNoTracking().Where(x => !x.IsDeleted)
-                on item.InstallationId equals installation.Id into installationGroup
+                on item.InstallationId equals (Guid?)installation.Id into installationGroup
             from installation in installationGroup.DefaultIfEmpty()
             join plantType in _dbContext.Types.AsNoTracking().Where(x => x.Category == "PlantType" && !x.IsDeleted)
                 on item.PlantTypeId equals plantType.Id into plantTypeGroup
@@ -108,19 +108,21 @@ public sealed class GetPlantDetailHandler
                 eventType != null ? eventType.Name : null))
             .ToListAsync(cancellationToken);
 
-        var latestReading = await (
-            from reading in _dbContext.Readings.AsNoTracking()
-            join device in _dbContext.Devices.AsNoTracking().Where(x => !x.IsDeleted)
-                on reading.DeviceId equals device.Id
-            where reading.InstallationId == plant.InstallationId && !reading.IsDeleted
-            orderby reading.ReadAt descending
-            select new PlantLatestReadingSummaryDto(
-                reading.Id,
-                reading.ReadAt,
-                device.Id,
-                device.Code,
-                reading.Source))
-            .FirstOrDefaultAsync(cancellationToken);
+        var latestReading = plant.InstallationId.HasValue
+            ? await (
+                from reading in _dbContext.Readings.AsNoTracking()
+                join device in _dbContext.Devices.AsNoTracking().Where(x => !x.IsDeleted)
+                    on reading.DeviceId equals device.Id
+                where reading.InstallationId == plant.InstallationId && !reading.IsDeleted
+                orderby reading.ReadAt descending
+                select new PlantLatestReadingSummaryDto(
+                    reading.Id,
+                    reading.ReadAt,
+                    device.Id,
+                    device.Code,
+                    reading.Source))
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
 
         return new PlantDetailDto(
             plant.Id,

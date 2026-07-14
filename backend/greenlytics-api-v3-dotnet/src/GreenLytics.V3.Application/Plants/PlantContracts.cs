@@ -23,7 +23,7 @@ public sealed record PlantSearchFilters(
 
 public sealed record CreatePlantCommand(
     Guid ClientId,
-    Guid InstallationId,
+    Guid? InstallationId,
     string Code,
     string Name,
     string? Description,

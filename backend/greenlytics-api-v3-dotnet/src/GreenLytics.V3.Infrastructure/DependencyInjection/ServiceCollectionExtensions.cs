@@ -56,6 +56,7 @@ public static class ServiceCollectionExtensions
             var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<SupabaseAuthenticationOptions>>().Value;
             client.BaseAddress = new Uri($"{options.Url.TrimEnd('/')}/auth/v1/");
         });
+        services.AddHttpClient<IPhotoStorageService, SupabaseStorageService>();
 
         services.AddScoped<CreatePlantHandler>();
         services.AddScoped<AnalyzePlantPhotosHandler>();

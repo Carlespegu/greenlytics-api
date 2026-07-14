@@ -43,7 +43,7 @@ public sealed class SupabaseStorageService : IPhotoStorageService
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
-        return storagePath;
+        return $"{_supabaseUrl.TrimEnd('/')}/storage/v1/object/public/{_bucket}/{storagePath.TrimStart('/')}";
     }
 
     public async Task DeleteAsync(string storagePath, CancellationToken cancellationToken = default)

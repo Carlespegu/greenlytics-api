@@ -5,7 +5,7 @@ namespace GreenLytics.V3.Domain.Entities;
 public sealed class Plant : BaseAuditableEntity
 {
     public Guid ClientId { get; set; }
-    public Guid InstallationId { get; set; }
+    public Guid? InstallationId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
